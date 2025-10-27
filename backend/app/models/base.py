@@ -72,3 +72,15 @@ class DocumentUploadResponse(BaseResponse):
     upload_date: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentProcessingResponse(BaseResponse):
+    """Response model for document processing."""
+
+    document_id: UUID
+    text_length: int
+    num_chunks: int
+    chunks_stored: int
+    processing_status: str
+
+    model_config = ConfigDict(from_attributes=True)

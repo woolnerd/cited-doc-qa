@@ -6,9 +6,14 @@ from uuid import UUID
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.core.dependencies import SupabaseClient
-from app.core.exceptions import FileValidationError
+from app.core.exceptions import DocumentProcessingError, FileValidationError
 from app.core.logging import get_logger
-from app.models.base import DocumentMetadata, DocumentUploadResponse
+from app.models.base import (
+    DocumentMetadata,
+    DocumentProcessingResponse,
+    DocumentUploadResponse,
+)
+from app.services.document_processor import DocumentProcessor
 
 logger = get_logger(__name__)
 
@@ -215,4 +220,87 @@ async def get_document(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve document",
+        ) from e
+
+
+@router.post("/{document_id}/process", response_model=DocumentProcessingResponse)
+async def process_document(
+    document_id: UUID,
+    file: UploadFile = File(...),
+    supabase: SupabaseClient = None,
+) -> DocumentProcessingResponse:
+    """Process an uploaded document through the RAG pipeline.
+
+    This endpoint:
+    1. Extracts text from the document
+    2. Chunks the text with contextual information
+    3. Generates embeddings for each chunk
+    4. Stores chunks and embeddings in the database
+
+    Args:
+        document_id: UUID of the uploaded document
+        file: The uploaded file content
+        supabase: Supabase client (injected dependency)
+
+    Returns:
+        Processing results with statistics
+
+    Raises:
+        HTTPException: If document doesn't exist or processing fails
+    """
+    try:
+        # Verify document exists
+        doc_result = (
+            supabase.table("documents").select("*").eq("id", str(document_id)).execute()
+        )
+
+        if not doc_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document {document_id} not found",
+            )
+
+        document_data = doc_result.data[0]
+        filename = document_data["filename"]
+        file_type = document_data["file_type"]
+
+        # Read file content
+        file_content = await file.read()
+
+        # Process document through pipeline
+        logger.info(f"Processing document {document_id}")
+        processor = DocumentProcessor(supabase_client=supabase)
+
+        result = processor.process_document(
+            document_id=document_id,
+            file_content=file_content,
+            filename=filename,
+            file_type=file_type,
+        )
+
+        return DocumentProcessingResponse(
+            success=True,
+            message="Document processed successfully",
+            document_id=document_id,
+            text_length=result["text_length"],
+            num_chunks=result["num_chunks"],
+            chunks_stored=result["chunks_stored"],
+            processing_status=result["status"],
+        )
+
+    except HTTPException:
+        raise
+    except DocumentProcessingError as e:
+        logger.error(f"Document processing failed for {document_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document processing failed: {str(e)}",
+        ) from e
+    except Exception as e:
+        logger.error(
+            f"Unexpected error processing document {document_id}: {e}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process document",
         ) from e
