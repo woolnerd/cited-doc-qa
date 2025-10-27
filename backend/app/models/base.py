@@ -1,6 +1,6 @@
 """Base Pydantic models for API requests and responses."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -33,7 +33,7 @@ class HealthResponse(BaseModel):
     status: str = "healthy"
     version: str
     environment: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -58,5 +58,17 @@ class ChunkMetadata(BaseModel):
     content: str
     chunk_index: int
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentUploadResponse(BaseResponse):
+    """Response model for document upload."""
+
+    document_id: UUID
+    filename: str
+    file_type: str
+    file_size: int
+    upload_date: datetime
 
     model_config = ConfigDict(from_attributes=True)

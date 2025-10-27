@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import health
+from app.api import documents, health
 from app.core.config import settings
 from app.core.exceptions import RAGChatbotException
 from app.core.logging import get_logger, setup_logging
@@ -122,9 +122,9 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 # Include routers
 app.include_router(health.router, tags=["Health"])
+app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
 
 # Additional routers will be added here:
-# app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
 # app.include_router(query.router, prefix="/api/query", tags=["Query"])
 
 
