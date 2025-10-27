@@ -84,3 +84,58 @@ class DocumentProcessingResponse(BaseResponse):
     processing_status: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class QueryRequest(BaseModel):
+    """Request model for query endpoint."""
+
+    query: str = Field(..., min_length=1, max_length=1000, description="User query")
+    top_k: int = Field(
+        default=5, ge=1, le=20, description="Number of results to return"
+    )
+    document_id: UUID | None = Field(
+        default=None, description="Optional: Search within specific document"
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SearchResult(BaseModel):
+    """Search result with scores and metadata."""
+
+    chunk_id: str
+    document_id: UUID
+    document_name: str
+    chunk_index: int
+    content: str
+    citation_num: int
+    rerank_score: float | None = None
+    rrf_score: float | None = None
+    vector_score: float | None = None
+    fulltext_score: float | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QueryMetadata(BaseModel):
+    """Metadata about query processing."""
+
+    query: str
+    results_count: int
+    model: str
+    temperature: float
+    tokens_used: dict[str, int]
+    timing: dict[str, float]
+    used_fallback: bool = False
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QueryResponse(BaseResponse):
+    """Response model for query endpoint."""
+
+    answer: str
+    sources: list[SearchResult]
+    metadata: QueryMetadata
+
+    model_config = ConfigDict(from_attributes=True)

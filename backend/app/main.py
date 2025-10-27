@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import documents, health
+from app.api import documents, health, query
 from app.core.config import settings
 from app.core.exceptions import RAGChatbotException
 from app.core.logging import get_logger, setup_logging
@@ -38,8 +38,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         if not settings.COHERE_API_KEY:
             logger.warning("Cohere API key not configured")
 
-        if not settings.ANTHROPIC_API_KEY:
-            logger.warning("Anthropic API key not configured")
+        if not settings.OPENROUTER_API_KEY:
+            logger.warning("OpenRouter API key not configured")
 
         logger.info("API keys validated successfully")
     except Exception as e:
@@ -123,9 +123,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 # Include routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
-
-# Additional routers will be added here:
-# app.include_router(query.router, prefix="/api/query", tags=["Query"])
+app.include_router(query.router, prefix="/api", tags=["Query"])
 
 
 # Request logging middleware
