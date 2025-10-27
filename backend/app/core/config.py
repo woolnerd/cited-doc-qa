@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # AI Services
     GOOGLE_API_KEY: str = "test-google-key"  # Gemini embeddings
     COHERE_API_KEY: str = "test-cohere-key"  # Reranking
-    ANTHROPIC_API_KEY: str = "test-anthropic-key"  # Claude LLM
+    OPENROUTER_API_KEY: str = "test-openrouter-key"  # Claude LLM via Openrouter
 
     # Embedding Configuration
     EMBEDDING_MODEL: str = "models/text-embedding-004"
@@ -50,8 +50,9 @@ class Settings(BaseSettings):
     RERANK_TOP_K: int = 5
     RRF_K: int = 60
 
-    # LLM Configuration
-    LLM_MODEL: str = "claude-3-5-sonnet-20241022"
+    # LLM Configuration (via Openrouter)
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    LLM_MODEL: str = "anthropic/claude-3.5-sonnet"  # Openrouter format
     LLM_TEMPERATURE: float = 0.3
     LLM_MAX_TOKENS: int = 2048
 
