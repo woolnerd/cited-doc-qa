@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chatbot - Document Q&A</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>RAG Chatbot</h1>
+            <p class="subtitle">Upload documents and ask questions</p>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadSection">
+            <div class="upload-area" id="uploadArea">
+                <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p class="upload-text">
+                    <strong>Click to upload</strong> or drag and drop
+                </p>
+                <p class="upload-hint">PDF, DOCX, or TXT (max 10MB)</p>
+                <input type="file" id="fileInput" accept=".pdf,.docx,.txt" hidden>
+            </div>
+
+            <!-- Upload Progress -->
+            <div class="upload-progress hidden" id="uploadProgress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Uploading...</p>
+            </div>
+
+            <!-- Upload Status -->
+            <div class="upload-status hidden" id="uploadStatus"></div>
+
+            <!-- Uploaded Documents -->
+            <div class="documents-list hidden" id="documentsList">
+                <h3>Uploaded Documents</h3>
+                <div id="documentsContainer"></div>
+            </div>
+        </section>
+
+        <!-- Chat Section -->
+        <section class="chat-section">
+            <div class="chat-container" id="chatContainer">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <h2>Welcome!</h2>
+                        <p>Upload a document to get started, then ask me anything about it.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-container">
+                <textarea
+                    id="queryInput"
+                    class="query-input"
+                    placeholder="Ask a question about your documents..."
+                    rows="1"
+                    disabled
+                ></textarea>
+                <button id="sendButton" class="send-button" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
