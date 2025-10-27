@@ -1,1 +1,1 @@
-# Services layer
+"""Services for the RAG chatbot application."""
