@@ -1,6 +1,6 @@
 """Pytest configuration and shared fixtures."""
+
 import pytest
-from typing import Generator
 
 
 @pytest.fixture
