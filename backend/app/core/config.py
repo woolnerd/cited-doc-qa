@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     RERANK_TOP_K: int = 5
     RRF_K: int = 60
 
+    # Reranking Configuration
+    RERANK_MODEL: str = "rerank-english-v3.0"
+    RERANK_MAX_RETRIES: int = 3
+    RERANK_RETRY_DELAY: float = 1.0  # seconds
+
     # LLM Configuration (via Openrouter)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     LLM_MODEL: str = "anthropic/claude-3.5-sonnet"  # Openrouter format
