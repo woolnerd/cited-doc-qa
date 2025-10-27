@@ -1,0 +1,67 @@
+"""Application configuration using Pydantic settings."""
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+
+    # Application
+    APP_NAME: str = "RAG Chatbot API"
+    APP_VERSION: str = "1.0.0"
+    ENVIRONMENT: str = "development"
+    LOG_LEVEL: str = "INFO"
+
+    # CORS
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ]
+
+    # File Upload
+    MAX_FILE_SIZE_MB: int = 10
+    ALLOWED_FILE_TYPES: list[str] = ["pdf", "docx", "txt"]
+
+    # Rate Limiting
+    UPLOAD_RATE_LIMIT: str = "10/hour"
+    QUERY_RATE_LIMIT: str = "30/hour"
+
+    # Supabase
+    SUPABASE_URL: str = "https://test.supabase.co"
+    SUPABASE_KEY: str = "test-key"
+
+    # AI Services
+    GOOGLE_API_KEY: str = "test-google-key"  # Gemini embeddings
+    COHERE_API_KEY: str = "test-cohere-key"  # Reranking
+    ANTHROPIC_API_KEY: str = "test-anthropic-key"  # Claude LLM
+
+    # Embedding Configuration
+    EMBEDDING_MODEL: str = "models/text-embedding-004"
+    EMBEDDING_DIMENSIONS: int = 768
+
+    # Chunking Configuration
+    CHUNK_SIZE_MIN: int = 400
+    CHUNK_SIZE_MAX: int = 600
+    CHUNK_SIZE_TARGET: int = 500
+
+    # Search Configuration
+    VECTOR_SEARCH_LIMIT: int = 30
+    FULL_TEXT_SEARCH_LIMIT: int = 30
+    RERANK_TOP_K: int = 5
+    RRF_K: int = 60
+
+    # LLM Configuration
+    LLM_MODEL: str = "claude-3-5-sonnet-20241022"
+    LLM_TEMPERATURE: float = 0.3
+    LLM_MAX_TOKENS: int = 2048
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
+
+
+# Global settings instance
+settings = Settings()
