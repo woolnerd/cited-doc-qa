@@ -32,9 +32,11 @@ jobs:
           fi
 
       - name: Check for issue reference
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          BODY="${{ github.event.pull_request.body }}"
-          if [[ "$BODY" =~ (closes|fixes|resolves)[[:space:]]+#[0-9]+ ]]; then
+          shopt -s nocasematch
+          if [[ "$PR_BODY" =~ (closes|fixes|resolves)[[:space:]]+#[0-9]+ ]]; then
             echo "✅ PR references an issue"
           else
             echo "⚠️ PR should reference an issue (e.g., 'Closes #123')"
