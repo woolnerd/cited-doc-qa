@@ -156,9 +156,9 @@ class DocumentProcessor:
                         "content": chunk["content"],
                         "contextual_content": chunk["contextual_content"],
                         "chunk_index": chunk["chunk_index"],
-                        "token_count": chunk["token_count"],
                         "embedding": embedding,
                         "metadata": {
+                            "token_count": chunk["token_count"],
                             "content_length": len(chunk["content"]),
                             "contextual_length": len(chunk["contextual_content"]),
                         },
