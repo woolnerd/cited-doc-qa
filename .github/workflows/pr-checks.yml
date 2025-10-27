@@ -1,0 +1,91 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-info:
+    name: PR Information
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Get PR info
+        run: |
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo "PR Author: ${{ github.event.pull_request.user.login }}"
+          echo "Base Branch: ${{ github.event.pull_request.base.ref }}"
+          echo "Head Branch: ${{ github.event.pull_request.head.ref }}"
+
+      - name: Check PR title format
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          if [[ ! "$TITLE" =~ ^(feat|fix|docs|test|refactor|chore|ci):.+ ]]; then
+            echo "⚠️ PR title should follow conventional commit format"
+            echo "Examples: feat: add feature, fix: bug fix, docs: update readme"
+          else
+            echo "✅ PR title format is correct"
+          fi
+
+      - name: Check for issue reference
+        run: |
+          BODY="${{ github.event.pull_request.body }}"
+          if [[ "$BODY" =~ (closes|fixes|resolves)[[:space:]]+#[0-9]+ ]]; then
+            echo "✅ PR references an issue"
+          else
+            echo "⚠️ PR should reference an issue (e.g., 'Closes #123')"
+          fi
+
+      - name: Analyze changed files
+        run: |
+          echo "Files changed in this PR:"
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}
+
+          echo ""
+          echo "Lines changed:"
+          git diff --stat ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}
+
+  size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          ADDED=$(git diff --numstat ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | awk '{sum+=$1} END {print sum}')
+          DELETED=$(git diff --numstat ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | awk '{sum+=$2} END {print sum}')
+          TOTAL=$((ADDED + DELETED))
+
+          echo "Lines added: $ADDED"
+          echo "Lines deleted: $DELETED"
+          echo "Total changes: $TOTAL"
+
+          if [[ $TOTAL -gt 1000 ]]; then
+            echo "⚠️ Large PR detected ($TOTAL lines). Consider splitting into smaller PRs."
+          else
+            echo "✅ PR size is reasonable"
+          fi
+
+  label-pr:
+    name: Auto-label PR
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Label based on files changed
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true

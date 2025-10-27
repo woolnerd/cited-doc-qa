@@ -1,5 +1,9 @@
 # RAG Chatbot Demo
 
+[![CI](https://github.com/woolnerd/production-rag-system/actions/workflows/ci.yml/badge.svg)](https://github.com/woolnerd/production-rag-system/actions/workflows/ci.yml)
+[![Deploy](https://github.com/woolnerd/production-rag-system/actions/workflows/deploy.yml/badge.svg)](https://github.com/woolnerd/production-rag-system/actions/workflows/deploy.yml)
+[![codecov](https://codecov.io/gh/woolnerd/production-rag-system/branch/main/graph/badge.svg)](https://codecov.io/gh/woolnerd/production-rag-system)
+
 A production-grade RAG (Retrieval Augmented Generation) chatbot that allows users to upload documents and ask questions with proper source citations.
 
 ## Features

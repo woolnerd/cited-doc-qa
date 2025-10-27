@@ -1,0 +1,29 @@
+# Auto-labeler configuration for PRs
+
+backend:
+  - backend/**/*
+  - app/**/*.py
+
+frontend:
+  - frontend/**/*
+  - "**/*.html"
+  - "**/*.js"
+  - "**/*.css"
+
+testing:
+  - tests/**/*
+  - "**/*test*.py"
+
+documentation:
+  - "**/*.md"
+  - docs/**/*
+
+ci-cd:
+  - .github/**/*
+  - Dockerfile
+  - docker-compose*.yml
+
+dependencies:
+  - requirements.txt
+  - pyproject.toml
+  - package.json
