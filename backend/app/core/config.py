@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     CHUNK_SIZE_TARGET: int = 500
 
     # Search Configuration
+    SEARCH_TOP_K: int = 10  # Number of top results to return
+    SEARCH_SIMILARITY_THRESHOLD: float = 0.7  # Minimum similarity score (0-1)
     VECTOR_SEARCH_LIMIT: int = 30
     FULL_TEXT_SEARCH_LIMIT: int = 30
     RERANK_TOP_K: int = 5
