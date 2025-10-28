@@ -1,0 +1,626 @@
+# RAG Chatbot - AI Assistant Context
+
+> This file provides context for AI assistants (Claude, Cursor, Cline, etc.) working on this project.
+
+## Project Overview
+
+Production-ready RAG (Retrieval-Augmented Generation) chatbot system that allows users to upload documents and ask questions about them using advanced search and AI generation.
+
+**Live Demo:** <https://github.com/woolnerd/production-rag-system>
+
+## Tech Stack
+
+### Backend
+- **Framework:** FastAPI (Python 3.13+)
+- **Database:** Supabase (PostgreSQL 15 + pgvector extension)
+- **Vector Search:** pgvector with IVFFlat indexing
+- **Full-Text Search:** PostgreSQL ts_vector with GIN indexing
+- **Embeddings:** Google Gemini (text-embedding-004, 768 dimensions)
+- **Reranking:** Cohere (rerank-english-v3.0)
+- **LLM Generation:** Claude 3.5 Sonnet via OpenRouter
+- **Testing:** pytest with >85% coverage target
+
+### Frontend
+- **Pure vanilla JavaScript** (no build step, no frameworks)
+- **HTML + CSS** with modern responsive design
+- **Server:** Simple Python HTTP server (`frontend/serve.py`)
+- **Ports:** Frontend (3000), Backend (8000)
+
+### Infrastructure
+- **CI/CD:** GitHub Actions
+- **Code Quality:** pre-commit hooks (black, ruff, mypy, bandit)
+- **Version Control:** Git with conventional commits
+
+## Important: GitHub Issue Numbering
+
+⚠️ **Issue numbering discrepancy exists** - This was not intentional:
+
+- Early issues (created mid-project) have "Issue #1-8" in titles but different actual GitHub numbers
+- Later issues (#6, #7, #9-17) use their actual GitHub issue numbers
+- Always check the actual GitHub issue URL, not just the title number
+
+Example:
+
+- Title: "Issue #1: Project Setup" → Actual: #29
+- Title: "Issue #6: Document Upload" → Actual: #22
+- Title: "Document Management Interface" → Actual: #6 ✓
+
+When referencing issues, verify the actual number with `gh issue list`.
+
+## Project Structure
+
+```
+rag-demo/
+├── backend/                    # FastAPI application
+│   ├── app/
+│   │   ├── api/               # API endpoints
+│   │   ├── services/          # Business logic (embeddings, search, LLM)
+│   │   ├── models/            # Pydantic models
+│   │   ├── core/              # Config, dependencies, logging
+│   │   └── main.py            # FastAPI app entry point
+│   ├── tests/                 # Pytest tests
+│   └── .env                   # Environment variables (not in git)
+├── frontend/                   # Vanilla JS frontend
+│   ├── index.html             # Main HTML
+│   ├── styles.css             # All styling
+│   ├── app.js                 # Application logic
+│   └── serve.py               # Development server
+├── migrations/                 # SQL database migrations
+│   ├── 001_initial_schema.sql
+│   ├── 002_add_search_functions.sql
+│   └── 003_fix_search_function_types.sql  # CRITICAL!
+├── database/                   # Database documentation
+└── venv/                      # Python virtual environment
+```
+
+## Development Workflow
+
+### 1. Making Changes
+
+**Always use this pattern:**
+
+1. Work on a GitHub issue (never commit to main directly)
+2. Create a feature branch: `git checkout -b issue-N-description`
+3. Make changes and commit with descriptive messages
+4. Use TodoWrite tool for multi-step tasks
+5. Run tests: `cd backend && pytest`
+6. Create PR linked to issue
+7. Merge via GitHub (squash preferred)
+
+### 2. Commit Format
+
+```
+Add feature description
+
+Detailed explanation of changes made.
+
+Tested:
+- Test case 1
+- Test case 2
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+### 3. Pre-commit Hooks
+
+Automatically run on commit:
+- `black` - Code formatting
+- `ruff` - Linting
+- `mypy` - Type checking
+- `bandit` - Security scanning
+
+If hooks fail, fix issues before committing.
+
+### 4. PR Creation
+
+```bash
+gh pr create --title "Add feature (Issue #N)" --body "..."
+```
+
+Always include:
+- Summary of changes
+- Testing performed
+- Link to issue (auto-closes with "Fixes #N")
+
+## Database & Migrations
+
+### Running Migrations
+
+⚠️ **CRITICAL:** Always apply migrations via Supabase SQL Editor, not CLI
+
+1. Go to Supabase Dashboard → SQL Editor
+2. Copy migration file contents from `migrations/`
+3. Run the SQL query
+4. Verify success with test queries
+
+### Migration 003 is Critical
+
+**Must be applied** for search to work:
+
+```sql
+-- migrations/003_fix_search_function_types.sql
+-- Fixes "type real does not match double precision" error
+```
+
+Without this migration:
+
+- Vector search may work
+- Full-text search will fail with type errors
+- Queries return 500 errors
+
+### Common Database Issues
+
+**Issue:** "Could not find the function search_chunks"
+
+- **Cause:** Migration 002 not applied
+- **Fix:** Run migration 002 in Supabase SQL Editor
+
+**Issue:** "type real does not match expected type double precision"
+
+- **Cause:** Migration 003 not applied
+- **Fix:** Run migration 003 in Supabase SQL Editor
+
+**Issue:** Search returns 0 results but no errors
+
+- **Cause:** Supabase schema cache not refreshed
+- **Fix:** Wait a few minutes or restart backend
+- **Note:** This can happen mysteriously and resolve itself
+
+## Search & Retrieval
+
+### How It Works
+
+1. **Hybrid Search** (runs in parallel):
+   - Vector search using cosine similarity
+   - Full-text search using PostgreSQL ts_vector
+
+2. **Reciprocal Rank Fusion (RRF):**
+   - Combines vector + full-text results
+   - Weighted scoring algorithm
+
+3. **Reranking:**
+   - Uses Cohere rerank-english-v3.0
+   - Improves result relevance
+
+4. **Context Assembly:**
+   - Top 5 chunks (configurable)
+   - Includes document names and chunk indices
+
+5. **LLM Generation:**
+   - Claude 3.5 Sonnet generates answer
+   - Cites sources with [1], [2], etc.
+
+### Query Requirements
+
+⚠️ **Queries must match document content**
+
+If documents are about electricity bills, queries like "What is Python?" will correctly return 0 results. Always ask relevant questions:
+
+✅ Good: "What was my electricity usage?"
+✅ Good: "How much do I owe?"
+❌ Bad: "What is Python?" (if docs are about bills)
+
+## Common Tasks
+
+### Running the Application
+
+```bash
+# Terminal 1 - Backend
+cd backend
+source ../venv/bin/activate
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 - Frontend
+cd frontend
+python3 serve.py
+
+# Access at http://localhost:3000
+```
+
+### Running Tests
+
+```bash
+cd backend
+source ../venv/bin/activate
+pytest                    # Run all tests
+pytest -v                 # Verbose
+pytest --cov              # With coverage
+pytest tests/test_foo.py  # Specific file
+```
+
+### Environment Variables
+
+Required in `backend/.env`:
+```bash
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_KEY=eyJxxx...
+GEMINI_API_KEY=AIzaSyxxx...
+COHERE_API_KEY=xxx...
+OPENROUTER_API_KEY=sk-or-xxx...
+```
+
+### Checking GitHub Issues
+
+```bash
+gh issue list                    # Open issues
+gh issue list --state all       # All issues
+gh issue view 6                 # View specific issue
+gh pr list                      # Open PRs
+```
+
+## Code Patterns & Conventions
+
+### Backend
+
+**FastAPI Endpoints:**
+```python
+@router.post("/endpoint", response_model=ResponseModel)
+async def endpoint_name(
+    request: RequestModel,
+    supabase: SupabaseClient = None,  # Injected dependency
+) -> ResponseModel:
+    """Clear docstring."""
+    try:
+        # Implementation
+        return ResponseModel(success=True, data=result)
+    except Exception as e:
+        logger.error(f"Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error message")
+```
+
+**Services:**
+```python
+class ServiceName:
+    """Service docstring."""
+
+    def __init__(self, client: Client):
+        self.client = client
+
+    def method(self, param: str) -> Result:
+        """Method docstring."""
+        # Implementation
+```
+
+**Testing:**
+```python
+def test_feature():
+    """Test that feature works correctly."""
+    # Arrange
+    input_data = create_test_data()
+
+    # Act
+    result = function(input_data)
+
+    # Assert
+    assert result.success is True
+    assert result.data == expected
+```
+
+### Frontend
+
+**Pure vanilla JS patterns:**
+```javascript
+// State management
+const state = {
+    documents: [],
+    messages: [],
+};
+
+// API calls
+async function fetchData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/endpoint`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error('Request failed');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error:', error);
+        showError(error.message);
+    }
+}
+
+// DOM updates
+function updateUI(data) {
+    elements.container.innerHTML = data.map(item => `
+        <div class="item">
+            ${escapeHtml(item.name)}
+        </div>
+    `).join('');
+}
+```
+
+## Known Gotchas
+
+### 1. TypeScript Warnings in app.js
+
+The IDE shows TypeScript diagnostics for `app.js` even though it's vanilla JS. Common warnings:
+- Unused variables (often needed for clarity)
+- Parameter types (no TypeScript in vanilla JS)
+
+**Fix unused variables:** Remove them if truly unused.
+
+### 2. Supabase Schema Cache
+
+Supabase caches schema/function definitions. After running migrations:
+- Changes may not be immediately visible
+- Backend may need restart
+- Wait 1-2 minutes for cache refresh
+
+### 3. File Upload Size Limits
+
+- Max file size: 10MB (configurable in `documents.py`)
+- Allowed types: PDF, DOCX, TXT
+- Frontend validates before upload
+- Backend validates again for security
+
+### 4. Embedding Dimensions
+
+⚠️ **Must match across system:**
+
+- Gemini embeddings: 768 dimensions
+- Database vector column: vector(768)
+- Search functions: Use 768-dim vectors
+
+Changing embedding model requires:
+
+1. Update `EMBEDDING_DIMENSIONS` in config
+2. Migrate database column type
+3. Regenerate all embeddings
+
+### 5. Import Naming Collisions
+
+**Watch for shadowing in Python:**
+```python
+# Bad - shadows fastapi.status module
+status = "ready"
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Good - use different variable name
+doc_status = "ready"
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+```
+
+## Debugging
+
+### Backend Logs
+
+```bash
+# Follow uvicorn logs
+tail -f logs/app.log  # If logging to file
+
+# Or watch console output
+# Logs show:
+# - Request details
+# - Search timing
+# - API call results
+# - Errors with tracebacks
+```
+
+### Common Error Messages
+
+**"No results found for query"**
+
+- Not an error - query doesn't match document content
+- Check what documents contain
+- Try more specific queries
+
+**"Vector search failed"**
+
+- Migration 002 missing
+- Supabase function not found
+- Run migration 002
+
+**"Full-text search failed: type mismatch"**
+
+- Migration 003 missing
+- Type error in search function
+- Run migration 003
+
+**"Could not find 'token_count' column"**
+
+- Schema mismatch
+- Run migration 001
+- Verify all columns exist
+
+### Database Inspection
+
+```python
+# Quick script to check database
+from app.core.config import settings
+from supabase import create_client
+
+supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+
+# Check chunks
+result = supabase.table('chunks').select('id, content').limit(5).execute()
+print(f"Chunks: {len(result.data)}")
+
+# Check documents
+result = supabase.table('documents').select('id, filename').execute()
+print(f"Documents: {len(result.data)}")
+```
+
+## Testing Strategy
+
+### Test Coverage
+
+Current: >85%
+
+- Unit tests for all services
+- Integration tests for API endpoints
+- Mock external APIs (Gemini, Cohere, OpenRouter)
+
+### Test Organization
+
+```
+tests/
+├── test_api/              # API endpoint tests
+├── test_services/         # Service layer tests
+├── conftest.py           # Shared fixtures
+└── __init__.py
+```
+
+### Running Specific Tests
+
+```bash
+pytest tests/test_api/test_documents.py::test_upload_document
+pytest -k "document"       # All tests matching "document"
+pytest -m "slow"          # Tests marked as slow
+```
+
+## Performance Considerations
+
+### Search Timing (typical)
+
+- Vector search: ~600ms
+- Full-text search: ~100ms
+- RRF merge: ~10ms
+- Reranking: ~500ms
+- LLM generation: ~3-5s
+- **Total:** ~4-6s for end-to-end query
+
+### Optimization Opportunities
+
+1. **Caching:**
+   - Embed common queries
+   - Cache search results
+   - Cache LLM responses
+
+2. **Batch Processing:**
+   - Process multiple chunks in parallel
+   - Batch embedding generation
+
+3. **Database:**
+   - Optimize IVFFlat index `lists` parameter
+   - Adjust search thresholds
+   - Add more indexes for common queries
+
+## Security Notes
+
+⚠️ **Development setup - not production-ready:**
+
+- No authentication/authorization
+- No rate limiting
+- No input sanitization beyond basic validation
+- CORS wide open for development
+- API keys in `.env` file (not secure for production)
+
+**Before production:**
+
+1. Add user authentication (OAuth, JWT)
+2. Implement rate limiting
+3. Add input validation/sanitization
+4. Restrict CORS origins
+5. Use proper secret management
+6. Add virus scanning for uploads
+7. Implement access control for documents
+
+## Deployment
+
+Not yet configured. Planned:
+
+- Docker containers (Issue #14)
+- GitHub Actions CI/CD (Issue #15)
+- VPS deployment (Issue #16)
+
+## Useful Commands
+
+```bash
+# Git workflow
+git checkout -b issue-N-feature
+git add .
+git commit -m "Add feature"
+git push -u origin issue-N-feature
+gh pr create --title "Title" --body "Body"
+
+# Python environment
+python3 -m venv venv
+source venv/bin/activate  # Mac/Linux
+pip install -r backend/requirements.txt
+pip install -r backend/requirements-dev.txt
+
+# Code quality
+black backend/              # Format code
+ruff check backend/        # Lint
+mypy backend/              # Type check
+bandit -r backend/         # Security scan
+
+# Database
+cat migrations/003_fix_search_function_types.sql
+# Copy and run in Supabase SQL Editor
+
+# Testing
+pytest                     # All tests
+pytest --cov              # With coverage
+pytest -v                 # Verbose
+```
+
+## Resources
+
+- **Repository:** <https://github.com/woolnerd/production-rag-system>
+- **Supabase Docs:** <https://supabase.com/docs>
+- **FastAPI Docs:** <https://fastapi.tiangolo.com>
+- **pgvector Docs:** <https://github.com/pgvector/pgvector>
+
+## Contributing
+
+This project follows trunk-based development:
+
+1. All changes via GitHub issues
+2. Feature branches from main
+3. PRs reviewed and squashed to main
+4. Never commit directly to main
+
+## Notes for AI Assistants
+
+### Best Practices
+
+1. **Always use TodoWrite tool** for multi-step tasks
+2. **Mark todos complete** immediately after finishing
+3. **Run tests** before creating PRs
+4. **Check pre-commit hooks** pass before committing
+5. **Link PRs to issues** with "Fixes #N"
+6. **Use descriptive commit messages** (not "fix bug")
+
+### When Things Break
+
+1. Check backend logs first
+2. Verify database migrations applied
+3. Test search functions directly
+4. Check environment variables set
+5. Verify API keys valid
+6. Try restarting backend server
+
+### Common User Questions
+
+**"Search isn't working"**
+
+- Check migrations applied (especially 003)
+- Verify documents uploaded and processed
+- Check if query matches document content
+
+**"Upload fails"**
+
+- Check file size < 10MB
+- Verify file type (PDF, DOCX, TXT)
+- Check Supabase connection
+
+**"No results found"**
+
+- Usually correct - query doesn't match docs
+- Ask user what documents they uploaded
+- Suggest relevant queries
+
+---
+
+**Last Updated:** 2025-10-28
+**Project Status:** Beta - Core features complete, testing in progress
