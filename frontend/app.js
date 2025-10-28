@@ -23,6 +23,7 @@ const elements = {
     chatMessages: document.getElementById('chatMessages'),
     queryInput: document.getElementById('queryInput'),
     sendButton: document.getElementById('sendButton'),
+    newConversationButton: document.getElementById('newConversationButton'),
 };
 
 // Initialize App
@@ -59,6 +60,9 @@ function setupEventListeners() {
         elements.queryInput.style.height = 'auto';
         elements.queryInput.style.height = elements.queryInput.scrollHeight + 'px';
     });
+
+    // New conversation button
+    elements.newConversationButton.addEventListener('click', clearConversation);
 }
 
 // Drag and Drop Handlers
@@ -358,6 +362,20 @@ function enableChat() {
     }
 }
 
+function clearConversation() {
+    // Clear messages from state
+    state.messages = [];
+
+    // Clear chat UI
+    elements.chatMessages.innerHTML = '';
+
+    // Hide new conversation button
+    elements.newConversationButton.classList.add('hidden');
+
+    // Show success feedback
+    showUploadStatus('success', 'Conversation cleared. Start a new conversation!');
+}
+
 function addMessage(role, content, sources = [], metadata = {}) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message message-${role}`;
@@ -384,6 +402,11 @@ function addMessage(role, content, sources = [], metadata = {}) {
 
     // Store in state
     state.messages.push({ role, content, sources, metadata });
+
+    // Show new conversation button if there are messages
+    if (state.messages.length > 0) {
+        elements.newConversationButton.classList.remove('hidden');
+    }
 }
 
 function createSourcesSection(sources) {
