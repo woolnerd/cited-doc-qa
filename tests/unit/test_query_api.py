@@ -9,15 +9,19 @@ from fastapi.testclient import TestClient
 
 
 @pytest.fixture
-def client():
-    """Create test client."""
-    return TestClient(app)
-
-
-@pytest.fixture
 def mock_supabase():
     """Mock Supabase client."""
     return Mock()
+
+
+@pytest.fixture
+def client(mock_supabase):
+    """Create test client with mocked Supabase dependency."""
+    from app.core.dependencies import get_supabase_client
+
+    app.dependency_overrides[get_supabase_client] = lambda: mock_supabase
+    yield TestClient(app)
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -124,7 +128,6 @@ def test_query_success(
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
         patch("app.api.query.RerankingService") as MockReranking,
         patch("app.api.query.LLMService") as MockLLM,
-        patch("app.core.dependencies.get_supabase_client"),
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
@@ -167,7 +170,6 @@ def test_query_with_top_k(
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
         patch("app.api.query.RerankingService") as MockReranking,
         patch("app.api.query.LLMService") as MockLLM,
-        patch("app.core.dependencies.get_supabase_client"),
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
@@ -205,7 +207,6 @@ def test_query_with_document_id(
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
         patch("app.api.query.RerankingService") as MockReranking,
         patch("app.api.query.LLMService") as MockLLM,
-        patch("app.core.dependencies.get_supabase_client"),
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
@@ -233,10 +234,7 @@ def test_query_with_document_id(
 
 def test_query_no_results(client):
     """Test query when no search results found."""
-    with (
-        patch("app.api.query.HybridSearchService") as MockHybridSearch,
-        patch("app.core.dependencies.get_supabase_client"),
-    ):
+    with (patch("app.api.query.HybridSearchService") as MockHybridSearch,):
         # Setup mock to return empty results
         mock_hybrid = MockHybridSearch.return_value
         mock_hybrid.search.return_value = {
@@ -275,10 +273,7 @@ def test_query_invalid_request(client):
 
 def test_query_service_error(client):
     """Test query handling of service errors."""
-    with (
-        patch("app.api.query.HybridSearchService") as MockHybridSearch,
-        patch("app.core.dependencies.get_supabase_client"),
-    ):
+    with (patch("app.api.query.HybridSearchService") as MockHybridSearch,):
         # Setup mock to raise error
         mock_hybrid = MockHybridSearch.return_value
         mock_hybrid.search.side_effect = Exception("Service error")
@@ -303,7 +298,6 @@ def test_query_combines_timing_correctly(
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
         patch("app.api.query.RerankingService") as MockReranking,
         patch("app.api.query.LLMService") as MockLLM,
-        patch("app.core.dependencies.get_supabase_client"),
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
@@ -348,7 +342,6 @@ def test_query_preserves_all_scores(
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
         patch("app.api.query.RerankingService") as MockReranking,
         patch("app.api.query.LLMService") as MockLLM,
-        patch("app.core.dependencies.get_supabase_client"),
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value

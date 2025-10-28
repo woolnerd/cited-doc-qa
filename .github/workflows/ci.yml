@@ -90,8 +90,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=backend/app --cov-report=xml --cov-report=term tests/ -m "not slow"
-        continue-on-error: true
+          pytest tests/unit/ -m "not slow" --cov=backend/app --cov-report=xml --cov-report=term --cov-fail-under=80
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
