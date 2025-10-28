@@ -28,6 +28,7 @@ const elements = {
 // Initialize App
 function init() {
     setupEventListeners();
+    loadDocuments();
     console.log('RAG Chatbot initialized');
 }
 
@@ -114,7 +115,7 @@ async function handleFile(file) {
         updateProgress(50, 'Processing document...');
 
         // Step 2: Process document
-        const processResult = await processDocument(uploadResult.document_id, file);
+        await processDocument(uploadResult.document_id, file);
         updateProgress(100, 'Complete!');
 
         // Update state
@@ -172,6 +173,65 @@ async function processDocument(documentId, file) {
     }
 
     return await response.json();
+}
+
+// Document Management
+async function loadDocuments() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/documents`);
+
+        if (!response.ok) {
+            console.error('Failed to load documents');
+            return;
+        }
+
+        const data = await response.json();
+        state.documents = data.documents;
+        updateDocumentsList();
+
+        // Enable chat if there are processed documents
+        if (state.documents.some(doc => doc.status === 'ready')) {
+            enableChat();
+        }
+    } catch (error) {
+        console.error('Error loading documents:', error);
+    }
+}
+
+async function deleteDocument(documentId) {
+    // Confirm deletion
+    const doc = state.documents.find(d => d.id === documentId);
+    if (!doc) return;
+
+    if (!confirm(`Delete "${doc.filename}"? This will permanently remove the document and all its chunks.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Delete failed');
+        }
+
+        const result = await response.json();
+
+        // Remove from state
+        state.documents = state.documents.filter(d => d.id !== documentId);
+
+        // Update UI
+        updateDocumentsList();
+
+        // Show success message
+        showUploadStatus('success', `Deleted "${doc.filename}" (${result.chunks_deleted} chunks removed)`);
+
+    } catch (error) {
+        console.error('Delete error:', error);
+        showUploadStatus('error', error.message || 'Failed to delete document');
+    }
 }
 
 // Query Handling
@@ -262,15 +322,29 @@ function updateDocumentsList() {
     }
 
     elements.documentsList.classList.remove('hidden');
-    elements.documentsContainer.innerHTML = state.documents.map(doc => `
+    elements.documentsContainer.innerHTML = state.documents.map(doc => {
+        const uploadDate = new Date(doc.upload_date).toLocaleDateString();
+        const statusIcon = doc.status === 'ready' ? '✓' : '⏳';
+        const statusText = doc.status === 'ready' ? 'Ready' : 'Processing';
+
+        return `
         <div class="document-item">
             <svg class="document-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span class="document-name">${escapeHtml(doc.name)}</span>
-            <span class="document-status">✓ Processed</span>
+            <div class="document-info">
+                <span class="document-name">${escapeHtml(doc.filename)}</span>
+                <span class="document-meta">${uploadDate} • ${doc.chunk_count} chunks</span>
+            </div>
+            <span class="document-status status-${doc.status}">${statusIcon} ${statusText}</span>
+            <button class="delete-button" onclick="deleteDocument('${doc.id}')" title="Delete document">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function enableChat() {
@@ -321,7 +395,7 @@ function createSourcesSection(sources) {
     header.textContent = `Sources (${sources.length})`;
     sourcesDiv.appendChild(header);
 
-    sources.forEach((source, index) => {
+    sources.forEach((source) => {
         const sourceItem = createSourceItem(source);
         sourcesDiv.appendChild(sourceItem);
     });
@@ -390,7 +464,6 @@ function createSourceItem(source) {
 
     // Toggle functionality
     header.addEventListener('click', () => {
-        const isExpanded = header.classList.contains('expanded');
         header.classList.toggle('expanded');
         content.classList.toggle('expanded');
     });

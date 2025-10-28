@@ -9,6 +9,9 @@ from app.core.dependencies import SupabaseClient
 from app.core.exceptions import DocumentProcessingError, FileValidationError
 from app.core.logging import get_logger
 from app.models.base import (
+    DocumentDeleteResponse,
+    DocumentListItem,
+    DocumentListResponse,
     DocumentMetadata,
     DocumentProcessingResponse,
     DocumentUploadResponse,
@@ -303,4 +306,149 @@ async def process_document(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to process document",
+        ) from e
+
+
+@router.get("", response_model=DocumentListResponse)
+async def list_documents(
+    supabase: SupabaseClient = None,
+) -> DocumentListResponse:
+    """List all documents with their metadata and chunk counts.
+
+    Args:
+        supabase: Supabase client (injected dependency)
+
+    Returns:
+        List of all documents with metadata
+
+    Raises:
+        HTTPException: If retrieval fails
+    """
+    try:
+        # Get all documents
+        result = (
+            supabase.table("documents")
+            .select("*")
+            .order("upload_date", desc=True)
+            .execute()
+        )
+
+        documents = []
+        for doc_data in result.data:
+            # Get chunk count for this document
+            chunk_result = (
+                supabase.table("chunks")
+                .select("id", count="exact")
+                .eq("document_id", doc_data["id"])
+                .execute()
+            )
+
+            chunk_count = chunk_result.count if chunk_result.count is not None else 0
+
+            # Determine status based on chunk count
+            doc_status = "ready" if chunk_count > 0 else "processing"
+
+            documents.append(
+                DocumentListItem(
+                    id=UUID(doc_data["id"]),
+                    filename=doc_data["filename"],
+                    file_type=doc_data["file_type"],
+                    upload_date=datetime.fromisoformat(doc_data["upload_date"]),
+                    chunk_count=chunk_count,
+                    status=doc_status,
+                    metadata=doc_data.get("metadata", {}),
+                )
+            )
+
+        logger.info(f"Retrieved {len(documents)} documents")
+
+        return DocumentListResponse(
+            success=True,
+            message=f"Retrieved {len(documents)} documents",
+            documents=documents,
+            total_count=len(documents),
+        )
+
+    except Exception as e:
+        logger.error(f"Error retrieving documents: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve documents",
+        ) from e
+
+
+@router.delete("/{document_id}", response_model=DocumentDeleteResponse)
+async def delete_document(
+    document_id: UUID,
+    supabase: SupabaseClient = None,
+) -> DocumentDeleteResponse:
+    """Delete a document and all its associated chunks.
+
+    The database cascade delete will automatically remove all chunks
+    associated with this document.
+
+    Args:
+        document_id: The document UUID to delete
+        supabase: Supabase client (injected dependency)
+
+    Returns:
+        Deletion confirmation with statistics
+
+    Raises:
+        HTTPException: If document not found or deletion fails
+    """
+    try:
+        # Check if document exists
+        doc_result = (
+            supabase.table("documents")
+            .select("id")
+            .eq("id", str(document_id))
+            .execute()
+        )
+
+        if not doc_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document {document_id} not found",
+            )
+
+        # Get chunk count before deletion
+        chunk_result = (
+            supabase.table("chunks")
+            .select("id", count="exact")
+            .eq("document_id", str(document_id))
+            .execute()
+        )
+
+        chunks_to_delete = chunk_result.count if chunk_result.count is not None else 0
+
+        # Delete document (chunks will be cascade deleted)
+        delete_result = (
+            supabase.table("documents").delete().eq("id", str(document_id)).execute()
+        )
+
+        if not delete_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete document",
+            )
+
+        logger.info(
+            f"Deleted document {document_id} and {chunks_to_delete} associated chunks"
+        )
+
+        return DocumentDeleteResponse(
+            success=True,
+            message=f"Document deleted successfully with {chunks_to_delete} chunks",
+            document_id=document_id,
+            chunks_deleted=chunks_to_delete,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting document {document_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete document",
         ) from e

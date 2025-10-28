@@ -139,3 +139,35 @@ class QueryResponse(BaseResponse):
     metadata: QueryMetadata
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentListItem(BaseModel):
+    """Document item in list response."""
+
+    id: UUID
+    filename: str
+    file_type: str
+    upload_date: datetime
+    chunk_count: int
+    status: str = "ready"  # ready, processing, failed
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentListResponse(BaseResponse):
+    """Response model for documents list endpoint."""
+
+    documents: list[DocumentListItem]
+    total_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentDeleteResponse(BaseResponse):
+    """Response model for document deletion."""
+
+    document_id: UUID
+    chunks_deleted: int
+
+    model_config = ConfigDict(from_attributes=True)
