@@ -129,7 +129,6 @@ jobs:
     name: Build Docker Image
     runs-on: ubuntu-latest
     needs: [lint-and-format, test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - uses: actions/checkout@v4
@@ -137,7 +136,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image (dry run)
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -145,7 +144,64 @@ jobs:
           tags: production-rag-system:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-        continue-on-error: true  # Allow to fail until Dockerfile is created
+          load: true
+
+      - name: Test Docker image
+        run: |
+          # Start container in background
+          docker run -d --name test-container \
+            -p 8000:8000 \
+            -e SUPABASE_URL=http://test \
+            -e SUPABASE_KEY=test \
+            -e GEMINI_API_KEY=test \
+            -e COHERE_API_KEY=test \
+            -e OPENROUTER_API_KEY=test \
+            production-rag-system:latest
+
+          # Wait for application to start
+          echo "Waiting for application to start..."
+          sleep 5
+
+          # Test health endpoint directly
+          echo "Testing health endpoint..."
+          for i in {1..20}; do
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✅ Health endpoint is responding"
+
+              # Verify container is still running
+              if docker ps | grep -q test-container; then
+                echo "✅ Container is running"
+                docker logs test-container | tail -20
+                docker stop test-container
+                docker rm test-container
+                exit 0
+              else
+                echo "❌ Container stopped unexpectedly"
+                docker logs test-container
+                docker rm test-container
+                exit 1
+              fi
+            fi
+            echo "Attempt $i: Health endpoint not ready yet, waiting..."
+            sleep 2
+          done
+
+          echo "❌ Health endpoint failed to respond"
+          echo "Container logs:"
+          docker logs test-container
+          docker stop test-container
+          docker rm test-container
+          exit 1
+
+      - name: Check image size
+        run: |
+          SIZE=$(docker image inspect production-rag-system:latest --format='{{.Size}}' | awk '{print int($1/1024/1024)}')
+          echo "Image size: ${SIZE}MB"
+          if [ $SIZE -gt 500 ]; then
+            echo "⚠️ Warning: Image size (${SIZE}MB) exceeds 500MB target"
+          else
+            echo "✅ Image size is within 500MB target"
+          fi
 
   all-checks-passed:
     name: All Checks Passed
