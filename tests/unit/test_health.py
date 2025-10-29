@@ -36,38 +36,9 @@ def test_health_check_success(client):
     assert "T" in data["timestamp"]  # ISO format has T separator
 
 
-def test_root_endpoint_success(client):
-    """Test root endpoint returns welcome message."""
-    response = client.get("/")
-
-    assert response.status_code == 200
-    data = response.json()
-
-    # Check required fields
-    assert "message" in data
-    assert "version" in data
-    assert "docs" in data
-    assert "health" in data
-
-    # Check message contains app name
-    assert "Welcome to" in data["message"]
-
-    # Check endpoints are documented
-    assert data["docs"] == "/docs"
-    assert data["health"] == "/health"
-
-
 def test_health_check_returns_json(client):
     """Test health check returns JSON content type."""
     response = client.get("/health")
-
-    assert response.status_code == 200
-    assert "application/json" in response.headers["content-type"]
-
-
-def test_root_returns_json(client):
-    """Test root endpoint returns JSON content type."""
-    response = client.get("/")
 
     assert response.status_code == 200
     assert "application/json" in response.headers["content-type"]

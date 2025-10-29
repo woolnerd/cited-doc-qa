@@ -23,18 +23,3 @@ async def health_check() -> HealthResponse:
         environment=settings.ENVIRONMENT,
         timestamp=datetime.now(UTC),
     )
-
-
-@router.get("/", response_model=dict, tags=["Health"])
-async def root() -> dict:
-    """Root endpoint.
-
-    Returns:
-        Welcome message with API info
-    """
-    return {
-        "message": f"Welcome to {settings.APP_NAME}",
-        "version": settings.APP_VERSION,
-        "docs": "/docs",
-        "health": "/health",
-    }

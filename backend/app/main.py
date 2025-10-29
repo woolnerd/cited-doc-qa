@@ -2,10 +2,12 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import documents, health, query
 from app.core.config import settings
@@ -124,6 +126,19 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 app.include_router(health.router, tags=["Health"])
 app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
 app.include_router(query.router, prefix="/api", tags=["Query"])
+
+# Mount static files (frontend)
+# Serve frontend at root path
+# Get the frontend directory path (relative to app/main.py)
+# In Docker: /app/app/main.py -> /app/frontend
+frontend_dir = Path(__file__).parent.parent / "frontend"
+
+# Only mount if frontend directory exists
+if frontend_dir.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="static")
+    logger.info(f"Serving static files from {frontend_dir}")
+else:
+    logger.warning(f"Frontend directory not found at {frontend_dir}")
 
 
 # Request logging middleware
