@@ -2,6 +2,8 @@
 
 This guide covers the automated deployment pipeline for the RAG chatbot system.
 
+> **Note:** For step-by-step setup instructions specific to our production VPS configuration, see [`deployment/VPS-SETUP.md`](../deployment/VPS-SETUP.md). This document provides a general overview of the deployment architecture and workflow.
+
 ## Overview
 
 The deployment pipeline automatically:
@@ -42,7 +44,7 @@ Configure the following secrets in your GitHub repository:
 | Secret | Description | Required |
 |--------|-------------|----------|
 | `VPS_HOST` | VPS IP address or hostname | Yes |
-| `VPS_USER` | SSH username (default: `deploy`) | Yes |
+| `VPS_USER` | SSH username (default: `root`) | Yes |
 | `VPS_SSH_KEY` | SSH private key for authentication | Yes |
 
 ### 4. GitHub Variables
@@ -51,7 +53,7 @@ Configure these variables in your repository settings:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `VPS_CONFIGURED` | Set to `true` to enable deployment | `false` |
-| `DEPLOYMENT_URL` | Public URL of your deployment | `https://rag.yourdomain.com` |
+| `DEPLOYMENT_URL` | Public URL of your deployment | `https://rag.getfreetime.ai` |
 
 ## Setup Instructions
 
@@ -71,13 +73,12 @@ sudo usermod -aG docker $USER
 # Install Docker Compose
 sudo apt install docker-compose -y
 
-# Create deployment user
-sudo useradd -m -s /bin/bash deploy
-sudo usermod -aG docker deploy
+# Add current user to docker group (if not root)
+sudo usermod -aG docker $USER
 
 # Create application directory
-sudo mkdir -p /opt/production-rag-system
-sudo chown deploy:deploy /opt/production-rag-system
+sudo mkdir -p /root/production-rag-system
+# Or for non-root: sudo mkdir -p /opt/production-rag-system && sudo chown $USER:$USER /opt/production-rag-system
 ```
 
 ### Step 2: Configure SSH Access
@@ -88,8 +89,8 @@ On your local machine, generate an SSH key for GitHub Actions:
 # Generate SSH key pair
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github-deploy
 
-# Copy public key to VPS
-ssh-copy-id -i ~/.ssh/github-deploy.pub deploy@your-vps-ip
+# Copy public key to VPS (replace with your username)
+ssh-copy-id -i ~/.ssh/github-deploy.pub root@your-vps-ip
 ```
 
 Add the private key to GitHub Secrets:
@@ -100,11 +101,11 @@ Add the private key to GitHub Secrets:
 
 ### Step 3: Clone Repository on VPS
 
-SSH into the VPS as the deploy user:
+SSH into the VPS:
 
 ```bash
-ssh deploy@your-vps-ip
-cd /opt/production-rag-system
+ssh root@your-vps-ip
+cd /root/production-rag-system
 git clone https://github.com/yourusername/production-rag-system.git .
 ```
 
@@ -113,7 +114,7 @@ git clone https://github.com/yourusername/production-rag-system.git .
 Create `.env.production` on the VPS:
 
 ```bash
-cd /opt/production-rag-system
+cd /root/production-rag-system
 cp .env.example .env.production
 nano .env.production
 ```
@@ -245,8 +246,8 @@ Trigger manually from GitHub Actions:
 If automatic rollback fails, manually rollback on VPS:
 
 ```bash
-ssh deploy@your-vps-ip
-cd /opt/production-rag-system
+ssh root@your-vps-ip
+cd /root/production-rag-system
 
 # List available images
 docker images | grep production-rag-system
@@ -257,7 +258,7 @@ docker-compose -f docker-compose.prod.yml down
 docker-compose -f docker-compose.prod.yml up -d
 
 # Verify
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 ### View Logs
@@ -302,7 +303,7 @@ docker-compose -f docker-compose.prod.yml logs --tail=50
 
 Health check:
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 ## Troubleshooting
@@ -325,7 +326,7 @@ curl http://localhost:8000/health
 1. Check logs: `docker-compose logs -f`
 2. Verify environment variables in `.env.production`
 3. Ensure Supabase connection works
-4. Check if port 8000 is available
+4. Check if port 8001 is available
 
 ### Image Pull Fails
 

@@ -82,11 +82,11 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER || 'deploy' }}
+          username: ${{ secrets.VPS_USER || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /opt/production-rag-system
+            cd /root/production-rag-system
 
             echo "📥 Pulling latest code..."
             git pull origin main
@@ -104,7 +104,7 @@ jobs:
             sleep 10
 
             echo "✅ Verifying deployment..."
-            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+            if curl -f http://localhost:8001/health > /dev/null 2>&1; then
               echo "✅ Deployment successful - health check passed"
             else
               echo "❌ Deployment failed - health check failed"
@@ -160,11 +160,11 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER || 'deploy' }}
+          username: ${{ secrets.VPS_USER || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /opt/production-rag-system
+            cd /root/production-rag-system
 
             echo "🔄 Rolling back to previous version..."
 
@@ -181,7 +181,7 @@ jobs:
 
               # Verify rollback
               sleep 10
-              if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              if curl -f http://localhost:8001/health > /dev/null 2>&1; then
                 echo "✅ Rollback successful"
               else
                 echo "❌ Rollback failed"

@@ -5,7 +5,7 @@ services:
     image: ${DOCKER_REGISTRY:-ghcr.io/woolnerd}/production-rag-system:${IMAGE_TAG:-latest}
     container_name: rag-chatbot-prod
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - ENVIRONMENT=production
       - LOG_LEVEL=WARNING

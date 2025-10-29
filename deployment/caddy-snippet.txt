@@ -1,0 +1,32 @@
+# Caddy Configuration Snippet for RAG Chatbot
+#
+# Add this to your existing /etc/caddy/Caddyfile
+# Location: Anywhere in the file (recommend grouping with other getfreetime.ai domains)
+#
+# This configuration:
+# - Reverse proxies rag.getfreetime.ai to the Docker container on port 8001
+# - Enables gzip compression
+# - Adds security headers
+# - Logs access to dedicated file
+
+rag.getfreetime.ai {
+    reverse_proxy localhost:8001
+
+    encode gzip
+
+    log {
+        output file /var/log/caddy/rag-access.log
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000;"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+    }
+}
+
+# After adding this snippet:
+# 1. Test configuration: sudo caddy validate --config /etc/caddy/Caddyfile
+# 2. Reload Caddy: sudo systemctl reload caddy
+# 3. Check status: sudo systemctl status caddy
