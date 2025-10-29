@@ -101,17 +101,25 @@ jobs:
             echo "🚀 Starting new containers..."
             docker-compose -f docker-compose.prod.yml up -d
 
-            echo "⏳ Waiting for health check..."
-            sleep 10
+            echo "⏳ Waiting for application to start..."
 
-            echo "✅ Verifying deployment..."
-            if curl -f http://localhost:8001/health > /dev/null 2>&1; then
-              echo "✅ Deployment successful - health check passed"
-            else
-              echo "❌ Deployment failed - health check failed"
-              docker-compose -f docker-compose.prod.yml logs --tail=50
-              exit 1
-            fi
+            # Wait up to 60 seconds for health check to pass
+            for i in {1..12}; do
+              echo "Attempt $i/12: Checking health endpoint..."
+              if curl -f http://localhost:8001/health > /dev/null 2>&1; then
+                echo "✅ Deployment successful - health check passed"
+                break
+              fi
+
+              if [ $i -eq 12 ]; then
+                echo "❌ Deployment failed - health check timed out after 60 seconds"
+                docker-compose -f docker-compose.prod.yml logs --tail=50
+                exit 1
+              fi
+
+              echo "Not ready yet, waiting 5 seconds..."
+              sleep 5
+            done
 
             echo "🧹 Cleaning up old images..."
             docker image prune -f
