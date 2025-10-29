@@ -9,6 +9,7 @@ const state = {
     isUploading: false,
     isProcessing: false,
     isQuerying: false,
+    isLoadingDocuments: false,
 };
 
 // DOM Elements
@@ -123,23 +124,30 @@ async function handleFile(file) {
         await processDocument(uploadResult.document_id, file);
         updateProgress(100, 'Complete!');
 
-        // Update state
-        state.documents.push({
+        // Add placeholder for new document while loading
+        state.documents.unshift({
             id: uploadResult.document_id,
-            name: file.name,
-            status: 'processed',
+            filename: file.name,
+            status: 'loading',
+            upload_date: new Date().toISOString(),
+            chunk_count: 0
         });
+        updateDocumentsList();
+
+        // Reload documents to get complete metadata
+        await loadDocuments();
 
         // Update UI
         showUploadProgress(false);
         showUploadStatus('success', `Successfully uploaded and processed "${file.name}"`);
-        updateDocumentsList();
         enableChat();
 
     } catch (error) {
         console.error('Upload/process error:', error);
         showUploadProgress(false);
         showUploadStatus('error', error.message || 'Failed to upload document');
+        // Reload documents to remove any failed uploads from the list
+        await loadDocuments();
     } finally {
         state.isUploading = false;
         elements.fileInput.value = '';
@@ -183,15 +191,29 @@ async function processDocument(documentId, file) {
 // Document Management
 async function loadDocuments() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/documents`);
+        state.isLoadingDocuments = true;
+        updateDocumentsList(); // Show loading state
+
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        const response = await fetch(`${API_BASE_URL}/api/documents`, {
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
 
         if (!response.ok) {
             console.error('Failed to load documents');
+            state.isLoadingDocuments = false;
+            updateDocumentsList();
             return;
         }
 
         const data = await response.json();
         state.documents = data.documents;
+        state.isLoadingDocuments = false;
         updateDocumentsList();
 
         // Enable chat if there are processed documents
@@ -200,6 +222,8 @@ async function loadDocuments() {
         }
     } catch (error) {
         console.error('Error loading documents:', error);
+        state.isLoadingDocuments = false;
+        updateDocumentsList();
     }
 }
 
@@ -308,19 +332,36 @@ function updateProgress(percent, text) {
 }
 
 function showUploadStatus(type, message) {
-    elements.uploadStatus.textContent = message;
+    elements.uploadStatus.innerHTML = `
+        <span>${message}</span>
+        <button class="status-close" onclick="dismissUploadStatus()" aria-label="Dismiss">×</button>
+    `;
     elements.uploadStatus.className = `upload-status ${type}`;
     elements.uploadStatus.classList.remove('hidden');
 
-    // Auto-hide success messages
-    if (type === 'success') {
-        setTimeout(() => {
-            elements.uploadStatus.classList.add('hidden');
-        }, 5000);
-    }
+    // Auto-hide all messages after 15 seconds
+    setTimeout(() => {
+        elements.uploadStatus.classList.add('hidden');
+    }, 15000);
+}
+
+function dismissUploadStatus() {
+    elements.uploadStatus.classList.add('hidden');
 }
 
 function updateDocumentsList() {
+    // Show loading spinner only if we have no documents yet (initial load)
+    if (state.isLoadingDocuments && state.documents.length === 0) {
+        elements.documentsList.classList.remove('hidden');
+        elements.documentsContainer.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                <p>Loading documents...</p>
+            </div>
+        `;
+        return;
+    }
+
     if (state.documents.length === 0) {
         elements.documentsList.classList.add('hidden');
         return;
@@ -329,6 +370,25 @@ function updateDocumentsList() {
     elements.documentsList.classList.remove('hidden');
     elements.documentsContainer.innerHTML = state.documents.map(doc => {
         const uploadDate = new Date(doc.upload_date).toLocaleDateString();
+
+        // Show loading state for documents being loaded
+        if (doc.status === 'loading') {
+            return `
+            <div class="document-item">
+                <svg class="document-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div class="document-info">
+                    <span class="document-name">${escapeHtml(doc.filename)}</span>
+                    <span class="document-meta">Loading details...</span>
+                </div>
+                <span class="document-status status-loading">
+                    <div class="loading-spinner"></div>
+                </span>
+            </div>
+            `;
+        }
+
         const statusIcon = doc.status === 'ready' ? '✓' : '⏳';
         const statusText = doc.status === 'ready' ? 'Ready' : 'Processing';
 

@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Allow manual deployment
+  workflow_dispatch: # Allow manual deployment
 
 env:
   REGISTRY: ghcr.io
@@ -72,7 +72,7 @@ jobs:
     if: vars.VPS_CONFIGURED == 'true'
     environment:
       name: production
-      url: ${{ vars.DEPLOYMENT_URL || 'https://rag.yourdomain.com' }}
+      url: ${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetime.ai' }}
 
     steps:
       - name: Checkout deployment scripts
@@ -117,7 +117,7 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          DEPLOYMENT_URL="${{ vars.DEPLOYMENT_URL || 'https://rag.yourdomain.com' }}"
+          DEPLOYMENT_URL="${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetima.ai' }}"
 
           echo "🧪 Running smoke tests..."
 
@@ -146,7 +146,7 @@ jobs:
           echo "**Environment:** production" >> $GITHUB_STEP_SUMMARY
           echo "**Host:** \`${{ secrets.VPS_HOST }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** \`${{ needs.build-and-push.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** ${{ vars.DEPLOYMENT_URL || 'https://rag.yourdomain.com' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetime.ai' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
   rollback:

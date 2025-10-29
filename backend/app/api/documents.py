@@ -295,6 +295,12 @@ async def process_document(
         raise
     except DocumentProcessingError as e:
         logger.error(f"Document processing failed for {document_id}: {e}")
+        # Delete the failed document from database
+        try:
+            supabase.table("documents").delete().eq("id", str(document_id)).execute()
+            logger.info(f"Deleted failed document {document_id}")
+        except Exception as del_error:
+            logger.error(f"Failed to delete document {document_id}: {del_error}")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Document processing failed: {str(e)}",
@@ -303,6 +309,12 @@ async def process_document(
         logger.error(
             f"Unexpected error processing document {document_id}: {e}", exc_info=True
         )
+        # Delete the failed document from database
+        try:
+            supabase.table("documents").delete().eq("id", str(document_id)).execute()
+            logger.info(f"Deleted failed document {document_id}")
+        except Exception as del_error:
+            logger.error(f"Failed to delete document {document_id}: {del_error}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to process document",
