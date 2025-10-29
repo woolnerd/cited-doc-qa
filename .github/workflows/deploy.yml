@@ -3,16 +3,26 @@ name: Deploy to Production
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Allow manual deployment
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  deploy:
-    name: Deploy to VPS
+  build-and-push:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -20,7 +30,7 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -28,12 +38,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=ref,event=branch
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -42,33 +54,146 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-        continue-on-error: true  # Allow to fail until Dockerfile is created
 
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Generate deployment summary
+        run: |
+          echo "## 🚀 Docker Image Built Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:** ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+  deploy-to-vps:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    # Only run if VPS secrets are configured
+    if: vars.VPS_CONFIGURED == 'true'
+    environment:
+      name: production
+      url: ${{ vars.DEPLOYMENT_URL || 'https://rag.yourdomain.com' }}
+
+    steps:
+      - name: Checkout deployment scripts
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          username: ${{ secrets.VPS_USER || 'deploy' }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             cd /opt/production-rag-system
-            docker-compose pull
-            docker-compose up -d
-            docker-compose ps
-        continue-on-error: true  # Allow to fail until VPS is configured
+
+            echo "📥 Pulling latest code..."
+            git pull origin main
+
+            echo "🐳 Pulling latest Docker image..."
+            docker-compose -f docker-compose.prod.yml pull
+
+            echo "🛑 Stopping old containers..."
+            docker-compose -f docker-compose.prod.yml down
+
+            echo "🚀 Starting new containers..."
+            docker-compose -f docker-compose.prod.yml up -d
+
+            echo "⏳ Waiting for health check..."
+            sleep 10
+
+            echo "✅ Verifying deployment..."
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✅ Deployment successful - health check passed"
+            else
+              echo "❌ Deployment failed - health check failed"
+              docker-compose -f docker-compose.prod.yml logs --tail=50
+              exit 1
+            fi
+
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
 
       - name: Run smoke tests
         run: |
-          echo "Running smoke tests..."
-          sleep 10  # Wait for service to start
-          # curl -f http://your-domain.com/health || exit 1
-        continue-on-error: true
+          DEPLOYMENT_URL="${{ vars.DEPLOYMENT_URL || 'https://rag.yourdomain.com' }}"
 
-      - name: Notify deployment status
-        if: always()
-        run: |
-          if [[ "${{ job.status }}" == "success" ]]; then
-            echo "✅ Deployment successful!"
+          echo "🧪 Running smoke tests..."
+
+          # Test health endpoint
+          if curl -f ${DEPLOYMENT_URL}/health > /dev/null 2>&1; then
+            echo "✅ Health endpoint responding"
           else
-            echo "⚠️ Deployment encountered issues"
+            echo "❌ Health endpoint not responding"
+            exit 1
           fi
+
+          # Test API docs
+          if curl -f ${DEPLOYMENT_URL}/docs > /dev/null 2>&1; then
+            echo "✅ API docs accessible"
+          else
+            echo "⚠️ API docs not accessible (non-critical)"
+          fi
+
+          echo "✅ All smoke tests passed"
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "## 🌐 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** production" >> $GITHUB_STEP_SUMMARY
+          echo "**Host:** \`${{ secrets.VPS_HOST }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ needs.build-and-push.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ vars.DEPLOYMENT_URL || 'https://rag.yourdomain.com' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-to-vps]
+    if: failure() && vars.VPS_CONFIGURED == 'true'
+
+    steps:
+      - name: Rollback to previous version
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER || 'deploy' }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/production-rag-system
+
+            echo "🔄 Rolling back to previous version..."
+
+            # Get previous image tag
+            PREV_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep production-rag-system | sed -n '2p')
+
+            if [ -n "$PREV_IMAGE" ]; then
+              echo "Rolling back to: $PREV_IMAGE"
+
+              # Update docker-compose to use previous image
+              export IMAGE_TAG=$PREV_IMAGE
+              docker-compose -f docker-compose.prod.yml down
+              docker-compose -f docker-compose.prod.yml up -d
+
+              # Verify rollback
+              sleep 10
+              if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+                echo "✅ Rollback successful"
+              else
+                echo "❌ Rollback failed"
+                exit 1
+              fi
+            else
+              echo "⚠️ No previous image found for rollback"
+            fi
+
+      - name: Notify rollback
+        run: |
+          echo "## ⚠️ Deployment Failed - Rollback Executed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The deployment failed and has been automatically rolled back." >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs and fix the issue before redeploying." >> $GITHUB_STEP_SUMMARY
