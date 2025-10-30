@@ -40,6 +40,16 @@ async def query(
     try:
         logger.info(f"Processing query: '{request.query[:50]}...'")
 
+        # Log conversation history for debugging
+        if request.conversation_history:
+            logger.info(
+                f"Conversation history: {len(request.conversation_history)} messages"
+            )
+            for idx, msg in enumerate(request.conversation_history):
+                logger.info(f"  [{idx}] {msg.role}: {msg.content[:80]}...")
+        else:
+            logger.info("No conversation history provided")
+
         # Initialize services
         hybrid_search = HybridSearchService(supabase_client=supabase)
         reranking_service = RerankingService()
@@ -96,10 +106,20 @@ async def query(
 
         # Step 3: LLM answer generation
         logger.info("Generating answer with Claude...")
+
+        # Convert conversation history to dict format if provided
+        conversation_history = None
+        if request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+
         llm_response = llm_service.generate_answer_with_retry(
             query=request.query,
             search_results=reranked_results,
             max_retries=3,
+            conversation_history=conversation_history,
         )
 
         # Format sources for response

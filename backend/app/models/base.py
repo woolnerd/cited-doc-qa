@@ -86,6 +86,15 @@ class DocumentProcessingResponse(BaseResponse):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ConversationMessage(BaseModel):
+    """Single message in conversation history."""
+
+    role: str = Field(..., description="Message role: 'user' or 'assistant'")
+    content: str = Field(..., description="Message content")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class QueryRequest(BaseModel):
     """Request model for query endpoint."""
 
@@ -95,6 +104,10 @@ class QueryRequest(BaseModel):
     )
     document_id: UUID | None = Field(
         default=None, description="Optional: Search within specific document"
+    )
+    conversation_history: list[ConversationMessage] | None = Field(
+        default=None,
+        description="Optional: Previous messages in the conversation for context",
     )
 
     model_config = ConfigDict(from_attributes=True)

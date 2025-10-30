@@ -84,11 +84,36 @@ Your role:
 - If the context doesn't contain enough information to answer fully, say so
 - Be concise but thorough
 - Maintain a professional and helpful tone
+- Remember the conversation history and use it to understand follow-up questions
 
 Important:
 - Do not make up information that's not in the context
 - If you're uncertain, acknowledge it
 - Use citations to help users verify information"""
+
+    def _truncate_conversation_history(
+        self,
+        conversation_history: list[dict[str, str]],
+        max_messages: int = 10,
+    ) -> list[dict[str, str]]:
+        """Truncate conversation history to keep only recent messages.
+
+        Args:
+            conversation_history: List of conversation messages
+            max_messages: Maximum number of messages to keep
+
+        Returns:
+            Truncated conversation history
+        """
+        if len(conversation_history) <= max_messages:
+            return conversation_history
+
+        logger.info(
+            f"Truncating conversation history from {len(conversation_history)} to {max_messages} messages"
+        )
+
+        # Keep the most recent messages
+        return conversation_history[-max_messages:]
 
     def generate_answer(
         self,
@@ -96,6 +121,7 @@ Important:
         search_results: list[dict[str, Any]],
         temperature: float | None = None,
         max_tokens: int | None = None,
+        conversation_history: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
         """Generate an answer to the query using search results as context.
 
@@ -104,6 +130,7 @@ Important:
             search_results: Reranked search results for context
             temperature: Override default temperature (0.0-1.0)
             max_tokens: Override default max tokens
+            conversation_history: Previous messages in the conversation
 
         Returns:
             Dictionary with answer and metadata
@@ -122,8 +149,19 @@ Important:
             # Format context from search results
             context = self._format_context(search_results)
 
-            # Create messages
+            # Create messages array
             system_prompt = self._create_system_prompt()
+            messages = [{"role": "system", "content": system_prompt}]
+
+            # Add conversation history if provided (truncated to avoid context window issues)
+            if conversation_history:
+                truncated_history = self._truncate_conversation_history(
+                    conversation_history, max_messages=10
+                )
+                logger.info(f"Including {len(truncated_history)} previous messages")
+                messages.extend(truncated_history)
+
+            # Add current query with context
             user_message = f"""Context from documents:
 
 {context}
@@ -132,15 +170,14 @@ Question: {query}
 
 Please provide a comprehensive answer based on the context above, including citations."""
 
+            messages.append({"role": "user", "content": user_message})
+
             start_time = time.time()
 
             # Call LLM API
             response: ChatCompletion = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message},
-                ],
+                messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
@@ -206,6 +243,7 @@ Please provide a comprehensive answer based on the context above, including cita
         retry_delay: float = 1.0,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        conversation_history: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
         """Generate answer with retry logic.
 
@@ -216,6 +254,7 @@ Please provide a comprehensive answer based on the context above, including cita
             retry_delay: Initial delay between retries (exponential backoff)
             temperature: Override default temperature
             max_tokens: Override default max tokens
+            conversation_history: Previous messages in the conversation
 
         Returns:
             Dictionary with answer and metadata
@@ -232,6 +271,7 @@ Please provide a comprehensive answer based on the context above, including cita
                     search_results=search_results,
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    conversation_history=conversation_history,
                 )
             except Exception as e:
                 last_error = e

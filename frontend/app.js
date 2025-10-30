@@ -6,6 +6,7 @@ const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhos
 const state = {
     documents: [],
     messages: [],
+    conversationHistory: [], // Store conversation for context
     isUploading: false,
     isProcessing: false,
     isQuerying: false,
@@ -283,6 +284,11 @@ async function handleSendQuery() {
         state.isQuerying = true;
         elements.sendButton.disabled = true;
 
+        // Build conversation history (exclude current query, include previous messages)
+        const conversationHistory = state.conversationHistory.length > 0
+            ? state.conversationHistory
+            : null;
+
         // Call API
         const response = await fetch(`${API_BASE_URL}/api/query`, {
             method: 'POST',
@@ -292,6 +298,7 @@ async function handleSendQuery() {
             body: JSON.stringify({
                 query: query,
                 top_k: 5,
+                conversation_history: conversationHistory,
             }),
         });
 
@@ -308,10 +315,19 @@ async function handleSendQuery() {
         // Add assistant message
         addMessage('assistant', result.answer, result.sources, result.metadata);
 
+        // Update conversation history for context
+        state.conversationHistory.push({ role: 'user', content: query });
+        state.conversationHistory.push({ role: 'assistant', content: result.answer });
+
     } catch (error) {
         console.error('Query error:', error);
         removeLoading(loadingId);
-        addMessage('assistant', `Sorry, I encountered an error: ${error.message}`);
+        const errorMessage = `Sorry, I encountered an error: ${error.message}`;
+        addMessage('assistant', errorMessage);
+
+        // Add error to conversation history to maintain context
+        state.conversationHistory.push({ role: 'user', content: query });
+        state.conversationHistory.push({ role: 'assistant', content: errorMessage });
     } finally {
         state.isQuerying = false;
         elements.sendButton.disabled = false;
@@ -426,6 +442,9 @@ function enableChat() {
 function clearConversation() {
     // Clear messages from state
     state.messages = [];
+
+    // Clear conversation history
+    state.conversationHistory = [];
 
     // Clear chat UI
     elements.chatMessages.innerHTML = '';
