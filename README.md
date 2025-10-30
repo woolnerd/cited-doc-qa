@@ -182,14 +182,6 @@ See `docs/deployment.md` for production deployment instructions.
 - Very large documents (>1000 pages) may take several minutes to process
 - API costs scale with usage (see cost estimates in docs)
 
-## Contributing
-
-See `CONTRIBUTING.md` for guidelines.
-
-## License
-
-MIT License - see `LICENSE` file for details.
-
 ## Support
 
 For issues and questions, please open a GitHub issue.
