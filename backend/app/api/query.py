@@ -8,6 +8,7 @@ from app.core.logging import get_logger
 from app.models.base import QueryMetadata, QueryRequest, QueryResponse, SearchResult
 from app.services.hybrid_search import HybridSearchService
 from app.services.llm import LLMService
+from app.services.query_enhancement import QueryEnhancementService
 from app.services.reranking import RerankingService
 
 logger = get_logger(__name__)
@@ -23,9 +24,10 @@ async def query(
     """Process a user query through the RAG pipeline.
 
     Pipeline:
-    1. Hybrid search (vector + full-text with RRF)
-    2. Cohere reranking
-    3. Claude answer generation with citations
+    1. Query enhancement (with conversation context)
+    2. Hybrid search (vector + full-text with RRF)
+    3. Cohere reranking
+    4. Claude answer generation with citations
 
     Args:
         request: Query request with query text and optional parameters
@@ -51,21 +53,36 @@ async def query(
             logger.info("No conversation history provided")
 
         # Initialize services
+        query_enhancer = QueryEnhancementService()
         hybrid_search = HybridSearchService(supabase_client=supabase)
         reranking_service = RerankingService()
         llm_service = LLMService()
 
-        # Step 1: Hybrid search
+        # Step 1: Query enhancement (if conversation context exists)
+        enhanced_query = request.query
+        if request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+            enhanced_query = query_enhancer.enhance_query(
+                query=request.query,
+                conversation_history=conversation_history,
+            )
+            if enhanced_query != request.query:
+                logger.info(f"Query enhanced: '{request.query}' → '{enhanced_query}'")
+
+        # Step 2: Hybrid search (use enhanced query)
         logger.info("Running hybrid search...")
         if request.document_id:
             search_response = hybrid_search.search_by_document(
-                query=request.query,
+                query=enhanced_query,
                 document_id=str(request.document_id),
                 top_k=30,  # Get more results for reranking
             )
         else:
             search_response = hybrid_search.search(
-                query=request.query,
+                query=enhanced_query,
                 top_k=30,  # Get more results for reranking
             )
 
@@ -93,10 +110,10 @@ async def query(
                 ),
             )
 
-        # Step 2: Reranking
+        # Step 3: Reranking (use enhanced query for better relevance)
         logger.info(f"Reranking {len(search_results)} results...")
         rerank_response = reranking_service.rerank_with_metadata(
-            query=request.query,
+            query=enhanced_query,
             results=search_results,
             top_k=request.top_k,
         )
@@ -104,7 +121,7 @@ async def query(
         reranked_results = rerank_response["results"]
         rerank_metadata = rerank_response["metadata"]
 
-        # Step 3: LLM answer generation
+        # Step 4: LLM answer generation (use original query for natural answer)
         logger.info("Generating answer with Claude...")
 
         # Convert conversation history to dict format if provided
@@ -116,7 +133,7 @@ async def query(
             ]
 
         llm_response = llm_service.generate_answer_with_retry(
-            query=request.query,
+            query=request.query,  # Use original query for natural language answer
             search_results=reranked_results,
             max_retries=3,
             conversation_history=conversation_history,
