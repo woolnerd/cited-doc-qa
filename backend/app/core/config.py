@@ -26,9 +26,22 @@ class Settings(BaseSettings):
     UPLOAD_RATE_LIMIT: str = "10/hour"
     QUERY_RATE_LIMIT: str = "30/hour"
 
-    # Supabase
+    # Database (Supabase - legacy)
     SUPABASE_URL: str = "https://test.supabase.co"
     SUPABASE_KEY: str = "test-key"
+
+    # Database (PostgreSQL - preferred)
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str = "rag_db"
+    POSTGRES_USER: str = "rag_user"
+    POSTGRES_PASSWORD: str = "changeme123"
+
+    # Database connection URL (constructed from above)
+    @property
+    def DATABASE_URL(self) -> str:
+        """PostgreSQL connection URL for asyncpg."""
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     # AI Services
     GOOGLE_API_KEY: str = "test-google-key"  # Gemini embeddings

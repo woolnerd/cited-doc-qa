@@ -3,11 +3,10 @@
 import time
 from typing import Any
 
-from supabase import Client
-
 from app.core.config import settings
 from app.core.exceptions import DocumentProcessingError
 from app.core.logging import get_logger
+from app.services.database import DatabaseService
 from app.services.embeddings import EmbeddingService
 from app.services.full_text_search import FullTextSearchService
 from app.services.vector_search import VectorSearchService
@@ -20,7 +19,7 @@ class HybridSearchService:
 
     def __init__(
         self,
-        supabase_client: Client,
+        db: DatabaseService,
         embedding_service: EmbeddingService | None = None,
         vector_search_service: VectorSearchService | None = None,
         full_text_search_service: FullTextSearchService | None = None,
@@ -28,22 +27,20 @@ class HybridSearchService:
         """Initialize the hybrid search service.
 
         Args:
-            supabase_client: Supabase client for database operations
+            db: PostgreSQL database service
             embedding_service: Embedding service (creates new if None)
             vector_search_service: Vector search service (creates new if None)
             full_text_search_service: Full-text search service (creates new if None)
         """
-        self.supabase = supabase_client
+        self.db = db
         self.embedding_service = embedding_service or EmbeddingService()
 
         # Initialize search services
         self.vector_search = vector_search_service or VectorSearchService(
-            supabase_client=supabase_client,
+            db=db,
             embedding_service=self.embedding_service,
         )
-        self.full_text_search = full_text_search_service or FullTextSearchService(
-            supabase_client=supabase_client
-        )
+        self.full_text_search = full_text_search_service or FullTextSearchService(db=db)
 
     def _calculate_rrf_score(self, rank: int, k: int = settings.RRF_K) -> float:
         """Calculate RRF score for a given rank.
@@ -133,7 +130,7 @@ class HybridSearchService:
 
         return sorted_results
 
-    def search(
+    async def search(
         self,
         query: str,
         top_k: int = 30,
@@ -165,7 +162,7 @@ class HybridSearchService:
 
             # Run vector search
             vector_start = time.time()
-            vector_results = self.vector_search.search(
+            vector_results = await self.vector_search.search(
                 query=query,
                 top_k=vector_limit,
             )
@@ -173,7 +170,7 @@ class HybridSearchService:
 
             # Run full-text search
             fulltext_start = time.time()
-            fulltext_results = self.full_text_search.search(
+            fulltext_results = await self.full_text_search.search(
                 query=query,
                 limit=fulltext_limit,
             )
@@ -232,7 +229,7 @@ class HybridSearchService:
             logger.error(f"Hybrid search failed: {e}", exc_info=True)
             raise DocumentProcessingError(f"Hybrid search failed: {e}") from e
 
-    def search_by_document(
+    async def search_by_document(
         self,
         query: str,
         document_id: str,
@@ -268,7 +265,7 @@ class HybridSearchService:
 
             # Run vector search
             vector_start = time.time()
-            vector_results = self.vector_search.search_by_document(
+            vector_results = await self.vector_search.search_by_document(
                 query=query,
                 document_id=document_id,
                 top_k=vector_limit,
@@ -277,7 +274,7 @@ class HybridSearchService:
 
             # Run full-text search
             fulltext_start = time.time()
-            fulltext_results = self.full_text_search.search_by_document(
+            fulltext_results = await self.full_text_search.search_by_document(
                 query=query,
                 document_id=document_id,
                 limit=fulltext_limit,

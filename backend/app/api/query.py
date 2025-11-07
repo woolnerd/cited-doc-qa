@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.core.dependencies import SupabaseClient
+from app.core.dependencies import Database
 from app.core.exceptions import DocumentProcessingError
 from app.core.logging import get_logger
 from app.models.base import QueryMetadata, QueryRequest, QueryResponse, SearchResult
@@ -19,7 +19,7 @@ router = APIRouter()
 @router.post("/query", response_model=QueryResponse, status_code=status.HTTP_200_OK)
 async def query(
     request: QueryRequest,
-    supabase: SupabaseClient,
+    db: Database,
 ) -> QueryResponse:
     """Process a user query through the RAG pipeline.
 
@@ -31,7 +31,7 @@ async def query(
 
     Args:
         request: Query request with query text and optional parameters
-        supabase: Supabase client dependency
+        db: PostgreSQL database service dependency
 
     Returns:
         QueryResponse with answer, sources, and metadata
@@ -54,7 +54,7 @@ async def query(
 
         # Initialize services
         query_enhancer = QueryEnhancementService()
-        hybrid_search = HybridSearchService(supabase_client=supabase)
+        hybrid_search = HybridSearchService(db=db)
         reranking_service = RerankingService()
         llm_service = LLMService()
 
@@ -75,13 +75,13 @@ async def query(
         # Step 2: Hybrid search (use enhanced query)
         logger.info("Running hybrid search...")
         if request.document_id:
-            search_response = hybrid_search.search_by_document(
+            search_response = await hybrid_search.search_by_document(
                 query=enhanced_query,
                 document_id=str(request.document_id),
                 top_k=30,  # Get more results for reranking
             )
         else:
-            search_response = hybrid_search.search(
+            search_response = await hybrid_search.search(
                 query=enhanced_query,
                 top_k=30,  # Get more results for reranking
             )

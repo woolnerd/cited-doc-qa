@@ -13,6 +13,7 @@ from app.api import documents, health, query
 from app.core.config import settings
 from app.core.exceptions import RAGChatbotException
 from app.core.logging import get_logger, setup_logging
+from app.services.database import db
 
 # Setup logging
 setup_logging()
@@ -28,6 +29,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # Startup
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
+
+    # Initialize PostgreSQL connection
+    try:
+        await db.connect()
+        logger.info("PostgreSQL connection pool initialized")
+    except Exception as e:
+        logger.error(f"Failed to connect to PostgreSQL: {e}")
+        # Don't fail startup - allow fallback to Supabase if needed
+        logger.warning("Continuing without PostgreSQL connection")
 
     # Validate API keys on startup
     try:
@@ -51,6 +61,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     # Shutdown
     logger.info("Shutting down application")
+
+    # Close PostgreSQL connection
+    try:
+        await db.disconnect()
+        logger.info("PostgreSQL connection pool closed")
+    except Exception as e:
+        logger.error(f"Error closing PostgreSQL connection: {e}")
 
 
 # Create FastAPI app

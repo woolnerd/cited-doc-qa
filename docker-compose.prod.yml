@@ -20,6 +20,7 @@ services:
     restart: always
     networks:
       - rag-network
+      - n8n-test_default
     # Resource limits
     deploy:
       resources:
@@ -43,3 +44,5 @@ services:
 networks:
   rag-network:
     driver: bridge
+  n8n-test_default:
+    external: true
