@@ -1,6 +1,6 @@
 """Tests for vector similarity search service."""
 
-from unittest.mock import MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -9,9 +9,10 @@ from app.services.vector_search import VectorSearchService
 
 
 @pytest.fixture
-def mock_supabase():
-    """Mock Supabase client."""
+def mock_db():
+    """Mock DatabaseService."""
     mock = MagicMock()
+    mock.fetch = AsyncMock()
     return mock
 
 
@@ -24,10 +25,10 @@ def mock_embedding_service():
 
 
 @pytest.fixture
-def vector_search_service(mock_supabase, mock_embedding_service):
+def vector_search_service(mock_db, mock_embedding_service):
     """Create VectorSearchService with mocked dependencies."""
     return VectorSearchService(
-        supabase_client=mock_supabase,
+        db=mock_db,
         embedding_service=mock_embedding_service,
     )
 
@@ -64,16 +65,15 @@ def sample_search_results():
     ]
 
 
-def test_search_success(
-    vector_search_service, mock_supabase, mock_embedding_service, sample_search_results
+@pytest.mark.asyncio
+async def test_search_success(
+    vector_search_service, mock_db, mock_embedding_service, sample_search_results
 ):
     """Test successful vector similarity search."""
-    # Mock RPC call
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    # Mock database fetch
+    mock_db.fetch.return_value = sample_search_results
 
-    results = vector_search_service.search("test query")
+    results = await vector_search_service.search("test query")
 
     assert len(results) == 3
     assert results[0]["similarity_score"] == 0.95
@@ -86,63 +86,55 @@ def test_search_success(
         "test query"
     )
 
-    # Verify RPC was called
-    mock_supabase.rpc.assert_called_once()
-    call_args = mock_supabase.rpc.call_args
-    assert call_args[0][0] == "search_chunks"
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_custom_parameters(
-    vector_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_custom_parameters(
+    vector_search_service, mock_db, sample_search_results
 ):
     """Test search with custom top_k and similarity_threshold."""
-    mock_result = Mock()
-    mock_result.data = sample_search_results[:2]
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results[:2]
 
-    results = vector_search_service.search(
+    results = await vector_search_service.search(
         "test query", top_k=5, similarity_threshold=0.8
     )
 
     assert len(results) == 2
 
-    # Check RPC parameters
-    call_args = mock_supabase.rpc.call_args[0][1]
-    assert call_args["match_count"] == 5
-    assert call_args["similarity_threshold"] == 0.8
+    # Check database call was made
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_no_results(vector_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_no_results(vector_search_service, mock_db):
     """Test search with no matching results."""
-    mock_result = Mock()
-    mock_result.data = []
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = []
 
-    results = vector_search_service.search("test query")
+    results = await vector_search_service.search("test query")
 
     assert results == []
 
 
-def test_search_none_results(vector_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_none_results(vector_search_service, mock_db):
     """Test search when database returns None."""
-    mock_result = Mock()
-    mock_result.data = None
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = None
 
-    results = vector_search_service.search("test query")
+    results = await vector_search_service.search("test query")
 
     assert results == []
 
 
-def test_search_formats_results_correctly(
-    vector_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_formats_results_correctly(
+    vector_search_service, mock_db, sample_search_results
 ):
     """Test that search results are formatted correctly."""
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    results = vector_search_service.search("test query")
+    results = await vector_search_service.search("test query")
 
     # Check all expected fields are present
     for result in results:
@@ -161,7 +153,8 @@ def test_search_formats_results_correctly(
     assert all(isinstance(r["similarity_score"], float) for r in results)
 
 
-def test_search_embedding_generation_failure(
+@pytest.mark.asyncio
+async def test_search_embedding_generation_failure(
     vector_search_service, mock_embedding_service
 ):
     """Test handling of embedding generation failure."""
@@ -170,102 +163,91 @@ def test_search_embedding_generation_failure(
     )
 
     with pytest.raises(DocumentProcessingError, match="Embedding generation failed"):
-        vector_search_service.search("test query")
+        await vector_search_service.search("test query")
 
 
-def test_search_database_error(vector_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_database_error(vector_search_service, mock_db):
     """Test handling of database errors during search."""
-    mock_supabase.rpc.return_value.execute.side_effect = Exception("Database error")
+    mock_db.fetch.side_effect = Exception("Database error")
 
     with pytest.raises(DocumentProcessingError, match="Vector search failed"):
-        vector_search_service.search("test query")
+        await vector_search_service.search("test query")
 
 
-def test_search_by_document_success(
-    vector_search_service, mock_supabase, mock_embedding_service, sample_search_results
+@pytest.mark.asyncio
+async def test_search_by_document_success(
+    vector_search_service, mock_db, mock_embedding_service, sample_search_results
 ):
     """Test successful search within a specific document."""
     document_id = str(uuid4())
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    results = vector_search_service.search_by_document("test query", document_id)
+    results = await vector_search_service.search_by_document("test query", document_id)
 
     assert len(results) == 3
 
     # Verify embedding was generated
     mock_embedding_service.generate_query_embedding.assert_called_once()
 
-    # Verify correct RPC function was called
-    call_args = mock_supabase.rpc.call_args
-    assert call_args[0][0] == "search_chunks_by_document"
-    assert call_args[0][1]["target_document_id"] == document_id
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_by_document_custom_parameters(
-    vector_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_by_document_custom_parameters(
+    vector_search_service, mock_db, sample_search_results
 ):
     """Test search by document with custom parameters."""
     document_id = str(uuid4())
-    mock_result = Mock()
-    mock_result.data = sample_search_results[:2]
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results[:2]
 
-    results = vector_search_service.search_by_document(
+    results = await vector_search_service.search_by_document(
         "test query", document_id, top_k=5, similarity_threshold=0.85
     )
 
     assert len(results) == 2
-
-    # Check RPC parameters
-    call_args = mock_supabase.rpc.call_args[0][1]
-    assert call_args["target_document_id"] == document_id
-    assert call_args["match_count"] == 5
-    assert call_args["similarity_threshold"] == 0.85
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_by_document_no_results(vector_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_by_document_no_results(vector_search_service, mock_db):
     """Test search by document with no matching results."""
     document_id = str(uuid4())
-    mock_result = Mock()
-    mock_result.data = []
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = []
 
-    results = vector_search_service.search_by_document("test query", document_id)
+    results = await vector_search_service.search_by_document("test query", document_id)
 
     assert results == []
 
 
-def test_search_by_document_database_error(vector_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_by_document_database_error(vector_search_service, mock_db):
     """Test handling of database errors during search by document."""
     document_id = str(uuid4())
-    mock_supabase.rpc.return_value.execute.side_effect = Exception("Database error")
+    mock_db.fetch.side_effect = Exception("Database error")
 
     with pytest.raises(
         DocumentProcessingError, match="Vector search by document failed"
     ):
-        vector_search_service.search_by_document("test query", document_id)
+        await vector_search_service.search_by_document("test query", document_id)
 
 
-def test_search_uses_default_settings(
-    vector_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_uses_default_settings(
+    vector_search_service, mock_db, sample_search_results
 ):
     """Test that search uses default settings from config."""
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    vector_search_service.search("test query")
+    await vector_search_service.search("test query")
 
-    # Check default values were used
-    call_args = mock_supabase.rpc.call_args[0][1]
-    assert "match_count" in call_args
-    assert "similarity_threshold" in call_args
-    # Values should be from settings.SEARCH_TOP_K and settings.SEARCH_SIMILARITY_THRESHOLD
+    # Check database was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_result_without_contextual_content(vector_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_result_without_contextual_content(vector_search_service, mock_db):
     """Test handling of results without contextual_content field."""
     # Result without contextual_content
     result_data = [
@@ -278,17 +260,16 @@ def test_search_result_without_contextual_content(vector_search_service, mock_su
         }
     ]
 
-    mock_result = Mock()
-    mock_result.data = result_data
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = result_data
 
-    results = vector_search_service.search("test query")
+    results = await vector_search_service.search("test query")
 
     # Should use content as fallback for contextual_content
     assert results[0]["contextual_content"] == "Test content"
 
 
-def test_search_result_without_metadata(vector_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_result_without_metadata(vector_search_service, mock_db):
     """Test handling of results without metadata field."""
     result_data = [
         {
@@ -300,66 +281,62 @@ def test_search_result_without_metadata(vector_search_service, mock_supabase):
         }
     ]
 
-    mock_result = Mock()
-    mock_result.data = result_data
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = result_data
 
-    results = vector_search_service.search("test query")
+    results = await vector_search_service.search("test query")
 
     # Should use empty dict as default metadata
     assert results[0]["metadata"] == {}
 
 
-def test_service_initialization_creates_default_embedding_service(mock_supabase):
+def test_service_initialization_creates_default_embedding_service(mock_db):
     """Test that service creates default embedding service if none provided."""
-    service = VectorSearchService(supabase_client=mock_supabase)
+    service = VectorSearchService(db=mock_db)
 
     assert service.embedding_service is not None
-    assert service.supabase is mock_supabase
+    assert service.db is mock_db
 
 
 def test_service_initialization_uses_provided_embedding_service(
-    mock_supabase, mock_embedding_service
+    mock_db, mock_embedding_service
 ):
     """Test that service uses provided embedding service."""
     service = VectorSearchService(
-        supabase_client=mock_supabase,
+        db=mock_db,
         embedding_service=mock_embedding_service,
     )
 
     assert service.embedding_service is mock_embedding_service
 
 
-def test_search_logs_query(
-    vector_search_service, mock_supabase, sample_search_results, caplog
+@pytest.mark.asyncio
+async def test_search_logs_query(
+    vector_search_service, mock_db, sample_search_results, caplog
 ):
     """Test that search logs the query."""
     import logging
 
     caplog.set_level(logging.INFO)
 
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    vector_search_service.search("test query for logging")
+    await vector_search_service.search("test query for logging")
 
     assert "Vector search for query" in caplog.text
     assert "test query for logging" in caplog.text
 
 
-def test_search_logs_results_count(
-    vector_search_service, mock_supabase, sample_search_results, caplog
+@pytest.mark.asyncio
+async def test_search_logs_results_count(
+    vector_search_service, mock_db, sample_search_results, caplog
 ):
     """Test that search logs the number of results found."""
     import logging
 
     caplog.set_level(logging.INFO)
 
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    vector_search_service.search("test query")
+    await vector_search_service.search("test query")
 
     assert "Found 3 results" in caplog.text

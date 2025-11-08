@@ -1,20 +1,31 @@
 """Integration test configuration and fixtures."""
 
+import asyncio
 from uuid import uuid4
 
 import pytest
 from app.core.config import settings
-from supabase import create_client
+from app.services.database import DatabaseService
 
 
 @pytest.fixture(scope="session")
-def supabase_client():
-    """Create a real Supabase client for integration tests.
+def event_loop():
+    """Create an event loop for the session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
-    Uses actual Supabase connection for end-to-end testing.
+
+@pytest.fixture(scope="session")
+async def db_service():
+    """Create a real DatabaseService for integration tests.
+
+    Uses actual PostgreSQL connection for end-to-end testing.
     """
-    client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-    return client
+    db = DatabaseService()
+    await db.connect()
+    yield db
+    await db.disconnect()
 
 
 @pytest.fixture
@@ -24,7 +35,7 @@ def test_document_id():
 
 
 @pytest.fixture(autouse=True)
-def cleanup_test_data(supabase_client):
+def cleanup_test_data(db_service):
     """Clean up test data before and after each test.
 
     This fixture runs automatically for every test to ensure clean state.
@@ -40,13 +51,19 @@ def cleanup_test_data(supabase_client):
     yield track_document
 
     # Cleanup after test
-    for doc_id in created_docs:
-        try:
-            # Delete document (chunks cascade automatically)
-            supabase_client.table("documents").delete().eq("id", doc_id).execute()
-        except Exception as e:
-            # Log but don't fail test on cleanup errors
-            print(f"Cleanup warning: Could not delete document {doc_id}: {e}")
+    async def cleanup():
+        for doc_id in created_docs:
+            try:
+                # Delete document (chunks cascade automatically)
+                await db_service.execute(
+                    "DELETE FROM documents WHERE id = $1", doc_id
+                )
+            except Exception as e:
+                # Log but don't fail test on cleanup errors
+                print(f"Cleanup warning: Could not delete document {doc_id}: {e}")
+
+    # Run cleanup in event loop
+    asyncio.get_event_loop().run_until_complete(cleanup())
 
 
 @pytest.fixture

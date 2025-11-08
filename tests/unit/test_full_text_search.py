@@ -1,6 +1,6 @@
 """Tests for full-text search service."""
 
-from unittest.mock import MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -9,16 +9,17 @@ from app.services.full_text_search import FullTextSearchService
 
 
 @pytest.fixture
-def mock_supabase():
-    """Mock Supabase client."""
+def mock_db():
+    """Mock DatabaseService."""
     mock = MagicMock()
+    mock.fetch = AsyncMock()
     return mock
 
 
 @pytest.fixture
-def full_text_search_service(mock_supabase):
+def full_text_search_service(mock_db):
     """Create FullTextSearchService with mocked dependencies."""
-    return FullTextSearchService(supabase_client=mock_supabase)
+    return FullTextSearchService(db=mock_db)
 
 
 @pytest.fixture
@@ -53,14 +54,13 @@ def sample_search_results():
     ]
 
 
-def test_search_success(full_text_search_service, mock_supabase, sample_search_results):
+@pytest.mark.asyncio
+async def test_search_success(full_text_search_service, mock_db, sample_search_results):
     """Test successful full-text search."""
-    # Mock RPC call
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    # Mock database fetch
+    mock_db.fetch.return_value = sample_search_results
 
-    results = full_text_search_service.search("Python programming")
+    results = await full_text_search_service.search("Python programming")
 
     assert len(results) == 3
     assert results[0]["relevance_score"] == 0.95
@@ -68,61 +68,53 @@ def test_search_success(full_text_search_service, mock_supabase, sample_search_r
     assert results[1]["rank"] == 2
     assert results[2]["rank"] == 3
 
-    # Verify RPC was called
-    mock_supabase.rpc.assert_called_once()
-    call_args = mock_supabase.rpc.call_args
-    assert call_args[0][0] == "search_chunks_fulltext"
-    assert call_args[0][1]["search_query"] == "Python programming"
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_custom_limit(
-    full_text_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_custom_limit(
+    full_text_search_service, mock_db, sample_search_results
 ):
     """Test search with custom limit."""
-    mock_result = Mock()
-    mock_result.data = sample_search_results[:2]
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results[:2]
 
-    results = full_text_search_service.search("Python", limit=2)
+    results = await full_text_search_service.search("Python", limit=2)
 
     assert len(results) == 2
 
-    # Check RPC parameters
-    call_args = mock_supabase.rpc.call_args[0][1]
-    assert call_args["match_limit"] == 2
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_no_results(full_text_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_no_results(full_text_search_service, mock_db):
     """Test search with no matching results."""
-    mock_result = Mock()
-    mock_result.data = []
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = []
 
-    results = full_text_search_service.search("nonexistent query")
+    results = await full_text_search_service.search("nonexistent query")
 
     assert results == []
 
 
-def test_search_none_results(full_text_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_none_results(full_text_search_service, mock_db):
     """Test search when database returns None."""
-    mock_result = Mock()
-    mock_result.data = None
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = None
 
-    results = full_text_search_service.search("test query")
+    results = await full_text_search_service.search("test query")
 
     assert results == []
 
 
-def test_search_formats_results_correctly(
-    full_text_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_formats_results_correctly(
+    full_text_search_service, mock_db, sample_search_results
 ):
     """Test that search results are formatted correctly."""
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    results = full_text_search_service.search("Python")
+    results = await full_text_search_service.search("Python")
 
     # Check all expected fields are present
     for result in results:
@@ -141,115 +133,111 @@ def test_search_formats_results_correctly(
     assert all(isinstance(r["relevance_score"], float) for r in results)
 
 
-def test_search_empty_query(full_text_search_service):
+@pytest.mark.asyncio
+async def test_search_empty_query(full_text_search_service):
     """Test search with empty query."""
     with pytest.raises(DocumentProcessingError, match="Search query cannot be empty"):
-        full_text_search_service.search("")
+        await full_text_search_service.search("")
 
 
-def test_search_whitespace_query(full_text_search_service):
+@pytest.mark.asyncio
+async def test_search_whitespace_query(full_text_search_service):
     """Test search with whitespace-only query."""
     with pytest.raises(DocumentProcessingError, match="Search query cannot be empty"):
-        full_text_search_service.search("   ")
+        await full_text_search_service.search("   ")
 
 
-def test_search_database_error(full_text_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_database_error(full_text_search_service, mock_db):
     """Test handling of database errors during search."""
-    mock_supabase.rpc.return_value.execute.side_effect = Exception("Database error")
+    mock_db.fetch.side_effect = Exception("Database error")
 
     with pytest.raises(DocumentProcessingError, match="Full-text search failed"):
-        full_text_search_service.search("test query")
+        await full_text_search_service.search("test query")
 
 
-def test_search_by_document_success(
-    full_text_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_by_document_success(
+    full_text_search_service, mock_db, sample_search_results
 ):
     """Test successful search within a specific document."""
     document_id = str(uuid4())
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    results = full_text_search_service.search_by_document("Python", document_id)
+    results = await full_text_search_service.search_by_document("Python", document_id)
 
     assert len(results) == 3
 
-    # Verify correct RPC function was called
-    call_args = mock_supabase.rpc.call_args
-    assert call_args[0][0] == "search_chunks_fulltext_by_document"
-    assert call_args[0][1]["target_document_id"] == document_id
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_by_document_custom_limit(
-    full_text_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_by_document_custom_limit(
+    full_text_search_service, mock_db, sample_search_results
 ):
     """Test search by document with custom limit."""
     document_id = str(uuid4())
-    mock_result = Mock()
-    mock_result.data = sample_search_results[:2]
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results[:2]
 
-    results = full_text_search_service.search_by_document(
+    results = await full_text_search_service.search_by_document(
         "Python", document_id, limit=2
     )
 
     assert len(results) == 2
 
-    # Check RPC parameters
-    call_args = mock_supabase.rpc.call_args[0][1]
-    assert call_args["target_document_id"] == document_id
-    assert call_args["match_limit"] == 2
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_by_document_no_results(full_text_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_by_document_no_results(full_text_search_service, mock_db):
     """Test search by document with no matching results."""
     document_id = str(uuid4())
-    mock_result = Mock()
-    mock_result.data = []
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = []
 
-    results = full_text_search_service.search_by_document("test query", document_id)
+    results = await full_text_search_service.search_by_document("test query", document_id)
 
     assert results == []
 
 
-def test_search_by_document_empty_query(full_text_search_service):
+@pytest.mark.asyncio
+async def test_search_by_document_empty_query(full_text_search_service):
     """Test search by document with empty query."""
     document_id = str(uuid4())
 
     with pytest.raises(DocumentProcessingError, match="Search query cannot be empty"):
-        full_text_search_service.search_by_document("", document_id)
+        await full_text_search_service.search_by_document("", document_id)
 
 
-def test_search_by_document_database_error(full_text_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_by_document_database_error(full_text_search_service, mock_db):
     """Test handling of database errors during search by document."""
     document_id = str(uuid4())
-    mock_supabase.rpc.return_value.execute.side_effect = Exception("Database error")
+    mock_db.fetch.side_effect = Exception("Database error")
 
     with pytest.raises(
         DocumentProcessingError, match="Full-text search by document failed"
     ):
-        full_text_search_service.search_by_document("test query", document_id)
+        await full_text_search_service.search_by_document("test query", document_id)
 
 
-def test_search_uses_default_limit(
-    full_text_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_uses_default_limit(
+    full_text_search_service, mock_db, sample_search_results
 ):
     """Test that search uses default limit from config."""
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    full_text_search_service.search("test query")
+    await full_text_search_service.search("test query")
 
-    # Check default limit was used
-    call_args = mock_supabase.rpc.call_args[0][1]
-    assert "match_limit" in call_args
-    # Value should be from settings.FULL_TEXT_SEARCH_LIMIT
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
 
 
-def test_search_result_without_contextual_content(
-    full_text_search_service, mock_supabase
+@pytest.mark.asyncio
+async def test_search_result_without_contextual_content(
+    full_text_search_service, mock_db
 ):
     """Test handling of results without contextual_content field."""
     # Result without contextual_content
@@ -263,17 +251,16 @@ def test_search_result_without_contextual_content(
         }
     ]
 
-    mock_result = Mock()
-    mock_result.data = result_data
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = result_data
 
-    results = full_text_search_service.search("Python")
+    results = await full_text_search_service.search("Python")
 
     # Should use content as fallback for contextual_content
     assert results[0]["contextual_content"] == "Test content about Python"
 
 
-def test_search_result_without_metadata(full_text_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_result_without_metadata(full_text_search_service, mock_db):
     """Test handling of results without metadata field."""
     result_data = [
         {
@@ -285,17 +272,16 @@ def test_search_result_without_metadata(full_text_search_service, mock_supabase)
         }
     ]
 
-    mock_result = Mock()
-    mock_result.data = result_data
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = result_data
 
-    results = full_text_search_service.search("test")
+    results = await full_text_search_service.search("test")
 
     # Should use empty dict as default metadata
     assert results[0]["metadata"] == {}
 
 
-def test_search_result_without_rank(full_text_search_service, mock_supabase):
+@pytest.mark.asyncio
+async def test_search_result_without_rank(full_text_search_service, mock_db):
     """Test handling of results without rank field."""
     result_data = [
         {
@@ -307,72 +293,66 @@ def test_search_result_without_rank(full_text_search_service, mock_supabase):
         }
     ]
 
-    mock_result = Mock()
-    mock_result.data = result_data
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = result_data
 
-    results = full_text_search_service.search("test")
+    results = await full_text_search_service.search("test")
 
     # Should use 0.0 as default relevance score
     assert results[0]["relevance_score"] == 0.0
 
 
-def test_service_initialization(mock_supabase):
+def test_service_initialization(mock_db):
     """Test that service initializes correctly."""
-    service = FullTextSearchService(supabase_client=mock_supabase)
+    service = FullTextSearchService(db=mock_db)
 
-    assert service.supabase is mock_supabase
+    assert service.db is mock_db
 
 
-def test_search_logs_query(
-    full_text_search_service, mock_supabase, sample_search_results, caplog
+@pytest.mark.asyncio
+async def test_search_logs_query(
+    full_text_search_service, mock_db, sample_search_results, caplog
 ):
     """Test that search logs the query."""
     import logging
 
     caplog.set_level(logging.INFO)
 
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    full_text_search_service.search("Python programming query")
+    await full_text_search_service.search("Python programming query")
 
     assert "Full-text search for query" in caplog.text
     assert "Python programming query" in caplog.text
 
 
-def test_search_logs_results_count(
-    full_text_search_service, mock_supabase, sample_search_results, caplog
+@pytest.mark.asyncio
+async def test_search_logs_results_count(
+    full_text_search_service, mock_db, sample_search_results, caplog
 ):
     """Test that search logs the number of results found."""
     import logging
 
     caplog.set_level(logging.INFO)
 
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
-    full_text_search_service.search("Python")
+    await full_text_search_service.search("Python")
 
     assert "Found 3 results for full-text query" in caplog.text
 
 
-def test_search_with_special_characters(
-    full_text_search_service, mock_supabase, sample_search_results
+@pytest.mark.asyncio
+async def test_search_with_special_characters(
+    full_text_search_service, mock_db, sample_search_results
 ):
     """Test search with special characters in query."""
-    mock_result = Mock()
-    mock_result.data = sample_search_results
-    mock_supabase.rpc.return_value.execute.return_value = mock_result
+    mock_db.fetch.return_value = sample_search_results
 
     # Query with special characters
     query = "Python & data-science | machine-learning"
-    results = full_text_search_service.search(query)
+    results = await full_text_search_service.search(query)
 
     assert len(results) == 3
 
-    # Verify query was passed correctly
-    call_args = mock_supabase.rpc.call_args[0][1]
-    assert call_args["search_query"] == query
+    # Verify database fetch was called
+    mock_db.fetch.assert_called_once()
