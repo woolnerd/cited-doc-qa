@@ -1,13 +1,13 @@
 """Document processing pipeline integrating extraction, chunking, and embedding."""
 
+import json
 from typing import Any
 from uuid import UUID
-
-from supabase import Client
 
 from app.core.exceptions import DocumentProcessingError
 from app.core.logging import get_logger
 from app.services.chunking import ChunkingService
+from app.services.database import DatabaseService
 from app.services.embeddings import EmbeddingService
 from app.services.text_extraction import TextExtractor
 
@@ -19,7 +19,7 @@ class DocumentProcessor:
 
     def __init__(
         self,
-        supabase_client: Client,
+        db_service: DatabaseService,
         text_extractor: TextExtractor | None = None,
         chunking_service: ChunkingService | None = None,
         embedding_service: EmbeddingService | None = None,
@@ -27,17 +27,17 @@ class DocumentProcessor:
         """Initialize the document processor with required services.
 
         Args:
-            supabase_client: Supabase client for database operations
+            db_service: Database service for database operations
             text_extractor: Text extraction service (creates new if None)
             chunking_service: Chunking service (creates new if None)
             embedding_service: Embedding service (creates new if None)
         """
-        self.supabase = supabase_client
+        self.db = db_service
         self.text_extractor = text_extractor or TextExtractor()
         self.chunking_service = chunking_service or ChunkingService()
         self.embedding_service = embedding_service or EmbeddingService()
 
-    def process_document(
+    async def process_document(
         self,
         document_id: UUID,
         file_content: bytes,
@@ -94,7 +94,7 @@ class DocumentProcessor:
 
             # Step 4: Store chunks and embeddings in database
             logger.info("Step 4: Storing chunks in database...")
-            stored_chunks = self._store_chunks(
+            stored_chunks = await self._store_chunks(
                 document_id=document_id,
                 chunks=chunks,
                 embeddings=embeddings,
@@ -121,13 +121,13 @@ class DocumentProcessor:
             )
             raise DocumentProcessingError(f"Failed to process document: {e}") from e
 
-    def _store_chunks(
+    async def _store_chunks(
         self,
         document_id: UUID,
         chunks: list[dict[str, Any]],
         embeddings: list[list[float]],
     ) -> int:
-        """Store document chunks and embeddings in Supabase.
+        """Store document chunks and embeddings in PostgreSQL.
 
         Args:
             document_id: UUID of the parent document
@@ -147,31 +147,39 @@ class DocumentProcessor:
                     f"embedding count ({len(embeddings)})"
                 )
 
-            # Prepare chunk records for batch insert
-            chunk_records = []
-            for chunk, embedding in zip(chunks, embeddings, strict=False):
-                chunk_records.append(
-                    {
-                        "document_id": str(document_id),
-                        "content": chunk["content"],
-                        "contextual_content": chunk["contextual_content"],
-                        "chunk_index": chunk["chunk_index"],
-                        "embedding": embedding,
-                        "metadata": {
-                            "token_count": chunk["token_count"],
-                            "content_length": len(chunk["content"]),
-                            "contextual_length": len(chunk["contextual_content"]),
-                        },
-                    }
+            # Prepare batch insert query
+            insert_query = """
+                INSERT INTO chunks (
+                    document_id, content, contextual_content,
+                    chunk_index, embedding, metadata
                 )
+                VALUES ($1, $2, $3, $4, $5::vector, $6::jsonb)
+            """
 
-            # Batch insert all chunks
-            result = self.supabase.table("chunks").insert(chunk_records).execute()
+            # Execute batch insert for all chunks
+            stored_count = 0
+            for chunk, embedding in zip(chunks, embeddings, strict=False):
+                # Convert embedding list to PostgreSQL vector format
+                embedding_str = "[" + ",".join(str(x) for x in embedding) + "]"
 
-            if not result.data:
-                raise DocumentProcessingError("Failed to store chunks in database")
+                # Prepare metadata
+                metadata_json = json.dumps({
+                    "token_count": chunk["token_count"],
+                    "content_length": len(chunk["content"]),
+                    "contextual_length": len(chunk["contextual_content"]),
+                })
 
-            stored_count = len(result.data)
+                await self.db.execute(
+                    insert_query,
+                    document_id,
+                    chunk["content"],
+                    chunk["contextual_content"],
+                    chunk["chunk_index"],
+                    embedding_str,
+                    metadata_json,
+                )
+                stored_count += 1
+
             logger.info(f"Successfully stored {stored_count} chunks")
 
             return stored_count

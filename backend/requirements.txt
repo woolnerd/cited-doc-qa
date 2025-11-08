@@ -7,7 +7,7 @@ python-multipart==0.0.12
 asyncpg==0.29.0
 psycopg2-binary==2.9.9
 sqlalchemy==2.0.23
-supabase==2.9.0  # Still needed for document upload (Phase 2 migration pending)
+supabase==2.9.0  # Legacy - can be removed once all tests are updated
 
 # AI Services
 google-generativeai==0.8.3
