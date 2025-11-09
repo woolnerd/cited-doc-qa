@@ -4,7 +4,7 @@ from io import BytesIO
 from unittest.mock import patch
 
 import pytest
-from app.core.dependencies import get_supabase_client
+from app.core.dependencies import get_database
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -12,9 +12,9 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-def client(supabase_client):
+def client(db_service):
     """Create test client with real database."""
-    app.dependency_overrides[get_supabase_client] = lambda: supabase_client
+    app.dependency_overrides[get_database] = lambda: db_service
     yield TestClient(app)
     app.dependency_overrides.clear()
 

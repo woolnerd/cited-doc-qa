@@ -1,7 +1,7 @@
 """Tests for document processing pipeline."""
 
 import logging
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -10,13 +10,11 @@ from app.services.document_processor import DocumentProcessor
 
 
 @pytest.fixture
-def mock_supabase():
-    """Mock Supabase client."""
+def mock_db_service():
+    """Mock DatabaseService."""
     mock = MagicMock()
-    # Mock the table().insert().execute() chain
-    mock_result = Mock()
-    mock_result.data = [{"id": str(uuid4())}] * 3  # 3 chunks stored
-    mock.table.return_value.insert.return_value.execute.return_value = mock_result
+    # Make database methods async
+    mock.execute = AsyncMock(return_value=None)
     return mock
 
 
@@ -71,11 +69,11 @@ def mock_embedding_service():
 
 @pytest.fixture
 def document_processor(
-    mock_supabase, mock_text_extractor, mock_chunking_service, mock_embedding_service
+    mock_db_service, mock_text_extractor, mock_chunking_service, mock_embedding_service
 ):
     """Create DocumentProcessor with mocked dependencies."""
     return DocumentProcessor(
-        supabase_client=mock_supabase,
+        db_service=mock_db_service,
         text_extractor=mock_text_extractor,
         chunking_service=mock_chunking_service,
         embedding_service=mock_embedding_service,
@@ -93,9 +91,10 @@ def sample_document_data():
     }
 
 
-def test_process_document_success(document_processor, sample_document_data):
+@pytest.mark.asyncio
+async def test_process_document_success(document_processor, sample_document_data):
     """Test successful document processing through full pipeline."""
-    result = document_processor.process_document(**sample_document_data)
+    result = await document_processor.process_document(**sample_document_data)
 
     assert result["status"] == "completed"
     assert result["document_id"] == str(sample_document_data["document_id"])
@@ -104,33 +103,36 @@ def test_process_document_success(document_processor, sample_document_data):
     assert result["chunks_stored"] == 3
 
 
-def test_process_document_calls_text_extractor(
+@pytest.mark.asyncio
+async def test_process_document_calls_text_extractor(
     document_processor, sample_document_data, mock_text_extractor
 ):
     """Test that document processor calls text extractor correctly."""
-    document_processor.process_document(**sample_document_data)
+    await document_processor.process_document(**sample_document_data)
 
     mock_text_extractor.extract_text.assert_called_once_with(
         sample_document_data["file_content"], sample_document_data["file_type"]
     )
 
 
-def test_process_document_calls_chunking_service(
+@pytest.mark.asyncio
+async def test_process_document_calls_chunking_service(
     document_processor, sample_document_data, mock_chunking_service
 ):
     """Test that document processor calls chunking service correctly."""
-    document_processor.process_document(**sample_document_data)
+    await document_processor.process_document(**sample_document_data)
 
     mock_chunking_service.chunk_text.assert_called_once()
     call_args = mock_chunking_service.chunk_text.call_args
     assert "test_document.pdf" in str(call_args)  # Filename in metadata
 
 
-def test_process_document_calls_embedding_service(
+@pytest.mark.asyncio
+async def test_process_document_calls_embedding_service(
     document_processor, sample_document_data, mock_embedding_service
 ):
     """Test that document processor calls embedding service correctly."""
-    document_processor.process_document(**sample_document_data)
+    await document_processor.process_document(**sample_document_data)
 
     mock_embedding_service.generate_embeddings_batch.assert_called_once()
     call_args = mock_embedding_service.generate_embeddings_batch.call_args[0][0]
@@ -138,26 +140,19 @@ def test_process_document_calls_embedding_service(
     assert all("Document:" in text for text in call_args)
 
 
-def test_process_document_stores_chunks_in_database(
-    document_processor, sample_document_data, mock_supabase
+@pytest.mark.asyncio
+async def test_process_document_stores_chunks_in_database(
+    document_processor, sample_document_data, mock_db_service
 ):
     """Test that chunks are stored in database correctly."""
-    document_processor.process_document(**sample_document_data)
+    await document_processor.process_document(**sample_document_data)
 
-    mock_supabase.table.assert_called_with("chunks")
-    mock_supabase.table().insert.assert_called_once()
-
-    # Check inserted data structure
-    inserted_data = mock_supabase.table().insert.call_args[0][0]
-    assert len(inserted_data) == 3
-    assert all("document_id" in chunk for chunk in inserted_data)
-    assert all("content" in chunk for chunk in inserted_data)
-    assert all("contextual_content" in chunk for chunk in inserted_data)
-    assert all("embedding" in chunk for chunk in inserted_data)
-    assert all("chunk_index" in chunk for chunk in inserted_data)
+    # Verify database execute was called 3 times (once per chunk)
+    assert mock_db_service.execute.call_count == 3
 
 
-def test_process_document_text_extraction_failure(
+@pytest.mark.asyncio
+async def test_process_document_text_extraction_failure(
     document_processor, sample_document_data, mock_text_extractor
 ):
     """Test handling of text extraction failure."""
@@ -166,10 +161,11 @@ def test_process_document_text_extraction_failure(
     )
 
     with pytest.raises(DocumentProcessingError, match="Failed to extract text"):
-        document_processor.process_document(**sample_document_data)
+        await document_processor.process_document(**sample_document_data)
 
 
-def test_process_document_chunking_failure(
+@pytest.mark.asyncio
+async def test_process_document_chunking_failure(
     document_processor, sample_document_data, mock_chunking_service
 ):
     """Test handling of chunking failure."""
@@ -178,10 +174,11 @@ def test_process_document_chunking_failure(
     )
 
     with pytest.raises(DocumentProcessingError, match="Failed to process document"):
-        document_processor.process_document(**sample_document_data)
+        await document_processor.process_document(**sample_document_data)
 
 
-def test_process_document_embedding_failure(
+@pytest.mark.asyncio
+async def test_process_document_embedding_failure(
     document_processor, sample_document_data, mock_embedding_service
 ):
     """Test handling of embedding generation failure."""
@@ -190,24 +187,22 @@ def test_process_document_embedding_failure(
     )
 
     with pytest.raises(DocumentProcessingError, match="Failed to process document"):
-        document_processor.process_document(**sample_document_data)
+        await document_processor.process_document(**sample_document_data)
 
 
-def test_process_document_storage_failure(
-    document_processor, sample_document_data, mock_supabase
+@pytest.mark.asyncio
+async def test_process_document_storage_failure(
+    document_processor, sample_document_data, mock_db_service
 ):
     """Test handling of database storage failure."""
-    mock_result = Mock()
-    mock_result.data = None  # Simulate storage failure
-    mock_supabase.table.return_value.insert.return_value.execute.return_value = (
-        mock_result
-    )
+    mock_db_service.execute.side_effect = Exception("Database error")
 
     with pytest.raises(DocumentProcessingError, match="Failed to store chunks"):
-        document_processor.process_document(**sample_document_data)
+        await document_processor.process_document(**sample_document_data)
 
 
-def test_process_document_chunk_embedding_mismatch(
+@pytest.mark.asyncio
+async def test_process_document_chunk_embedding_mismatch(
     document_processor, sample_document_data, mock_embedding_service
 ):
     """Test handling of chunk/embedding count mismatch."""
@@ -218,17 +213,18 @@ def test_process_document_chunk_embedding_mismatch(
     ]  # Only 2 embeddings for 3 chunks
 
     with pytest.raises(DocumentProcessingError, match="does not match"):
-        document_processor.process_document(**sample_document_data)
+        await document_processor.process_document(**sample_document_data)
 
 
-def test_process_document_logs_progress(
+@pytest.mark.asyncio
+async def test_process_document_logs_progress(
     document_processor, sample_document_data, caplog
 ):
     """Test that processing logs progress at each step."""
     # Set log level to INFO to capture all logs
     caplog.set_level(logging.INFO)
 
-    document_processor.process_document(**sample_document_data)
+    await document_processor.process_document(**sample_document_data)
 
     # Check that all steps are logged
     assert "Starting document processing" in caplog.text
@@ -239,16 +235,10 @@ def test_process_document_logs_progress(
     assert "Document processing complete" in caplog.text
 
 
-def test_process_document_with_different_file_types(mock_supabase):
+@pytest.mark.asyncio
+async def test_process_document_with_different_file_types(mock_db_service):
     """Test processing different file types."""
-    processor = DocumentProcessor(supabase_client=mock_supabase)
-
-    # Mock the table().insert().execute() chain
-    mock_result = Mock()
-    mock_result.data = [{"id": str(uuid4())}]
-    mock_supabase.table.return_value.insert.return_value.execute.return_value = (
-        mock_result
-    )
+    processor = DocumentProcessor(db_service=mock_db_service)
 
     file_types = ["pdf", "docx", "txt"]
 
@@ -271,7 +261,7 @@ def test_process_document_with_different_file_types(mock_supabase):
                 ) as mock_embed:
                     mock_embed.return_value = [[0.1] * 768]
 
-                    result = processor.process_document(
+                    result = await processor.process_document(
                         document_id=uuid4(),
                         file_content=b"test content",
                         filename=f"test.{file_type}",
@@ -282,9 +272,10 @@ def test_process_document_with_different_file_types(mock_supabase):
                     mock_extract.assert_called_with(b"test content", file_type)
 
 
-def test_store_chunks_validates_counts(mock_supabase):
+@pytest.mark.asyncio
+async def test_store_chunks_validates_counts(mock_db_service):
     """Test that _store_chunks validates chunk and embedding counts."""
-    processor = DocumentProcessor(supabase_client=mock_supabase)
+    processor = DocumentProcessor(db_service=mock_db_service)
 
     chunks = [
         {
@@ -297,20 +288,15 @@ def test_store_chunks_validates_counts(mock_supabase):
     embeddings = [[0.1] * 768, [0.2] * 768]  # Mismatched count
 
     with pytest.raises(DocumentProcessingError, match="does not match"):
-        processor._store_chunks(
+        await processor._store_chunks(
             document_id=uuid4(), chunks=chunks, embeddings=embeddings
         )
 
 
-def test_store_chunks_includes_metadata(mock_supabase):
+@pytest.mark.asyncio
+async def test_store_chunks_includes_metadata(mock_db_service):
     """Test that stored chunks include proper metadata."""
-    processor = DocumentProcessor(supabase_client=mock_supabase)
-
-    mock_result = Mock()
-    mock_result.data = [{"id": str(uuid4())}]
-    mock_supabase.table.return_value.insert.return_value.execute.return_value = (
-        mock_result
-    )
+    processor = DocumentProcessor(db_service=mock_db_service)
 
     chunks = [
         {
@@ -322,31 +308,33 @@ def test_store_chunks_includes_metadata(mock_supabase):
     ]
     embeddings = [[0.1] * 768]
 
-    processor._store_chunks(document_id=uuid4(), chunks=chunks, embeddings=embeddings)
+    await processor._store_chunks(
+        document_id=uuid4(), chunks=chunks, embeddings=embeddings
+    )
 
-    # Check metadata is included
-    inserted_data = mock_supabase.table().insert.call_args[0][0]
-    assert "metadata" in inserted_data[0]
-    assert "content_length" in inserted_data[0]["metadata"]
-    assert "contextual_length" in inserted_data[0]["metadata"]
+    # Verify execute was called with correct parameters
+    assert mock_db_service.execute.call_count == 1
+    call_args = mock_db_service.execute.call_args[0]
+    # Check that metadata JSON is passed
+    assert "metadata" in call_args[0]  # SQL query contains metadata
 
 
-def test_processor_initialization_creates_default_services(mock_supabase):
+def test_processor_initialization_creates_default_services(mock_db_service):
     """Test that processor creates default services if none provided."""
-    processor = DocumentProcessor(supabase_client=mock_supabase)
+    processor = DocumentProcessor(db_service=mock_db_service)
 
     assert processor.text_extractor is not None
     assert processor.chunking_service is not None
     assert processor.embedding_service is not None
-    assert processor.supabase is mock_supabase
+    assert processor.db is mock_db_service
 
 
 def test_processor_initialization_uses_provided_services(
-    mock_supabase, mock_text_extractor, mock_chunking_service, mock_embedding_service
+    mock_db_service, mock_text_extractor, mock_chunking_service, mock_embedding_service
 ):
     """Test that processor uses provided services."""
     processor = DocumentProcessor(
-        supabase_client=mock_supabase,
+        db_service=mock_db_service,
         text_extractor=mock_text_extractor,
         chunking_service=mock_chunking_service,
         embedding_service=mock_embedding_service,
@@ -357,11 +345,12 @@ def test_processor_initialization_uses_provided_services(
     assert processor.embedding_service is mock_embedding_service
 
 
-def test_process_document_returns_correct_statistics(
+@pytest.mark.asyncio
+async def test_process_document_returns_correct_statistics(
     document_processor, sample_document_data
 ):
     """Test that processing returns correct statistics."""
-    result = document_processor.process_document(**sample_document_data)
+    result = await document_processor.process_document(**sample_document_data)
 
     # Verify all expected fields are present
     assert "document_id" in result

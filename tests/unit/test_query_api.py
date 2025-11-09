@@ -1,6 +1,6 @@
 """Tests for query API endpoint."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import pytest
@@ -9,17 +9,19 @@ from fastapi.testclient import TestClient
 
 
 @pytest.fixture
-def mock_supabase():
-    """Mock Supabase client."""
-    return Mock()
+def mock_db():
+    """Mock DatabaseService."""
+    mock = Mock()
+    mock.fetch = AsyncMock()
+    return mock
 
 
 @pytest.fixture
-def client(mock_supabase):
-    """Create test client with mocked Supabase dependency."""
-    from app.core.dependencies import get_supabase_client
+def client(mock_db):
+    """Create test client with mocked DatabaseService dependency."""
+    from app.core.dependencies import get_db
 
-    app.dependency_overrides[get_supabase_client] = lambda: mock_supabase
+    app.dependency_overrides[get_db] = lambda: mock_db
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -117,7 +119,8 @@ def sample_llm_response():
     }
 
 
-def test_query_success(
+@pytest.mark.asyncio
+async def test_query_success(
     client,
     sample_hybrid_search_response,
     sample_rerank_response,
@@ -131,13 +134,17 @@ def test_query_success(
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search.return_value = sample_hybrid_search_response
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
 
         mock_rerank = MockReranking.return_value
-        mock_rerank.rerank_with_metadata.return_value = sample_rerank_response
+        mock_rerank.rerank_with_metadata = AsyncMock(
+            return_value=sample_rerank_response
+        )
 
         mock_llm = MockLLM.return_value
-        mock_llm.generate_answer_with_retry.return_value = sample_llm_response
+        mock_llm.generate_answer_with_retry = AsyncMock(
+            return_value=sample_llm_response
+        )
 
         # Make request
         response = client.post("/api/query", json={"query": "What is Python?"})
@@ -159,7 +166,8 @@ def test_query_success(
         assert "total_ms" in data["metadata"]["timing"]
 
 
-def test_query_with_top_k(
+@pytest.mark.asyncio
+async def test_query_with_top_k(
     client,
     sample_hybrid_search_response,
     sample_rerank_response,
@@ -173,13 +181,17 @@ def test_query_with_top_k(
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search.return_value = sample_hybrid_search_response
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
 
         mock_rerank = MockReranking.return_value
-        mock_rerank.rerank_with_metadata.return_value = sample_rerank_response
+        mock_rerank.rerank_with_metadata = AsyncMock(
+            return_value=sample_rerank_response
+        )
 
         mock_llm = MockLLM.return_value
-        mock_llm.generate_answer_with_retry.return_value = sample_llm_response
+        mock_llm.generate_answer_with_retry = AsyncMock(
+            return_value=sample_llm_response
+        )
 
         # Make request with custom top_k
         response = client.post(
@@ -194,7 +206,8 @@ def test_query_with_top_k(
         assert call_args["top_k"] == 3
 
 
-def test_query_with_document_id(
+@pytest.mark.asyncio
+async def test_query_with_document_id(
     client,
     sample_hybrid_search_response,
     sample_rerank_response,
@@ -210,13 +223,19 @@ def test_query_with_document_id(
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search_by_document.return_value = sample_hybrid_search_response
+        mock_hybrid.search_by_document = AsyncMock(
+            return_value=sample_hybrid_search_response
+        )
 
         mock_rerank = MockReranking.return_value
-        mock_rerank.rerank_with_metadata.return_value = sample_rerank_response
+        mock_rerank.rerank_with_metadata = AsyncMock(
+            return_value=sample_rerank_response
+        )
 
         mock_llm = MockLLM.return_value
-        mock_llm.generate_answer_with_retry.return_value = sample_llm_response
+        mock_llm.generate_answer_with_retry = AsyncMock(
+            return_value=sample_llm_response
+        )
 
         # Make request with document_id
         response = client.post(
@@ -232,15 +251,18 @@ def test_query_with_document_id(
         assert call_args["document_id"] == doc_id
 
 
-def test_query_no_results(client):
+@pytest.mark.asyncio
+async def test_query_no_results(client):
     """Test query when no search results found."""
     with (patch("app.api.query.HybridSearchService") as MockHybridSearch,):
         # Setup mock to return empty results
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search.return_value = {
-            "results": [],
-            "metadata": {"timing": {"total_ms": 100.0}},
-        }
+        mock_hybrid.search = AsyncMock(
+            return_value={
+                "results": [],
+                "metadata": {"timing": {"total_ms": 100.0}},
+            }
+        )
 
         # Make request
         response = client.post("/api/query", json={"query": "What is Python?"})
@@ -253,7 +275,8 @@ def test_query_no_results(client):
         assert len(data["sources"]) == 0
 
 
-def test_query_invalid_request(client):
+@pytest.mark.asyncio
+async def test_query_invalid_request(client):
     """Test query with invalid request data."""
     # Empty query
     response = client.post("/api/query", json={"query": ""})
@@ -271,12 +294,13 @@ def test_query_invalid_request(client):
     assert response.status_code == 422
 
 
-def test_query_service_error(client):
+@pytest.mark.asyncio
+async def test_query_service_error(client):
     """Test query handling of service errors."""
     with (patch("app.api.query.HybridSearchService") as MockHybridSearch,):
         # Setup mock to raise error
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search.side_effect = Exception("Service error")
+        mock_hybrid.search = AsyncMock(side_effect=Exception("Service error"))
 
         # Make request
         response = client.post("/api/query", json={"query": "What is Python?"})
@@ -287,7 +311,8 @@ def test_query_service_error(client):
         assert "error" in data or "detail" in data
 
 
-def test_query_combines_timing_correctly(
+@pytest.mark.asyncio
+async def test_query_combines_timing_correctly(
     client,
     sample_hybrid_search_response,
     sample_rerank_response,
@@ -301,13 +326,17 @@ def test_query_combines_timing_correctly(
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search.return_value = sample_hybrid_search_response
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
 
         mock_rerank = MockReranking.return_value
-        mock_rerank.rerank_with_metadata.return_value = sample_rerank_response
+        mock_rerank.rerank_with_metadata = AsyncMock(
+            return_value=sample_rerank_response
+        )
 
         mock_llm = MockLLM.return_value
-        mock_llm.generate_answer_with_retry.return_value = sample_llm_response
+        mock_llm.generate_answer_with_retry = AsyncMock(
+            return_value=sample_llm_response
+        )
 
         # Make request
         response = client.post("/api/query", json={"query": "What is Python?"})
@@ -331,7 +360,8 @@ def test_query_combines_timing_correctly(
         assert timing["total_ms"] == expected_total
 
 
-def test_query_preserves_all_scores(
+@pytest.mark.asyncio
+async def test_query_preserves_all_scores(
     client,
     sample_hybrid_search_response,
     sample_rerank_response,
@@ -345,13 +375,17 @@ def test_query_preserves_all_scores(
     ):
         # Setup mocks
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search.return_value = sample_hybrid_search_response
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
 
         mock_rerank = MockReranking.return_value
-        mock_rerank.rerank_with_metadata.return_value = sample_rerank_response
+        mock_rerank.rerank_with_metadata = AsyncMock(
+            return_value=sample_rerank_response
+        )
 
         mock_llm = MockLLM.return_value
-        mock_llm.generate_answer_with_retry.return_value = sample_llm_response
+        mock_llm.generate_answer_with_retry = AsyncMock(
+            return_value=sample_llm_response
+        )
 
         # Make request
         response = client.post("/api/query", json={"query": "What is Python?"})

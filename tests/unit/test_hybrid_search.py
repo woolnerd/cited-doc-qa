@@ -1,6 +1,6 @@
 """Tests for hybrid search service."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -9,9 +9,10 @@ from app.services.hybrid_search import HybridSearchService
 
 
 @pytest.fixture
-def mock_supabase():
-    """Mock Supabase client."""
+def mock_db():
+    """Mock DatabaseService."""
     mock = MagicMock()
+    mock.fetch = AsyncMock()
     return mock
 
 
@@ -27,6 +28,8 @@ def mock_embedding_service():
 def mock_vector_search():
     """Mock VectorSearchService."""
     mock = MagicMock()
+    mock.search = AsyncMock()
+    mock.search_by_document = AsyncMock()
     return mock
 
 
@@ -34,16 +37,18 @@ def mock_vector_search():
 def mock_fulltext_search():
     """Mock FullTextSearchService."""
     mock = MagicMock()
+    mock.search = AsyncMock()
+    mock.search_by_document = AsyncMock()
     return mock
 
 
 @pytest.fixture
 def hybrid_search_service(
-    mock_supabase, mock_embedding_service, mock_vector_search, mock_fulltext_search
+    mock_db, mock_embedding_service, mock_vector_search, mock_fulltext_search
 ):
     """Create HybridSearchService with mocked dependencies."""
     return HybridSearchService(
-        supabase_client=mock_supabase,
+        db=mock_db,
         embedding_service=mock_embedding_service,
         vector_search_service=mock_vector_search,
         full_text_search_service=mock_fulltext_search,
@@ -235,7 +240,8 @@ def test_merge_results_sorting(
         assert result["final_rank"] == idx + 1
 
 
-def test_search_success(
+@pytest.mark.asyncio
+async def test_search_success(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -246,7 +252,7 @@ def test_search_success(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query")
 
     # Check structure
     assert "results" in result
@@ -276,14 +282,15 @@ def test_search_success(
     mock_fulltext_search.search.assert_called_once()
 
 
-def test_search_with_custom_limits(
+@pytest.mark.asyncio
+async def test_search_with_custom_limits(
     hybrid_search_service, mock_vector_search, mock_fulltext_search
 ):
     """Test search with custom limits."""
     mock_vector_search.search.return_value = []
     mock_fulltext_search.search.return_value = []
 
-    hybrid_search_service.search(
+    await hybrid_search_service.search(
         "test query", top_k=10, vector_limit=20, fulltext_limit=25
     )
 
@@ -295,7 +302,8 @@ def test_search_with_custom_limits(
     assert fulltext_call[1]["limit"] == 25
 
 
-def test_search_top_k_limiting(
+@pytest.mark.asyncio
+async def test_search_top_k_limiting(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -306,7 +314,7 @@ def test_search_top_k_limiting(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = hybrid_search_service.search("test query", top_k=2)
+    result = await hybrid_search_service.search("test query", top_k=2)
 
     # Should only return top 2 results
     assert len(result["results"]) == 2
@@ -314,7 +322,8 @@ def test_search_top_k_limiting(
     assert result["metadata"]["merged_results_count"] == 4  # Before limiting
 
 
-def test_search_sources_tracking(
+@pytest.mark.asyncio
+async def test_search_sources_tracking(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -325,7 +334,7 @@ def test_search_sources_tracking(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query")
 
     sources = result["metadata"]["sources"]
     assert "vector_only" in sources
@@ -340,7 +349,8 @@ def test_search_sources_tracking(
     assert sources["fulltext_only"] == 1
 
 
-def test_search_empty_vector_results(
+@pytest.mark.asyncio
+async def test_search_empty_vector_results(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -350,7 +360,7 @@ def test_search_empty_vector_results(
     mock_vector_search.search.return_value = []
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query")
 
     assert len(result["results"]) == 3
     assert result["metadata"]["vector_results_count"] == 0
@@ -361,7 +371,8 @@ def test_search_empty_vector_results(
         assert res["source"] == "fulltext"
 
 
-def test_search_empty_fulltext_results(
+@pytest.mark.asyncio
+async def test_search_empty_fulltext_results(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -371,7 +382,7 @@ def test_search_empty_fulltext_results(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = []
 
-    result = hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query")
 
     assert len(result["results"]) == 3
     assert result["metadata"]["vector_results_count"] == 3
@@ -382,14 +393,15 @@ def test_search_empty_fulltext_results(
         assert res["source"] == "vector"
 
 
-def test_search_both_empty(
+@pytest.mark.asyncio
+async def test_search_both_empty(
     hybrid_search_service, mock_vector_search, mock_fulltext_search
 ):
     """Test search when both searches return no results."""
     mock_vector_search.search.return_value = []
     mock_fulltext_search.search.return_value = []
 
-    result = hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query")
 
     assert len(result["results"]) == 0
     assert result["metadata"]["total_results"] == 0
@@ -397,17 +409,19 @@ def test_search_both_empty(
     assert result["metadata"]["fulltext_results_count"] == 0
 
 
-def test_search_error_handling(
+@pytest.mark.asyncio
+async def test_search_error_handling(
     hybrid_search_service, mock_vector_search, mock_fulltext_search
 ):
     """Test error handling during search."""
     mock_vector_search.search.side_effect = Exception("Search error")
 
     with pytest.raises(DocumentProcessingError, match="Hybrid search failed"):
-        hybrid_search_service.search("test query")
+        await hybrid_search_service.search("test query")
 
 
-def test_search_by_document_success(
+@pytest.mark.asyncio
+async def test_search_by_document_success(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -419,7 +433,7 @@ def test_search_by_document_success(
     mock_vector_search.search_by_document.return_value = sample_vector_results
     mock_fulltext_search.search_by_document.return_value = sample_fulltext_results
 
-    result = hybrid_search_service.search_by_document("test query", document_id)
+    result = await hybrid_search_service.search_by_document("test query", document_id)
 
     # Check structure
     assert "results" in result
@@ -436,7 +450,8 @@ def test_search_by_document_success(
     assert fulltext_call[1]["document_id"] == document_id
 
 
-def test_search_by_document_with_limits(
+@pytest.mark.asyncio
+async def test_search_by_document_with_limits(
     hybrid_search_service, mock_vector_search, mock_fulltext_search
 ):
     """Test search by document with custom limits."""
@@ -444,7 +459,7 @@ def test_search_by_document_with_limits(
     mock_vector_search.search_by_document.return_value = []
     mock_fulltext_search.search_by_document.return_value = []
 
-    hybrid_search_service.search_by_document(
+    await hybrid_search_service.search_by_document(
         "test query", document_id, top_k=10, vector_limit=20, fulltext_limit=25
     )
 
@@ -456,7 +471,8 @@ def test_search_by_document_with_limits(
     assert fulltext_call[1]["limit"] == 25
 
 
-def test_search_by_document_error_handling(
+@pytest.mark.asyncio
+async def test_search_by_document_error_handling(
     hybrid_search_service, mock_vector_search, mock_fulltext_search
 ):
     """Test error handling during search by document."""
@@ -466,25 +482,25 @@ def test_search_by_document_error_handling(
     with pytest.raises(
         DocumentProcessingError, match="Hybrid search by document failed"
     ):
-        hybrid_search_service.search_by_document("test query", document_id)
+        await hybrid_search_service.search_by_document("test query", document_id)
 
 
-def test_service_initialization(mock_supabase):
+def test_service_initialization(mock_db):
     """Test that service initializes correctly with minimal dependencies."""
-    service = HybridSearchService(supabase_client=mock_supabase)
+    service = HybridSearchService(db=mock_db)
 
-    assert service.supabase is mock_supabase
+    assert service.db is mock_db
     assert service.embedding_service is not None
     assert service.vector_search is not None
     assert service.full_text_search is not None
 
 
 def test_service_initialization_with_all_dependencies(
-    mock_supabase, mock_embedding_service, mock_vector_search, mock_fulltext_search
+    mock_db, mock_embedding_service, mock_vector_search, mock_fulltext_search
 ):
     """Test that service uses provided dependencies."""
     service = HybridSearchService(
-        supabase_client=mock_supabase,
+        db=mock_db,
         embedding_service=mock_embedding_service,
         vector_search_service=mock_vector_search,
         full_text_search_service=mock_fulltext_search,
@@ -495,7 +511,8 @@ def test_service_initialization_with_all_dependencies(
     assert service.full_text_search is mock_fulltext_search
 
 
-def test_search_logs_query(
+@pytest.mark.asyncio
+async def test_search_logs_query(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -510,14 +527,15 @@ def test_search_logs_query(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = []
 
-    hybrid_search_service.search("test query for logging")
+    await hybrid_search_service.search("test query for logging")
 
     assert "Hybrid search for query" in caplog.text
     assert "test query for logging" in caplog.text
     assert "Hybrid search completed" in caplog.text
 
 
-def test_search_logs_timing(
+@pytest.mark.asyncio
+async def test_search_logs_timing(
     hybrid_search_service,
     mock_vector_search,
     mock_fulltext_search,
@@ -533,7 +551,7 @@ def test_search_logs_timing(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    hybrid_search_service.search("test query")
+    await hybrid_search_service.search("test query")
 
     assert "Vector search:" in caplog.text
     assert "results in" in caplog.text
