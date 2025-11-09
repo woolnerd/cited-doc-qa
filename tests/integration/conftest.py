@@ -4,7 +4,6 @@ import asyncio
 from uuid import uuid4
 
 import pytest
-from app.core.config import settings
 from app.services.database import DatabaseService
 
 
@@ -55,9 +54,7 @@ def cleanup_test_data(db_service):
         for doc_id in created_docs:
             try:
                 # Delete document (chunks cascade automatically)
-                await db_service.execute(
-                    "DELETE FROM documents WHERE id = $1", doc_id
-                )
+                await db_service.execute("DELETE FROM documents WHERE id = $1", doc_id)
             except Exception as e:
                 # Log but don't fail test on cleanup errors
                 print(f"Cleanup warning: Could not delete document {doc_id}: {e}")

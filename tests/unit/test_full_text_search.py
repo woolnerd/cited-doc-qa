@@ -196,7 +196,9 @@ async def test_search_by_document_no_results(full_text_search_service, mock_db):
     document_id = str(uuid4())
     mock_db.fetch.return_value = []
 
-    results = await full_text_search_service.search_by_document("test query", document_id)
+    results = await full_text_search_service.search_by_document(
+        "test query", document_id
+    )
 
     assert results == []
 

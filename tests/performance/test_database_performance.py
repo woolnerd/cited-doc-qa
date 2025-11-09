@@ -1,9 +1,8 @@
 """Performance benchmarks for database operations."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
-from app.core.config import settings
 from app.services.database import DatabaseService
 from app.services.full_text_search import FullTextSearchService
 from app.services.hybrid_search import HybridSearchService
@@ -45,6 +44,7 @@ async def test_vector_search_performance(benchmark, vector_search_service):
 
     def search():
         import asyncio
+
         return asyncio.get_event_loop().run_until_complete(
             vector_search_service.search(
                 query="machine learning",
@@ -64,6 +64,7 @@ async def test_full_text_search_performance(benchmark, full_text_search_service)
 
     def search():
         import asyncio
+
         return asyncio.get_event_loop().run_until_complete(
             full_text_search_service.search(query="Python programming", limit=10)
         )
@@ -75,11 +76,14 @@ async def test_full_text_search_performance(benchmark, full_text_search_service)
 @pytest.mark.asyncio
 async def test_hybrid_search_performance(benchmark, hybrid_search_service):
     """Benchmark hybrid search (vector + full-text) performance."""
-    with patch("app.services.embeddings.EmbeddingService.generate_query_embedding") as mock:
+    with patch(
+        "app.services.embeddings.EmbeddingService.generate_query_embedding"
+    ) as mock:
         mock.return_value = [0.1] * 768
 
         def search():
             import asyncio
+
             return asyncio.get_event_loop().run_until_complete(
                 hybrid_search_service.search(
                     query="What is machine learning?", top_k=10
@@ -97,6 +101,7 @@ async def test_document_filtered_search(benchmark, vector_search_service):
 
     def search():
         import asyncio
+
         return asyncio.get_event_loop().run_until_complete(
             vector_search_service.search_by_document(
                 query="test query", document_id=document_id, top_k=10
@@ -111,11 +116,14 @@ async def test_document_filtered_search(benchmark, vector_search_service):
 @pytest.mark.asyncio
 async def test_large_result_set_search(benchmark, hybrid_search_service):
     """Benchmark search with large result set (top_k=100)."""
-    with patch("app.services.embeddings.EmbeddingService.generate_query_embedding") as mock:
+    with patch(
+        "app.services.embeddings.EmbeddingService.generate_query_embedding"
+    ) as mock:
         mock.return_value = [0.1] * 768
 
         def search():
             import asyncio
+
             return asyncio.get_event_loop().run_until_complete(
                 hybrid_search_service.search(query="comprehensive search", top_k=100)
             )

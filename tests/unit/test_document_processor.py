@@ -1,7 +1,7 @@
 """Tests for document processing pipeline."""
 
 import logging
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -308,7 +308,9 @@ async def test_store_chunks_includes_metadata(mock_db_service):
     ]
     embeddings = [[0.1] * 768]
 
-    await processor._store_chunks(document_id=uuid4(), chunks=chunks, embeddings=embeddings)
+    await processor._store_chunks(
+        document_id=uuid4(), chunks=chunks, embeddings=embeddings
+    )
 
     # Verify execute was called with correct parameters
     assert mock_db_service.execute.call_count == 1

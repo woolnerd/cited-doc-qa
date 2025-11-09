@@ -1,9 +1,9 @@
 """Tests for document upload and management endpoints."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from app.core.dependencies import get_database
@@ -54,7 +54,7 @@ def test_upload_pdf_success(client_with_mock_db):
         "id": mock_document_id,
         "filename": "test.pdf",
         "file_type": "pdf",
-        "upload_date": datetime.now(timezone.utc),
+        "upload_date": datetime.now(UTC),
         "metadata": {"file_size": 100},
     }
 
@@ -82,7 +82,7 @@ def test_upload_docx_success(client_with_mock_db):
         "id": mock_document_id,
         "filename": "test.docx",
         "file_type": "docx",
-        "upload_date": datetime.now(timezone.utc),
+        "upload_date": datetime.now(UTC),
         "metadata": {"file_size": 150},
     }
 
@@ -113,7 +113,7 @@ def test_upload_txt_success(client_with_mock_db):
         "id": mock_document_id,
         "filename": "test.txt",
         "file_type": "txt",
-        "upload_date": datetime.now(timezone.utc),
+        "upload_date": datetime.now(UTC),
         "metadata": {"file_size": 50},
     }
 
@@ -197,7 +197,7 @@ def test_get_document_success(client_with_mock_db):
         "id": mock_document_id,
         "filename": "test.pdf",
         "file_type": "pdf",
-        "upload_date": datetime.now(timezone.utc),
+        "upload_date": datetime.now(UTC),
         "metadata": {"file_size": 100},
     }
 
@@ -247,7 +247,7 @@ def test_list_documents_success(client_with_mock_db):
             "id": doc_id_1,
             "filename": "test1.pdf",
             "file_type": "pdf",
-            "upload_date": datetime.now(timezone.utc),
+            "upload_date": datetime.now(UTC),
             "metadata": {"file_size": 100},
             "chunk_count": 5,
         },
@@ -255,7 +255,7 @@ def test_list_documents_success(client_with_mock_db):
             "id": doc_id_2,
             "filename": "test2.txt",
             "file_type": "txt",
-            "upload_date": datetime.now(timezone.utc),
+            "upload_date": datetime.now(UTC),
             "metadata": {"file_size": 50},
             "chunk_count": 3,
         },
