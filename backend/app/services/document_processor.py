@@ -163,11 +163,13 @@ class DocumentProcessor:
                 embedding_str = "[" + ",".join(str(x) for x in embedding) + "]"
 
                 # Prepare metadata
-                metadata_json = json.dumps({
-                    "token_count": chunk["token_count"],
-                    "content_length": len(chunk["content"]),
-                    "contextual_length": len(chunk["contextual_content"]),
-                })
+                metadata_json = json.dumps(
+                    {
+                        "token_count": chunk["token_count"],
+                        "content_length": len(chunk["content"]),
+                        "contextual_length": len(chunk["contextual_content"]),
+                    }
+                )
 
                 await self.db.execute(
                     insert_query,

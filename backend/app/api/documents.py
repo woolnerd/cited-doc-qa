@@ -132,10 +132,12 @@ async def upload_document(
 
     # Store document metadata in PostgreSQL
     try:
-        metadata_json = json.dumps({
-            "file_size": file_size,
-            "content_type": file.content_type,
-        })
+        metadata_json = json.dumps(
+            {
+                "file_size": file_size,
+                "content_type": file.content_type,
+            }
+        )
 
         query = """
             INSERT INTO documents (filename, file_type, upload_date, metadata)
@@ -144,11 +146,7 @@ async def upload_document(
         """
 
         result = await db.fetchrow(
-            query,
-            file.filename,
-            file_type,
-            upload_date,
-            metadata_json
+            query, file.filename, file_type, upload_date, metadata_json
         )
 
         if not result:
