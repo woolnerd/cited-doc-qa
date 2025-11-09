@@ -1,11 +1,12 @@
 """Document upload and management endpoints."""
 
+import json
 from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
-from app.core.dependencies import SupabaseClient
+from app.core.dependencies import Database
 from app.core.exceptions import DocumentProcessingError, FileValidationError
 from app.core.logging import get_logger
 from app.models.base import (
@@ -89,14 +90,15 @@ def get_file_type(filename: str) -> str:
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
+    *,
     file: UploadFile = File(...),
-    supabase: SupabaseClient = None,
+    db: Database,
 ) -> DocumentUploadResponse:
     """Upload a document for processing.
 
     Args:
         file: The file to upload
-        supabase: Supabase client (injected dependency)
+        db: Database service (injected dependency)
 
     Returns:
         Document upload confirmation with metadata
@@ -129,32 +131,32 @@ async def upload_document(
     file_type = get_file_type(file.filename)
     upload_date = datetime.now(UTC)
 
-    # Store document metadata in Supabase
+    # Store document metadata in PostgreSQL
     try:
-        result = (
-            supabase.table("documents")
-            .insert(
-                {
-                    "filename": file.filename,
-                    "file_type": file_type,
-                    "upload_date": upload_date.isoformat(),
-                    "metadata": {
-                        "file_size": file_size,
-                        "content_type": file.content_type,
-                    },
-                }
-            )
-            .execute()
+        metadata_json = json.dumps(
+            {
+                "file_size": file_size,
+                "content_type": file.content_type,
+            }
         )
 
-        if not result.data:
+        query = """
+            INSERT INTO documents (filename, file_type, upload_date, metadata)
+            VALUES ($1, $2, $3, $4::jsonb)
+            RETURNING id, filename, file_type, upload_date, metadata
+        """
+
+        result = await db.fetchrow(
+            query, file.filename, file_type, upload_date, metadata_json
+        )
+
+        if not result:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to store document metadata",
             )
 
-        document_data = result.data[0]
-        document_id = UUID(document_data["id"])
+        document_id = UUID(str(result["id"]))
 
         logger.info(f"Document uploaded successfully: {document_id}")
 
@@ -181,13 +183,13 @@ async def upload_document(
 @router.get("/{document_id}", response_model=DocumentMetadata)
 async def get_document(
     document_id: UUID,
-    supabase: SupabaseClient = None,
+    db: Database,
 ) -> DocumentMetadata:
     """Get document metadata by ID.
 
     Args:
         document_id: The document UUID
-        supabase: Supabase client (injected dependency)
+        db: Database service (injected dependency)
 
     Returns:
         Document metadata
@@ -196,24 +198,34 @@ async def get_document(
         HTTPException: If document not found or retrieval fails
     """
     try:
-        result = (
-            supabase.table("documents").select("*").eq("id", str(document_id)).execute()
-        )
+        query = """
+            SELECT id, filename, file_type, upload_date, metadata
+            FROM documents
+            WHERE id = $1
+        """
 
-        if not result.data:
+        result = await db.fetchrow(query, document_id)
+
+        if not result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Document {document_id} not found",
             )
 
-        document_data = result.data[0]
+        # Parse metadata if it's a JSON string
+        metadata = result["metadata"]
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                metadata = {}
 
         return DocumentMetadata(
-            id=UUID(document_data["id"]),
-            filename=document_data["filename"],
-            file_type=document_data["file_type"],
-            upload_date=datetime.fromisoformat(document_data["upload_date"]),
-            metadata=document_data.get("metadata", {}),
+            id=UUID(str(result["id"])),
+            filename=result["filename"],
+            file_type=result["file_type"],
+            upload_date=result["upload_date"],
+            metadata=metadata,
         )
 
     except HTTPException:
@@ -229,8 +241,9 @@ async def get_document(
 @router.post("/{document_id}/process", response_model=DocumentProcessingResponse)
 async def process_document(
     document_id: UUID,
+    *,
     file: UploadFile = File(...),
-    supabase: SupabaseClient = None,
+    db: Database,
 ) -> DocumentProcessingResponse:
     """Process an uploaded document through the RAG pipeline.
 
@@ -243,7 +256,7 @@ async def process_document(
     Args:
         document_id: UUID of the uploaded document
         file: The uploaded file content
-        supabase: Supabase client (injected dependency)
+        db: Database service (injected dependency)
 
     Returns:
         Processing results with statistics
@@ -253,28 +266,26 @@ async def process_document(
     """
     try:
         # Verify document exists
-        doc_result = (
-            supabase.table("documents").select("*").eq("id", str(document_id)).execute()
-        )
+        query = "SELECT filename, file_type FROM documents WHERE id = $1"
+        doc_result = await db.fetchrow(query, document_id)
 
-        if not doc_result.data:
+        if not doc_result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Document {document_id} not found",
             )
 
-        document_data = doc_result.data[0]
-        filename = document_data["filename"]
-        file_type = document_data["file_type"]
+        filename = doc_result["filename"]
+        file_type = doc_result["file_type"]
 
         # Read file content
         file_content = await file.read()
 
         # Process document through pipeline
         logger.info(f"Processing document {document_id}")
-        processor = DocumentProcessor(supabase_client=supabase)
+        processor = DocumentProcessor(db_service=db)
 
-        result = processor.process_document(
+        result = await processor.process_document(
             document_id=document_id,
             file_content=file_content,
             filename=filename,
@@ -297,7 +308,7 @@ async def process_document(
         logger.error(f"Document processing failed for {document_id}: {e}")
         # Delete the failed document from database
         try:
-            supabase.table("documents").delete().eq("id", str(document_id)).execute()
+            await db.execute("DELETE FROM documents WHERE id = $1", document_id)
             logger.info(f"Deleted failed document {document_id}")
         except Exception as del_error:
             logger.error(f"Failed to delete document {document_id}: {del_error}")
@@ -311,7 +322,7 @@ async def process_document(
         )
         # Delete the failed document from database
         try:
-            supabase.table("documents").delete().eq("id", str(document_id)).execute()
+            await db.execute("DELETE FROM documents WHERE id = $1", document_id)
             logger.info(f"Deleted failed document {document_id}")
         except Exception as del_error:
             logger.error(f"Failed to delete document {document_id}: {del_error}")
@@ -323,12 +334,12 @@ async def process_document(
 
 @router.get("", response_model=DocumentListResponse)
 async def list_documents(
-    supabase: SupabaseClient = None,
+    db: Database,
 ) -> DocumentListResponse:
     """List all documents with their metadata and chunk counts.
 
     Args:
-        supabase: Supabase client (injected dependency)
+        db: Database service (injected dependency)
 
     Returns:
         List of all documents with metadata
@@ -337,38 +348,47 @@ async def list_documents(
         HTTPException: If retrieval fails
     """
     try:
-        # Get all documents
-        result = (
-            supabase.table("documents")
-            .select("*")
-            .order("upload_date", desc=True)
-            .execute()
-        )
+        # Get all documents with chunk counts using a JOIN
+        query = """
+            SELECT
+                d.id,
+                d.filename,
+                d.file_type,
+                d.upload_date,
+                d.metadata,
+                COUNT(c.id) as chunk_count
+            FROM documents d
+            LEFT JOIN chunks c ON d.id = c.document_id
+            GROUP BY d.id, d.filename, d.file_type, d.upload_date, d.metadata
+            ORDER BY d.upload_date DESC
+        """
+
+        results = await db.fetch(query)
 
         documents = []
-        for doc_data in result.data:
-            # Get chunk count for this document
-            chunk_result = (
-                supabase.table("chunks")
-                .select("id", count="exact")
-                .eq("document_id", doc_data["id"])
-                .execute()
-            )
-
-            chunk_count = chunk_result.count if chunk_result.count is not None else 0
+        for row in results:
+            chunk_count = row["chunk_count"] or 0
 
             # Determine status based on chunk count
             doc_status = "ready" if chunk_count > 0 else "processing"
 
+            # Parse metadata if it's a JSON string
+            metadata = row["metadata"]
+            if isinstance(metadata, str):
+                try:
+                    metadata = json.loads(metadata)
+                except json.JSONDecodeError:
+                    metadata = {}
+
             documents.append(
                 DocumentListItem(
-                    id=UUID(doc_data["id"]),
-                    filename=doc_data["filename"],
-                    file_type=doc_data["file_type"],
-                    upload_date=datetime.fromisoformat(doc_data["upload_date"]),
+                    id=UUID(str(row["id"])),
+                    filename=row["filename"],
+                    file_type=row["file_type"],
+                    upload_date=row["upload_date"],
                     chunk_count=chunk_count,
                     status=doc_status,
-                    metadata=doc_data.get("metadata", {}),
+                    metadata=metadata,
                 )
             )
 
@@ -392,7 +412,7 @@ async def list_documents(
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
 async def delete_document(
     document_id: UUID,
-    supabase: SupabaseClient = None,
+    db: Database,
 ) -> DocumentDeleteResponse:
     """Delete a document and all its associated chunks.
 
@@ -401,7 +421,7 @@ async def delete_document(
 
     Args:
         document_id: The document UUID to delete
-        supabase: Supabase client (injected dependency)
+        db: Database service (injected dependency)
 
     Returns:
         Deletion confirmation with statistics
@@ -410,40 +430,30 @@ async def delete_document(
         HTTPException: If document not found or deletion fails
     """
     try:
-        # Check if document exists
-        doc_result = (
-            supabase.table("documents")
-            .select("id")
-            .eq("id", str(document_id))
-            .execute()
-        )
+        # Check if document exists and get chunk count in one query
+        check_query = """
+            SELECT
+                d.id,
+                COUNT(c.id) as chunk_count
+            FROM documents d
+            LEFT JOIN chunks c ON d.id = c.document_id
+            WHERE d.id = $1
+            GROUP BY d.id
+        """
 
-        if not doc_result.data:
+        doc_result = await db.fetchrow(check_query, document_id)
+
+        if not doc_result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Document {document_id} not found",
             )
 
-        # Get chunk count before deletion
-        chunk_result = (
-            supabase.table("chunks")
-            .select("id", count="exact")
-            .eq("document_id", str(document_id))
-            .execute()
-        )
-
-        chunks_to_delete = chunk_result.count if chunk_result.count is not None else 0
+        chunks_to_delete = doc_result["chunk_count"] or 0
 
         # Delete document (chunks will be cascade deleted)
-        delete_result = (
-            supabase.table("documents").delete().eq("id", str(document_id)).execute()
-        )
-
-        if not delete_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete document",
-            )
+        delete_query = "DELETE FROM documents WHERE id = $1"
+        await db.execute(delete_query, document_id)
 
         logger.info(
             f"Deleted document {document_id} and {chunks_to_delete} associated chunks"
