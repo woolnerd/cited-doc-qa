@@ -90,8 +90,9 @@ def get_file_type(filename: str) -> str:
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
+    *,
     file: UploadFile = File(...),
-    db: Database = None,
+    db: Database,
 ) -> DocumentUploadResponse:
     """Upload a document for processing.
 
@@ -182,7 +183,7 @@ async def upload_document(
 @router.get("/{document_id}", response_model=DocumentMetadata)
 async def get_document(
     document_id: UUID,
-    db: Database = None,
+    db: Database,
 ) -> DocumentMetadata:
     """Get document metadata by ID.
 
@@ -240,8 +241,9 @@ async def get_document(
 @router.post("/{document_id}/process", response_model=DocumentProcessingResponse)
 async def process_document(
     document_id: UUID,
+    *,
     file: UploadFile = File(...),
-    db: Database = None,
+    db: Database,
 ) -> DocumentProcessingResponse:
     """Process an uploaded document through the RAG pipeline.
 
@@ -332,7 +334,7 @@ async def process_document(
 
 @router.get("", response_model=DocumentListResponse)
 async def list_documents(
-    db: Database = None,
+    db: Database,
 ) -> DocumentListResponse:
     """List all documents with their metadata and chunk counts.
 
@@ -410,7 +412,7 @@ async def list_documents(
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
 async def delete_document(
     document_id: UUID,
-    db: Database = None,
+    db: Database,
 ) -> DocumentDeleteResponse:
     """Delete a document and all its associated chunks.
 
