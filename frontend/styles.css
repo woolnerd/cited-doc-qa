@@ -19,11 +19,16 @@
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-primary);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
 }
 
 /* Container */
@@ -36,11 +41,18 @@ body {
 /* Header */
 .header {
     text-align: center;
-    margin-bottom: 2rem;
+    padding: 2rem 1rem;
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .header h1 {
-    font-size: 2.5rem;
+    font-size: 3.5rem;
     font-weight: 700;
     color: var(--primary-color);
     margin-bottom: 0.5rem;
@@ -51,19 +63,72 @@ body {
     font-size: 1.1rem;
 }
 
+/* Main Layout */
+.main-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    min-height: calc(100vh - 180px);
+}
+
+/* Value Propositions */
+.value-props {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+}
+
+.value-prop {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.value-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+/* Sidebar */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
 /* Upload Section */
 .upload-section {
     background: var(--surface-color);
     border-radius: 0.75rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
+    padding: 1.5rem;
     box-shadow: var(--shadow);
+    height: fit-content;
+}
+
+/* Demo Warning */
+.demo-warning {
+    background-color: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
 }
 
 .upload-area {
     border: 2px dashed var(--border-color);
     border-radius: 0.5rem;
-    padding: 3rem;
+    padding: 2rem 1rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
@@ -81,10 +146,10 @@ body {
 }
 
 .upload-icon {
-    width: 4rem;
-    height: 4rem;
+    width: 3rem;
+    height: 3rem;
     color: var(--primary-color);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .upload-text {
@@ -184,45 +249,57 @@ body {
 }
 
 .document-item {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.5rem 0.75rem;
+    padding: 1rem;
     background-color: var(--bg-color);
     border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .document-icon {
     width: 1.5rem;
     height: 1.5rem;
     color: var(--primary-color);
-    margin-right: 0.75rem;
     flex-shrink: 0;
+    grid-row: 1 / 3;
+    align-self: start;
+    margin-top: 0.125rem;
 }
 
 .document-info {
-    flex: 1;
+    grid-column: 2;
+    grid-row: 1 / 3;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
+    min-width: 0;
 }
 
 .document-name {
     font-weight: 500;
     color: var(--text-primary);
+    font-size: 0.95rem;
+    word-break: break-word;
+    line-height: 1.4;
 }
 
 .document-meta {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .document-status {
-    font-size: 0.85rem;
-    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
     border-radius: 9999px;
     font-weight: 500;
-    margin-right: 0.5rem;
+    white-space: nowrap;
 }
 
 .status-ready {
@@ -253,6 +330,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
 }
 
 .delete-button:hover {
@@ -271,6 +351,9 @@ body {
     border-radius: 0.75rem;
     box-shadow: var(--shadow);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 220px);
 }
 
 .chat-header {
@@ -310,9 +393,10 @@ body {
 }
 
 .chat-container {
-    height: 500px;
+    flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .chat-messages {
@@ -580,6 +664,37 @@ body {
     height: 1.25rem;
 }
 
+/* Footer */
+.footer {
+    background-color: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    padding: 2rem 1rem;
+    margin-top: 2rem;
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.footer-content p {
+    margin: 0.25rem 0;
+}
+
+.footer-content a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-content a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;
@@ -591,24 +706,44 @@ body {
         padding: 1rem 0.5rem;
     }
 
+    .header {
+        padding: 1.5rem 1rem;
+    }
+
     .header h1 {
         font-size: 2rem;
     }
 
-    .upload-section,
+    .main-layout {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .sidebar {
+        order: 2;
+    }
+
     .chat-section {
+        order: 1;
+        height: 500px;
+    }
+
+    .value-props {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .upload-section {
         padding: 1rem;
     }
 
     .upload-area {
-        padding: 2rem 1rem;
+        padding: 1.5rem 1rem;
     }
 
     .message-content {
         max-width: 85%;
-    }
-
-    .chat-container {
-        height: 400px;
     }
 }

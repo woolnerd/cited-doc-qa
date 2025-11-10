@@ -4,49 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAG Chatbot - Document Q&A</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
             <h1>RAG Chatbot</h1>
             <p class="subtitle">Upload documents and ask questions</p>
-        </header>
+        </div>
+    </header>
 
-        <!-- Upload Section -->
-        <section class="upload-section" id="uploadSection">
-            <div class="upload-area" id="uploadArea">
-                <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <p class="upload-text">
-                    <strong>Click to upload</strong> or drag and drop
-                </p>
-                <p class="upload-hint">PDF, DOCX, or TXT (max 10MB)</p>
-                <input type="file" id="fileInput" accept=".pdf,.docx,.txt" hidden>
+    <div class="main-layout">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <!-- Demo Warning -->
+            <div class="demo-warning">
+                ⚠️ <strong>Demo:</strong> Docs deleted in 24hrs
             </div>
 
-            <!-- Upload Progress -->
-            <div class="upload-progress hidden" id="uploadProgress">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
+            <!-- Upload Section -->
+            <section class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="upload-text">
+                        <strong>Click to upload</strong> or drag and drop
+                    </p>
+                    <p class="upload-hint">PDF, DOCX, or TXT (max 10MB)</p>
+                    <input type="file" id="fileInput" accept=".pdf,.docx,.txt" hidden>
                 </div>
-                <p class="progress-text" id="progressText">Uploading...</p>
-            </div>
 
-            <!-- Upload Status -->
-            <div class="upload-status hidden" id="uploadStatus"></div>
+                <!-- Upload Progress -->
+                <div class="upload-progress hidden" id="uploadProgress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">Uploading...</p>
+                </div>
 
-            <!-- Uploaded Documents -->
-            <div class="documents-list hidden" id="documentsList">
-                <h3>Uploaded Documents</h3>
-                <div id="documentsContainer"></div>
-            </div>
-        </section>
+                <!-- Upload Status -->
+                <div class="upload-status hidden" id="uploadStatus"></div>
 
-        <!-- Chat Section -->
-        <section class="chat-section">
+                <!-- Uploaded Documents -->
+                <div class="documents-list hidden" id="documentsList">
+                    <h3>Documents</h3>
+                    <div id="documentsContainer"></div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Chat Section -->
+        <main class="chat-section">
             <div class="chat-header">
                 <button id="newConversationButton" class="new-conversation-button hidden" title="Start a new conversation">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,8 +90,17 @@
                     </svg>
                 </button>
             </div>
-        </section>
+        </main>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 FreeTime AI. All rights reserved.</p>
+            <p>Contact: <a href="mailto:hello@getfreetime.ai">hello@getfreetime.ai</a></p>
+            <p>Built by Dave Woolner</p>
+        </div>
+    </footer>
 
     <script src="app.js"></script>
 </body>
