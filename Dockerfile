@@ -44,6 +44,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 
 # Copy application code
 COPY backend/app /app/app
+COPY backend/scripts /app/scripts
 COPY frontend /app/frontend
 
 # Create non-root user for security
