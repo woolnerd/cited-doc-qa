@@ -252,7 +252,7 @@ async def test_search_success(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = await hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query", session_id="test-session")
 
     # Check structure
     assert "results" in result
@@ -291,7 +291,11 @@ async def test_search_with_custom_limits(
     mock_fulltext_search.search.return_value = []
 
     await hybrid_search_service.search(
-        "test query", top_k=10, vector_limit=20, fulltext_limit=25
+        "test query",
+        session_id="test-session",
+        top_k=10,
+        vector_limit=20,
+        fulltext_limit=25,
     )
 
     # Check that limits were passed correctly
@@ -314,7 +318,9 @@ async def test_search_top_k_limiting(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = await hybrid_search_service.search("test query", top_k=2)
+    result = await hybrid_search_service.search(
+        "test query", session_id="test-session", top_k=2
+    )
 
     # Should only return top 2 results
     assert len(result["results"]) == 2
@@ -334,7 +340,7 @@ async def test_search_sources_tracking(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = await hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query", session_id="test-session")
 
     sources = result["metadata"]["sources"]
     assert "vector_only" in sources
@@ -360,7 +366,7 @@ async def test_search_empty_vector_results(
     mock_vector_search.search.return_value = []
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    result = await hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query", session_id="test-session")
 
     assert len(result["results"]) == 3
     assert result["metadata"]["vector_results_count"] == 0
@@ -382,7 +388,7 @@ async def test_search_empty_fulltext_results(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = []
 
-    result = await hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query", session_id="test-session")
 
     assert len(result["results"]) == 3
     assert result["metadata"]["vector_results_count"] == 3
@@ -401,7 +407,7 @@ async def test_search_both_empty(
     mock_vector_search.search.return_value = []
     mock_fulltext_search.search.return_value = []
 
-    result = await hybrid_search_service.search("test query")
+    result = await hybrid_search_service.search("test query", session_id="test-session")
 
     assert len(result["results"]) == 0
     assert result["metadata"]["total_results"] == 0
@@ -417,7 +423,7 @@ async def test_search_error_handling(
     mock_vector_search.search.side_effect = Exception("Search error")
 
     with pytest.raises(DocumentProcessingError, match="Hybrid search failed"):
-        await hybrid_search_service.search("test query")
+        await hybrid_search_service.search("test query", session_id="test-session")
 
 
 @pytest.mark.asyncio
@@ -433,7 +439,9 @@ async def test_search_by_document_success(
     mock_vector_search.search_by_document.return_value = sample_vector_results
     mock_fulltext_search.search_by_document.return_value = sample_fulltext_results
 
-    result = await hybrid_search_service.search_by_document("test query", document_id)
+    result = await hybrid_search_service.search_by_document(
+        "test query", document_id, session_id="test-session"
+    )
 
     # Check structure
     assert "results" in result
@@ -460,7 +468,12 @@ async def test_search_by_document_with_limits(
     mock_fulltext_search.search_by_document.return_value = []
 
     await hybrid_search_service.search_by_document(
-        "test query", document_id, top_k=10, vector_limit=20, fulltext_limit=25
+        "test query",
+        document_id,
+        session_id="test-session",
+        top_k=10,
+        vector_limit=20,
+        fulltext_limit=25,
     )
 
     # Check that limits were passed correctly
@@ -482,7 +495,9 @@ async def test_search_by_document_error_handling(
     with pytest.raises(
         DocumentProcessingError, match="Hybrid search by document failed"
     ):
-        await hybrid_search_service.search_by_document("test query", document_id)
+        await hybrid_search_service.search_by_document(
+            "test query", document_id, session_id="test-session"
+        )
 
 
 def test_service_initialization(mock_db):
@@ -527,7 +542,9 @@ async def test_search_logs_query(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = []
 
-    await hybrid_search_service.search("test query for logging")
+    await hybrid_search_service.search(
+        "test query for logging", session_id="test-session"
+    )
 
     assert "Hybrid search for query" in caplog.text
     assert "test query for logging" in caplog.text
@@ -551,7 +568,7 @@ async def test_search_logs_timing(
     mock_vector_search.search.return_value = sample_vector_results
     mock_fulltext_search.search.return_value = sample_fulltext_results
 
-    await hybrid_search_service.search("test query")
+    await hybrid_search_service.search("test query", session_id="test-session")
 
     assert "Vector search:" in caplog.text
     assert "results in" in caplog.text

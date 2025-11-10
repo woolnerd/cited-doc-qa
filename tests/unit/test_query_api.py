@@ -143,7 +143,10 @@ async def test_query_success(
         mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
 
         # Make request
-        response = client.post("/api/query", json={"query": "What is Python?"})
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
 
         # Check response
         assert response.status_code == 200
@@ -187,7 +190,8 @@ async def test_query_with_top_k(
 
         # Make request with custom top_k
         response = client.post(
-            "/api/query", json={"query": "What is Python?", "top_k": 3}
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?", "top_k": 3},
         )
 
         assert response.status_code == 200
@@ -228,7 +232,11 @@ async def test_query_with_document_id(
         # Make request with document_id
         response = client.post(
             "/api/query",
-            json={"query": "What is Python?", "document_id": doc_id},
+            json={
+                "session_id": "test-session",
+                "query": "What is Python?",
+                "document_id": doc_id,
+            },
         )
 
         assert response.status_code == 200
@@ -253,7 +261,10 @@ async def test_query_no_results(client):
         )
 
         # Make request
-        response = client.post("/api/query", json={"query": "What is Python?"})
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -267,18 +278,26 @@ async def test_query_no_results(client):
 async def test_query_invalid_request(client):
     """Test query with invalid request data."""
     # Empty query
-    response = client.post("/api/query", json={"query": ""})
+    response = client.post(
+        "/api/query", json={"session_id": "test-session", "query": ""}
+    )
     assert response.status_code == 422  # Validation error
 
     # Query too long
-    response = client.post("/api/query", json={"query": "x" * 1001})
+    response = client.post(
+        "/api/query", json={"session_id": "test-session", "query": "x" * 1001}
+    )
     assert response.status_code == 422
 
     # Invalid top_k
-    response = client.post("/api/query", json={"query": "test", "top_k": 0})
+    response = client.post(
+        "/api/query", json={"session_id": "test-session", "query": "test", "top_k": 0}
+    )
     assert response.status_code == 422
 
-    response = client.post("/api/query", json={"query": "test", "top_k": 21})
+    response = client.post(
+        "/api/query", json={"session_id": "test-session", "query": "test", "top_k": 21}
+    )
     assert response.status_code == 422
 
 
@@ -291,7 +310,10 @@ async def test_query_service_error(client):
         mock_hybrid.search = AsyncMock(side_effect=Exception("Service error"))
 
         # Make request
-        response = client.post("/api/query", json={"query": "What is Python?"})
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
 
         assert response.status_code == 500
         data = response.json()
@@ -323,7 +345,10 @@ async def test_query_combines_timing_correctly(
         mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
 
         # Make request
-        response = client.post("/api/query", json={"query": "What is Python?"})
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
 
         data = response.json()
         timing = data["metadata"]["timing"]
@@ -368,7 +393,10 @@ async def test_query_preserves_all_scores(
         mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
 
         # Make request
-        response = client.post("/api/query", json={"query": "What is Python?"})
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
 
         data = response.json()
         source = data["sources"][0]

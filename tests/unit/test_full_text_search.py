@@ -60,7 +60,9 @@ async def test_search_success(full_text_search_service, mock_db, sample_search_r
     # Mock database fetch
     mock_db.fetch.return_value = sample_search_results
 
-    results = await full_text_search_service.search("Python programming")
+    results = await full_text_search_service.search(
+        "Python programming", session_id="test-session"
+    )
 
     assert len(results) == 3
     assert results[0]["relevance_score"] == 0.95
@@ -79,7 +81,9 @@ async def test_search_custom_limit(
     """Test search with custom limit."""
     mock_db.fetch.return_value = sample_search_results[:2]
 
-    results = await full_text_search_service.search("Python", limit=2)
+    results = await full_text_search_service.search(
+        "Python", session_id="test-session", limit=2
+    )
 
     assert len(results) == 2
 
@@ -92,7 +96,9 @@ async def test_search_no_results(full_text_search_service, mock_db):
     """Test search with no matching results."""
     mock_db.fetch.return_value = []
 
-    results = await full_text_search_service.search("nonexistent query")
+    results = await full_text_search_service.search(
+        "nonexistent query", session_id="test-session"
+    )
 
     assert results == []
 
@@ -102,7 +108,9 @@ async def test_search_none_results(full_text_search_service, mock_db):
     """Test search when database returns None."""
     mock_db.fetch.return_value = None
 
-    results = await full_text_search_service.search("test query")
+    results = await full_text_search_service.search(
+        "test query", session_id="test-session"
+    )
 
     assert results == []
 
@@ -114,7 +122,7 @@ async def test_search_formats_results_correctly(
     """Test that search results are formatted correctly."""
     mock_db.fetch.return_value = sample_search_results
 
-    results = await full_text_search_service.search("Python")
+    results = await full_text_search_service.search("Python", session_id="test-session")
 
     # Check all expected fields are present
     for result in results:
@@ -137,14 +145,14 @@ async def test_search_formats_results_correctly(
 async def test_search_empty_query(full_text_search_service):
     """Test search with empty query."""
     with pytest.raises(DocumentProcessingError, match="Search query cannot be empty"):
-        await full_text_search_service.search("")
+        await full_text_search_service.search("", session_id="test-session")
 
 
 @pytest.mark.asyncio
 async def test_search_whitespace_query(full_text_search_service):
     """Test search with whitespace-only query."""
     with pytest.raises(DocumentProcessingError, match="Search query cannot be empty"):
-        await full_text_search_service.search("   ")
+        await full_text_search_service.search("   ", session_id="test-session")
 
 
 @pytest.mark.asyncio
@@ -153,7 +161,7 @@ async def test_search_database_error(full_text_search_service, mock_db):
     mock_db.fetch.side_effect = Exception("Database error")
 
     with pytest.raises(DocumentProcessingError, match="Full-text search failed"):
-        await full_text_search_service.search("test query")
+        await full_text_search_service.search("test query", session_id="test-session")
 
 
 @pytest.mark.asyncio
@@ -164,7 +172,9 @@ async def test_search_by_document_success(
     document_id = str(uuid4())
     mock_db.fetch.return_value = sample_search_results
 
-    results = await full_text_search_service.search_by_document("Python", document_id)
+    results = await full_text_search_service.search_by_document(
+        "Python", document_id, session_id="test-session"
+    )
 
     assert len(results) == 3
 
@@ -181,7 +191,7 @@ async def test_search_by_document_custom_limit(
     mock_db.fetch.return_value = sample_search_results[:2]
 
     results = await full_text_search_service.search_by_document(
-        "Python", document_id, limit=2
+        "Python", document_id, session_id="test-session", limit=2
     )
 
     assert len(results) == 2
@@ -197,7 +207,7 @@ async def test_search_by_document_no_results(full_text_search_service, mock_db):
     mock_db.fetch.return_value = []
 
     results = await full_text_search_service.search_by_document(
-        "test query", document_id
+        "test query", document_id, session_id="test-session"
     )
 
     assert results == []
@@ -209,7 +219,9 @@ async def test_search_by_document_empty_query(full_text_search_service):
     document_id = str(uuid4())
 
     with pytest.raises(DocumentProcessingError, match="Search query cannot be empty"):
-        await full_text_search_service.search_by_document("", document_id)
+        await full_text_search_service.search_by_document(
+            "", document_id, session_id="test-session"
+        )
 
 
 @pytest.mark.asyncio
@@ -221,7 +233,9 @@ async def test_search_by_document_database_error(full_text_search_service, mock_
     with pytest.raises(
         DocumentProcessingError, match="Full-text search by document failed"
     ):
-        await full_text_search_service.search_by_document("test query", document_id)
+        await full_text_search_service.search_by_document(
+            "test query", document_id, session_id="test-session"
+        )
 
 
 @pytest.mark.asyncio
@@ -231,7 +245,7 @@ async def test_search_uses_default_limit(
     """Test that search uses default limit from config."""
     mock_db.fetch.return_value = sample_search_results
 
-    await full_text_search_service.search("test query")
+    await full_text_search_service.search("test query", session_id="test-session")
 
     # Verify database fetch was called
     mock_db.fetch.assert_called_once()
@@ -255,7 +269,7 @@ async def test_search_result_without_contextual_content(
 
     mock_db.fetch.return_value = result_data
 
-    results = await full_text_search_service.search("Python")
+    results = await full_text_search_service.search("Python", session_id="test-session")
 
     # Should use content as fallback for contextual_content
     assert results[0]["contextual_content"] == "Test content about Python"
@@ -276,7 +290,7 @@ async def test_search_result_without_metadata(full_text_search_service, mock_db)
 
     mock_db.fetch.return_value = result_data
 
-    results = await full_text_search_service.search("test")
+    results = await full_text_search_service.search("test", session_id="test-session")
 
     # Should use empty dict as default metadata
     assert results[0]["metadata"] == {}
@@ -297,7 +311,7 @@ async def test_search_result_without_rank(full_text_search_service, mock_db):
 
     mock_db.fetch.return_value = result_data
 
-    results = await full_text_search_service.search("test")
+    results = await full_text_search_service.search("test", session_id="test-session")
 
     # Should use 0.0 as default relevance score
     assert results[0]["relevance_score"] == 0.0
@@ -321,7 +335,9 @@ async def test_search_logs_query(
 
     mock_db.fetch.return_value = sample_search_results
 
-    await full_text_search_service.search("Python programming query")
+    await full_text_search_service.search(
+        "Python programming query", session_id="test-session"
+    )
 
     assert "Full-text search for query" in caplog.text
     assert "Python programming query" in caplog.text
@@ -338,7 +354,7 @@ async def test_search_logs_results_count(
 
     mock_db.fetch.return_value = sample_search_results
 
-    await full_text_search_service.search("Python")
+    await full_text_search_service.search("Python", session_id="test-session")
 
     assert "Found 3 results for full-text query" in caplog.text
 
@@ -352,7 +368,7 @@ async def test_search_with_special_characters(
 
     # Query with special characters
     query = "Python & data-science | machine-learning"
-    results = await full_text_search_service.search(query)
+    results = await full_text_search_service.search(query, session_id="test-session")
 
     assert len(results) == 3
 

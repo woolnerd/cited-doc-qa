@@ -73,7 +73,9 @@ async def test_search_success(
     # Mock database fetch
     mock_db.fetch.return_value = sample_search_results
 
-    results = await vector_search_service.search("test query")
+    results = await vector_search_service.search(
+        "test query", session_id="test-session"
+    )
 
     assert len(results) == 3
     assert results[0]["similarity_score"] == 0.95
@@ -98,7 +100,7 @@ async def test_search_custom_parameters(
     mock_db.fetch.return_value = sample_search_results[:2]
 
     results = await vector_search_service.search(
-        "test query", top_k=5, similarity_threshold=0.8
+        "test query", session_id="test-session", top_k=5, similarity_threshold=0.8
     )
 
     assert len(results) == 2
@@ -112,7 +114,9 @@ async def test_search_no_results(vector_search_service, mock_db):
     """Test search with no matching results."""
     mock_db.fetch.return_value = []
 
-    results = await vector_search_service.search("test query")
+    results = await vector_search_service.search(
+        "test query", session_id="test-session"
+    )
 
     assert results == []
 
@@ -122,7 +126,9 @@ async def test_search_none_results(vector_search_service, mock_db):
     """Test search when database returns None."""
     mock_db.fetch.return_value = None
 
-    results = await vector_search_service.search("test query")
+    results = await vector_search_service.search(
+        "test query", session_id="test-session"
+    )
 
     assert results == []
 
@@ -134,7 +140,9 @@ async def test_search_formats_results_correctly(
     """Test that search results are formatted correctly."""
     mock_db.fetch.return_value = sample_search_results
 
-    results = await vector_search_service.search("test query")
+    results = await vector_search_service.search(
+        "test query", session_id="test-session"
+    )
 
     # Check all expected fields are present
     for result in results:
@@ -163,7 +171,7 @@ async def test_search_embedding_generation_failure(
     )
 
     with pytest.raises(DocumentProcessingError, match="Embedding generation failed"):
-        await vector_search_service.search("test query")
+        await vector_search_service.search("test query", session_id="test-session")
 
 
 @pytest.mark.asyncio
@@ -172,7 +180,7 @@ async def test_search_database_error(vector_search_service, mock_db):
     mock_db.fetch.side_effect = Exception("Database error")
 
     with pytest.raises(DocumentProcessingError, match="Vector search failed"):
-        await vector_search_service.search("test query")
+        await vector_search_service.search("test query", session_id="test-session")
 
 
 @pytest.mark.asyncio
@@ -183,7 +191,9 @@ async def test_search_by_document_success(
     document_id = str(uuid4())
     mock_db.fetch.return_value = sample_search_results
 
-    results = await vector_search_service.search_by_document("test query", document_id)
+    results = await vector_search_service.search_by_document(
+        "test query", document_id, session_id="test-session"
+    )
 
     assert len(results) == 3
 
@@ -203,7 +213,11 @@ async def test_search_by_document_custom_parameters(
     mock_db.fetch.return_value = sample_search_results[:2]
 
     results = await vector_search_service.search_by_document(
-        "test query", document_id, top_k=5, similarity_threshold=0.85
+        "test query",
+        document_id,
+        session_id="test-session",
+        top_k=5,
+        similarity_threshold=0.85,
     )
 
     assert len(results) == 2
@@ -216,7 +230,9 @@ async def test_search_by_document_no_results(vector_search_service, mock_db):
     document_id = str(uuid4())
     mock_db.fetch.return_value = []
 
-    results = await vector_search_service.search_by_document("test query", document_id)
+    results = await vector_search_service.search_by_document(
+        "test query", document_id, session_id="test-session"
+    )
 
     assert results == []
 
@@ -230,7 +246,9 @@ async def test_search_by_document_database_error(vector_search_service, mock_db)
     with pytest.raises(
         DocumentProcessingError, match="Vector search by document failed"
     ):
-        await vector_search_service.search_by_document("test query", document_id)
+        await vector_search_service.search_by_document(
+            "test query", document_id, session_id="test-session"
+        )
 
 
 @pytest.mark.asyncio
@@ -240,7 +258,7 @@ async def test_search_uses_default_settings(
     """Test that search uses default settings from config."""
     mock_db.fetch.return_value = sample_search_results
 
-    await vector_search_service.search("test query")
+    await vector_search_service.search("test query", session_id="test-session")
 
     # Check database was called
     mock_db.fetch.assert_called_once()
@@ -262,7 +280,9 @@ async def test_search_result_without_contextual_content(vector_search_service, m
 
     mock_db.fetch.return_value = result_data
 
-    results = await vector_search_service.search("test query")
+    results = await vector_search_service.search(
+        "test query", session_id="test-session"
+    )
 
     # Should use content as fallback for contextual_content
     assert results[0]["contextual_content"] == "Test content"
@@ -283,7 +303,9 @@ async def test_search_result_without_metadata(vector_search_service, mock_db):
 
     mock_db.fetch.return_value = result_data
 
-    results = await vector_search_service.search("test query")
+    results = await vector_search_service.search(
+        "test query", session_id="test-session"
+    )
 
     # Should use empty dict as default metadata
     assert results[0]["metadata"] == {}
@@ -320,7 +342,9 @@ async def test_search_logs_query(
 
     mock_db.fetch.return_value = sample_search_results
 
-    await vector_search_service.search("test query for logging")
+    await vector_search_service.search(
+        "test query for logging", session_id="test-session"
+    )
 
     assert "Vector search for query" in caplog.text
     assert "test query for logging" in caplog.text
@@ -337,6 +361,6 @@ async def test_search_logs_results_count(
 
     mock_db.fetch.return_value = sample_search_results
 
-    await vector_search_service.search("test query")
+    await vector_search_service.search("test query", session_id="test-session")
 
     assert "Found 3 results" in caplog.text
