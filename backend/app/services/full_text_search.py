@@ -25,12 +25,14 @@ class FullTextSearchService:
     async def search(
         self,
         query: str,
+        session_id: str,
         limit: int | None = None,
     ) -> list[dict[str, Any]]:
-        """Perform full-text search for a query.
+        """Perform full-text search for a query with session filtering.
 
         Args:
             query: Search query text
+            session_id: Session identifier for filtering results
             limit: Maximum number of results to return (default from settings)
 
         Returns:
@@ -47,10 +49,11 @@ class FullTextSearchService:
 
             logger.info(f"Full-text search for query: '{query[:50]}...'")
 
-            # Perform full-text search using PostgreSQL function
+            # Perform full-text search using PostgreSQL function with session filtering
             results = await self.db.fetch(
-                "SELECT * FROM search_chunks_fulltext($1, $2)",
+                "SELECT * FROM search_chunks_fulltext_by_session($1, $2, $3)",
                 query,
+                session_id,
                 limit,
             )
 
@@ -97,13 +100,15 @@ class FullTextSearchService:
         self,
         query: str,
         document_id: str,
+        session_id: str,
         limit: int | None = None,
     ) -> list[dict[str, Any]]:
-        """Perform full-text search within a specific document.
+        """Perform full-text search within a specific document with session verification.
 
         Args:
             query: Search query text
             document_id: UUID of the document to search within
+            session_id: Session identifier for verifying document access
             limit: Maximum number of results to return (default from settings)
 
         Returns:
@@ -122,11 +127,12 @@ class FullTextSearchService:
                 f"Full-text search in document {document_id} for query: '{query[:50]}...'"
             )
 
-            # Perform full-text search filtered by document_id
+            # Perform full-text search filtered by document_id with session verification
             results = await self.db.fetch(
-                "SELECT * FROM search_chunks_fulltext_by_document($1, $2::uuid, $3)",
+                "SELECT * FROM search_chunks_fulltext_by_document_and_session($1, $2::uuid, $3, $4)",
                 query,
                 document_id,
+                session_id,
                 limit,
             )
 

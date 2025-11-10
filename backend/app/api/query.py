@@ -72,17 +72,19 @@ async def query(
             if enhanced_query != request.query:
                 logger.info(f"Query enhanced: '{request.query}' → '{enhanced_query}'")
 
-        # Step 2: Hybrid search (use enhanced query)
-        logger.info("Running hybrid search...")
+        # Step 2: Hybrid search (use enhanced query with session filtering)
+        logger.info(f"Running hybrid search for session: {request.session_id}")
         if request.document_id:
             search_response = await hybrid_search.search_by_document(
                 query=enhanced_query,
                 document_id=str(request.document_id),
+                session_id=request.session_id,
                 top_k=30,  # Get more results for reranking
             )
         else:
             search_response = await hybrid_search.search(
                 query=enhanced_query,
+                session_id=request.session_id,
                 top_k=30,  # Get more results for reranking
             )
 

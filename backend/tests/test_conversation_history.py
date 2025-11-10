@@ -22,9 +22,11 @@ class TestConversationHistoryModels:
             ConversationMessage(role="assistant", content="First answer"),
         ]
         request = QueryRequest(
+            session_id="test-session",
             query="Second question",
             conversation_history=history,
         )
+        assert request.session_id == "test-session"
         assert request.query == "Second question"
         assert len(request.conversation_history) == 2
         assert request.conversation_history[0].role == "user"
@@ -32,7 +34,8 @@ class TestConversationHistoryModels:
 
     def test_query_request_without_conversation_history(self):
         """Test QueryRequest without conversation history."""
-        request = QueryRequest(query="Single question")
+        request = QueryRequest(session_id="test-session", query="Single question")
+        assert request.session_id == "test-session"
         assert request.query == "Single question"
         assert request.conversation_history is None
 

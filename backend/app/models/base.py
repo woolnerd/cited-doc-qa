@@ -98,6 +98,7 @@ class ConversationMessage(BaseModel):
 class QueryRequest(BaseModel):
     """Request model for query endpoint."""
 
+    session_id: str = Field(..., min_length=1, description="Session identifier")
     query: str = Field(..., min_length=1, max_length=1000, description="User query")
     top_k: int = Field(
         default=5, ge=1, le=20, description="Number of results to return"
@@ -162,6 +163,7 @@ class DocumentListItem(BaseModel):
     file_type: str
     upload_date: datetime
     chunk_count: int
+    session_id: str
     status: str = "ready"  # ready, processing, failed
     metadata: dict[str, Any] = Field(default_factory=dict)
 

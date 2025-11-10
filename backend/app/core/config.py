@@ -71,6 +71,7 @@ class Settings(BaseSettings):
     RERANK_MODEL: str = "rerank-english-v3.0"
     RERANK_MAX_RETRIES: int = 3
     RERANK_RETRY_DELAY: float = 1.0  # seconds
+    RERANK_SCORE_THRESHOLD: float = 0.1  # Minimum rerank score to include in results
 
     # LLM Configuration (via Openrouter)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"

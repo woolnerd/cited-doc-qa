@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 
 from app.core.dependencies import Database
 from app.core.exceptions import DocumentProcessingError, FileValidationError
@@ -92,12 +92,14 @@ def get_file_type(filename: str) -> str:
 async def upload_document(
     *,
     file: UploadFile = File(...),
+    session_id: str = Form(...),
     db: Database,
 ) -> DocumentUploadResponse:
     """Upload a document for processing.
 
     Args:
         file: The file to upload
+        session_id: Session identifier for multi-user isolation
         db: Database service (injected dependency)
 
     Returns:
@@ -107,7 +109,9 @@ async def upload_document(
         FileValidationError: If file validation fails
         HTTPException: If document storage fails
     """
-    logger.info(f"Received upload request for file: {file.filename}")
+    logger.info(
+        f"Received upload request for file: {file.filename} (session: {session_id})"
+    )
 
     # Validate file
     validate_file(file)
@@ -141,13 +145,13 @@ async def upload_document(
         )
 
         query = """
-            INSERT INTO documents (filename, file_type, upload_date, metadata)
-            VALUES ($1, $2, $3, $4::jsonb)
-            RETURNING id, filename, file_type, upload_date, metadata
+            INSERT INTO documents (filename, file_type, upload_date, session_id, metadata)
+            VALUES ($1, $2, $3, $4, $5::jsonb)
+            RETURNING id, filename, file_type, upload_date, session_id, metadata
         """
 
         result = await db.fetchrow(
-            query, file.filename, file_type, upload_date, metadata_json
+            query, file.filename, file_type, upload_date, session_id, metadata_json
         )
 
         if not result:
@@ -334,36 +338,41 @@ async def process_document(
 
 @router.get("", response_model=DocumentListResponse)
 async def list_documents(
+    session_id: str = Query(...),
+    *,
     db: Database,
 ) -> DocumentListResponse:
-    """List all documents with their metadata and chunk counts.
+    """List documents for current session and global documents.
 
     Args:
+        session_id: Session identifier (from query param)
         db: Database service (injected dependency)
 
     Returns:
-        List of all documents with metadata
+        List of session + global documents with metadata
 
     Raises:
         HTTPException: If retrieval fails
     """
     try:
-        # Get all documents with chunk counts using a JOIN
+        # Get session documents + global documents with chunk counts
         query = """
             SELECT
                 d.id,
                 d.filename,
                 d.file_type,
                 d.upload_date,
+                d.session_id,
                 d.metadata,
                 COUNT(c.id) as chunk_count
             FROM documents d
             LEFT JOIN chunks c ON d.id = c.document_id
-            GROUP BY d.id, d.filename, d.file_type, d.upload_date, d.metadata
+            WHERE d.session_id = $1 OR d.session_id = 'global'
+            GROUP BY d.id, d.filename, d.file_type, d.upload_date, d.session_id, d.metadata
             ORDER BY d.upload_date DESC
         """
 
-        results = await db.fetch(query)
+        results = await db.fetch(query, session_id)
 
         documents = []
         for row in results:
@@ -387,6 +396,7 @@ async def list_documents(
                     file_type=row["file_type"],
                     upload_date=row["upload_date"],
                     chunk_count=chunk_count,
+                    session_id=row["session_id"],
                     status=doc_status,
                     metadata=metadata,
                 )
@@ -412,33 +422,38 @@ async def list_documents(
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
 async def delete_document(
     document_id: UUID,
+    session_id: str = Query(...),
+    *,
     db: Database,
 ) -> DocumentDeleteResponse:
     """Delete a document and all its associated chunks.
 
     The database cascade delete will automatically remove all chunks
-    associated with this document.
+    associated with this document. Users can only delete their own
+    session documents, not global documents.
 
     Args:
         document_id: The document UUID to delete
+        session_id: Session identifier (from query param)
         db: Database service (injected dependency)
 
     Returns:
         Deletion confirmation with statistics
 
     Raises:
-        HTTPException: If document not found or deletion fails
+        HTTPException: If document not found, unauthorized, or deletion fails
     """
     try:
-        # Check if document exists and get chunk count in one query
+        # Check if document exists, get session_id and chunk count
         check_query = """
             SELECT
                 d.id,
+                d.session_id,
                 COUNT(c.id) as chunk_count
             FROM documents d
             LEFT JOIN chunks c ON d.id = c.document_id
             WHERE d.id = $1
-            GROUP BY d.id
+            GROUP BY d.id, d.session_id
         """
 
         doc_result = await db.fetchrow(check_query, document_id)
@@ -447,6 +462,22 @@ async def delete_document(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Document {document_id} not found",
+            )
+
+        doc_session_id = doc_result["session_id"]
+
+        # Prevent deletion of global documents
+        if doc_session_id == "global":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot delete global documents",
+            )
+
+        # Verify session ownership
+        if doc_session_id != session_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot delete documents from other sessions",
             )
 
         chunks_to_delete = doc_result["chunk_count"] or 0

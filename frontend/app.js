@@ -3,6 +3,23 @@
 const API_BASE_URL =
   window.location.hostname === "localhost" ? "http://localhost:8000" : "";
 
+// Session Management
+// Generate or retrieve session ID from localStorage
+function getSessionId() {
+  let sessionId = localStorage.getItem("rag_session_id");
+  if (!sessionId) {
+    sessionId =
+      "session_" +
+      Date.now() +
+      "_" +
+      Math.random().toString(36).substr(2, 9);
+    localStorage.setItem("rag_session_id", sessionId);
+  }
+  return sessionId;
+}
+
+const SESSION_ID = getSessionId();
+
 // State
 const state = {
   documents: [],
@@ -12,6 +29,7 @@ const state = {
   isProcessing: false,
   isQuerying: false,
   isLoadingDocuments: false,
+  sessionId: SESSION_ID,
 };
 
 // DOM Elements
@@ -173,6 +191,7 @@ async function handleFile(file) {
 async function uploadDocument(file) {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("session_id", state.sessionId);
 
   const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
     method: "POST",
@@ -217,9 +236,12 @@ async function loadDocuments() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    const response = await fetch(`${API_BASE_URL}/api/documents`, {
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/documents?session_id=${state.sessionId}`,
+      {
+        signal: controller.signal,
+      }
+    );
 
     clearTimeout(timeout);
 
@@ -261,7 +283,7 @@ async function deleteDocument(documentId) {
 
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/documents/${documentId}`,
+      `${API_BASE_URL}/api/documents/${documentId}?session_id=${state.sessionId}`,
       {
         method: "DELETE",
       }
@@ -322,6 +344,7 @@ async function handleSendQuery() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        session_id: state.sessionId,
         query: query,
         top_k: 5,
         conversation_history: conversationHistory,

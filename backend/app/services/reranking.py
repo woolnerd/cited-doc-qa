@@ -103,16 +103,24 @@ class RerankingService:
                     f"Reranking completed in {rerank_time:.3f}s, returned {len(response.results)} results"
                 )
 
-                # Process reranked results
+                # Process reranked results and filter by threshold
                 reranked_results = []
                 for idx, rerank_result in enumerate(response.results):
                     original_result = results[rerank_result.index]
+                    rerank_score = rerank_result.relevance_score
+
+                    # Filter out results below threshold
+                    if rerank_score < settings.RERANK_SCORE_THRESHOLD:
+                        logger.debug(
+                            f"Filtering out result with rerank score {rerank_score:.3f} (below threshold {settings.RERANK_SCORE_THRESHOLD})"
+                        )
+                        continue
 
                     # Add Cohere relevance score
                     reranked_results.append(
                         {
                             **original_result,
-                            "rerank_score": rerank_result.relevance_score,
+                            "rerank_score": rerank_score,
                             "rerank_rank": idx + 1,
                             "original_rank": original_result.get("final_rank"),
                             "original_rrf_score": original_result.get("rrf_score"),

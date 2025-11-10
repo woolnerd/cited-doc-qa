@@ -133,14 +133,16 @@ class HybridSearchService:
     async def search(
         self,
         query: str,
+        session_id: str,
         top_k: int = 30,
         vector_limit: int | None = None,
         fulltext_limit: int | None = None,
     ) -> dict[str, Any]:
-        """Perform hybrid search combining vector and full-text search.
+        """Perform hybrid search combining vector and full-text search with session filtering.
 
         Args:
             query: Search query text
+            session_id: Session identifier for filtering results
             top_k: Number of final results to return (default 30)
             vector_limit: Limit for vector search (default from settings)
             fulltext_limit: Limit for full-text search (default from settings)
@@ -164,6 +166,7 @@ class HybridSearchService:
             vector_start = time.time()
             vector_results = await self.vector_search.search(
                 query=query,
+                session_id=session_id,
                 top_k=vector_limit,
             )
             vector_time = time.time() - vector_start
@@ -172,6 +175,7 @@ class HybridSearchService:
             fulltext_start = time.time()
             fulltext_results = await self.full_text_search.search(
                 query=query,
+                session_id=session_id,
                 limit=fulltext_limit,
             )
             fulltext_time = time.time() - fulltext_start
@@ -233,15 +237,17 @@ class HybridSearchService:
         self,
         query: str,
         document_id: str,
+        session_id: str,
         top_k: int = 30,
         vector_limit: int | None = None,
         fulltext_limit: int | None = None,
     ) -> dict[str, Any]:
-        """Perform hybrid search within a specific document.
+        """Perform hybrid search within a specific document with session verification.
 
         Args:
             query: Search query text
             document_id: UUID of the document to search within
+            session_id: Session identifier for verifying document access
             top_k: Number of final results to return (default 30)
             vector_limit: Limit for vector search (default from settings)
             fulltext_limit: Limit for full-text search (default from settings)
@@ -268,6 +274,7 @@ class HybridSearchService:
             vector_results = await self.vector_search.search_by_document(
                 query=query,
                 document_id=document_id,
+                session_id=session_id,
                 top_k=vector_limit,
             )
             vector_time = time.time() - vector_start
@@ -277,6 +284,7 @@ class HybridSearchService:
             fulltext_results = await self.full_text_search.search_by_document(
                 query=query,
                 document_id=document_id,
+                session_id=session_id,
                 limit=fulltext_limit,
             )
             fulltext_time = time.time() - fulltext_start

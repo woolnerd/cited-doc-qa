@@ -32,13 +32,15 @@ class VectorSearchService:
     async def search(
         self,
         query: str,
+        session_id: str,
         top_k: int | None = None,
         similarity_threshold: float | None = None,
     ) -> list[dict[str, Any]]:
-        """Perform vector similarity search for a query.
+        """Perform vector similarity search for a query with session filtering.
 
         Args:
             query: Search query text
+            session_id: Session identifier for filtering results
             top_k: Number of top results to return (default from settings)
             similarity_threshold: Minimum similarity score (0-1, default from settings)
 
@@ -65,10 +67,11 @@ class VectorSearchService:
             # Convert embedding list to PostgreSQL vector format string
             vector_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
-            # Perform vector similarity search using PostgreSQL function
+            # Perform vector similarity search using PostgreSQL function with session filtering
             results = await self.db.fetch(
-                "SELECT * FROM search_chunks($1::vector, $2, $3)",
+                "SELECT * FROM search_chunks_by_session($1::vector, $2, $3, $4)",
                 vector_str,
+                session_id,
                 top_k,
                 similarity_threshold,
             )
@@ -116,14 +119,16 @@ class VectorSearchService:
         self,
         query: str,
         document_id: str,
+        session_id: str,
         top_k: int | None = None,
         similarity_threshold: float | None = None,
     ) -> list[dict[str, Any]]:
-        """Perform vector similarity search within a specific document.
+        """Perform vector similarity search within a specific document with session verification.
 
         Args:
             query: Search query text
             document_id: UUID of the document to search within
+            session_id: Session identifier for verifying document access
             top_k: Number of top results to return (default from settings)
             similarity_threshold: Minimum similarity score (0-1, default from settings)
 
@@ -149,11 +154,12 @@ class VectorSearchService:
             # Convert embedding list to PostgreSQL vector format string
             vector_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
-            # Perform vector similarity search filtered by document_id
+            # Perform vector similarity search filtered by document_id with session verification
             results = await self.db.fetch(
-                "SELECT * FROM search_chunks_by_document($1::vector, $2::uuid, $3, $4)",
+                "SELECT * FROM search_chunks_by_document_and_session($1::vector, $2::uuid, $3, $4, $5)",
                 vector_str,
                 document_id,
+                session_id,
                 top_k,
                 similarity_threshold,
             )
