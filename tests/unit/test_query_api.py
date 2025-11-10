@@ -19,9 +19,9 @@ def mock_db():
 @pytest.fixture
 def client(mock_db):
     """Create test client with mocked DatabaseService dependency."""
-    from app.core.dependencies import get_db
+    from app.core.dependencies import get_database
 
-    app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_database] = lambda: mock_db
     yield TestClient(app)
     app.dependency_overrides.clear()
 
