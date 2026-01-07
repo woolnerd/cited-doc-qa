@@ -33,7 +33,7 @@ RETURNS TABLE (
     document_id uuid,
     content text,
     contextual_content text,
-    rank float,
+    rank double precision,
     metadata jsonb
 )
 LANGUAGE plpgsql
@@ -45,7 +45,7 @@ BEGIN
         c.document_id,
         c.content,
         c.contextual_content,
-        ts_rank(c.fts, websearch_to_tsquery('english', search_query)) as rank,
+        ts_rank(c.fts, websearch_to_tsquery('english', search_query))::double precision as rank,
         (c.metadata || jsonb_build_object(
             'document_name', d.filename,
             'chunk_index', c.chunk_index
@@ -69,7 +69,7 @@ RETURNS TABLE (
     document_id uuid,
     content text,
     contextual_content text,
-    rank float,
+    rank double precision,
     metadata jsonb
 )
 LANGUAGE plpgsql
@@ -81,7 +81,7 @@ BEGIN
         c.document_id,
         c.content,
         c.contextual_content,
-        ts_rank(c.fts, websearch_to_tsquery('english', search_query)) as rank,
+        ts_rank(c.fts, websearch_to_tsquery('english', search_query))::double precision as rank,
         (c.metadata || jsonb_build_object(
             'document_name', d.filename,
             'chunk_index', c.chunk_index
@@ -110,7 +110,7 @@ RETURNS TABLE (
     document_id uuid,
     content text,
     contextual_content text,
-    rank float,
+    rank double precision,
     metadata jsonb
 )
 LANGUAGE plpgsql
@@ -122,7 +122,7 @@ BEGIN
         c.document_id,
         c.content,
         c.contextual_content,
-        ts_rank(c.fts, websearch_to_tsquery('english', search_query)) as rank,
+        ts_rank(c.fts, websearch_to_tsquery('english', search_query))::double precision as rank,
         (c.metadata || jsonb_build_object(
             'document_name', d.filename,
             'chunk_index', c.chunk_index
@@ -148,7 +148,7 @@ RETURNS TABLE (
     document_id uuid,
     content text,
     contextual_content text,
-    rank float,
+    rank double precision,
     metadata jsonb
 )
 LANGUAGE plpgsql
@@ -160,7 +160,7 @@ BEGIN
         c.document_id,
         c.content,
         c.contextual_content,
-        ts_rank(c.fts, websearch_to_tsquery('english', search_query)) as rank,
+        ts_rank(c.fts, websearch_to_tsquery('english', search_query))::double precision as rank,
         (c.metadata || jsonb_build_object(
             'document_name', d.filename,
             'chunk_index', c.chunk_index
