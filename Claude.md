@@ -71,7 +71,8 @@ rag-demo/
 │   ├── 002_add_search_functions.sql
 │   ├── 003_fix_search_function_types.sql  # CRITICAL!
 │   ├── 004_add_session_isolation.sql
-│   └── 005_add_session_search_functions.sql
+│   ├── 005_add_session_search_functions.sql
+│   └── 006_optimize_fulltext_search.sql  # PERFORMANCE!
 ├── deployment/                 # VPS deployment documentation
 │   └── vps/                   # VPS-specific guides and scripts
 ├── database/                   # Database documentation
@@ -165,6 +166,38 @@ Without this migration:
 - Vector search may work
 - Full-text search will fail with type errors
 - Queries return 500 errors
+
+### Migration 006 - Full-Text Search Optimization
+
+**Performance improvement** - should be applied for faster searches:
+
+```sql
+-- migrations/006_optimize_fulltext_search.sql
+-- Fixes full-text search to use GIN index instead of runtime tsvector computation
+```
+
+**What it fixes:**
+
+The initial schema created a GIN index on a pre-computed `fts` column:
+```sql
+ALTER TABLE chunks ADD COLUMN fts tsvector
+    GENERATED ALWAYS AS (to_tsvector('english', coalesce(contextual_content, content))) STORED;
+CREATE INDEX idx_chunks_fts ON chunks USING GIN(fts);
+```
+
+But the search functions were computing `to_tsvector('english', c.content)` at query time, bypassing the index!
+
+**Benefits after migration:**
+- ✅ Uses pre-computed GIN index (much faster)
+- ✅ No runtime tsvector computation
+- ✅ Searches both `contextual_content` and `content` (as originally designed)
+- ✅ Significantly improves full-text search performance
+
+**Affected functions:**
+- `search_chunks_fulltext`
+- `search_chunks_fulltext_by_document`
+- `search_chunks_fulltext_by_session`
+- `search_chunks_fulltext_by_document_and_session`
 
 ### Common Database Issues
 
@@ -547,6 +580,54 @@ Not yet configured. Planned:
 - Docker containers (Issue #14)
 - GitHub Actions CI/CD (Issue #15)
 - VPS deployment (Issue #16)
+
+## Maintenance & Cleanup
+
+### Automated Cleanup Script
+
+**Purpose**: Prevents database bloat by deleting old demo documents (Issue #70)
+
+**Location**: `backend/scripts/cleanup_demo.py`
+
+**Usage (Docker - RECOMMENDED FOR VPS)**:
+
+```bash
+# Run cleanup in Docker container (deletes docs older than 24h)
+docker exec rag-chatbot-prod python /app/scripts/cleanup_demo.py
+
+# Dry run (see what would be deleted)
+docker exec rag-chatbot-prod python /app/scripts/cleanup_demo.py --dry-run
+
+# Custom time threshold
+docker exec rag-chatbot-prod python /app/scripts/cleanup_demo.py --hours 48
+```
+
+**Usage (Non-Docker/venv)**:
+
+```bash
+cd /root/rag-demo
+/root/rag-demo/venv/bin/python backend/scripts/cleanup_demo.py --dry-run
+```
+
+**Automated Scheduling (Docker with Cron)**:
+
+```bash
+# Cron job - runs daily at 2 AM
+crontab -e
+0 2 * * * docker exec rag-chatbot-prod python /app/scripts/cleanup_demo.py >> /var/log/rag-cleanup.log 2>&1
+
+# Or every 6 hours
+0 */6 * * * docker exec rag-chatbot-prod python /app/scripts/cleanup_demo.py >> /var/log/rag-cleanup.log 2>&1
+```
+
+**Features**:
+- Deletes documents older than 24 hours by default
+- Protects global documents (excludes `session_id='global'`)
+- Cascades deletion to chunks and embeddings
+- Comprehensive logging and statistics
+- Dry-run mode for testing
+
+**See**: `backend/scripts/README.md` for full documentation
 
 ## Useful Commands
 
