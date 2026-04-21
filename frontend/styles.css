@@ -419,6 +419,24 @@ body {
     color: var(--text-2);
 }
 
+.arch-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+}
+
+.arch-tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-2);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    letter-spacing: 0.01em;
+}
+
 /* Messages */
 .message {
     margin-bottom: 1.75rem;
