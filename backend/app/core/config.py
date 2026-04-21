@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = "test-openrouter-key"  # Claude LLM via Openrouter
 
     # Embedding Configuration
-    EMBEDDING_MODEL: str = "models/text-embedding-004"
+    EMBEDDING_MODEL: str = "models/gemini-embedding-001"
     EMBEDDING_DIMENSIONS: int = 768
 
     # Chunking Configuration
