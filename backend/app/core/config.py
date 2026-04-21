@@ -75,7 +75,7 @@ class Settings(BaseSettings):
 
     # LLM Configuration (via Openrouter)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    LLM_MODEL: str = "anthropic/claude-3.5-sonnet"  # Openrouter format
+    LLM_MODEL: str = "anthropic/claude-sonnet-4-5"  # Openrouter format
     LLM_TEMPERATURE: float = 0.3
     LLM_MAX_TOKENS: int = 2048
 

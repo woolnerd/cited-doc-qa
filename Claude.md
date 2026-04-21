@@ -688,6 +688,21 @@ This project follows trunk-based development:
 5. **Link PRs to issues** with "Fixes #N"
 6. **Use descriptive commit messages** (not "fix bug")
 
+### Before Committing Config/Constant Changes
+
+When changing any hardcoded value (model names, dimensions, thresholds, URLs), **always grep the test suite for the old value** before committing:
+
+```bash
+grep -rn "old-value" tests/
+```
+
+Tests in `tests/unit/` frequently hardcode config values in mock assertions. Changing a constant in `config.py` without updating the tests will cause CI to fail. This has happened with:
+
+- `EMBEDDING_MODEL` — tests assert the exact model string in mock call args
+- `EMBEDDING_DIMENSIONS` — tests use hardcoded dimension sizes in mock responses
+
+**Rule:** change the config → grep tests → update any hardcoded references → commit together.
+
 ### When Things Break
 
 1. Check backend logs first

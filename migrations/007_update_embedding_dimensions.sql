@@ -1,8 +1,14 @@
 -- Migration 007: Update embedding dimensions from 768 to 3072
 -- Required for gemini-embedding-001 which outputs 3072 dimensions
 
+-- Drop vector index before altering column type (required by pgvector)
+DROP INDEX IF EXISTS idx_chunks_embedding;
+
 -- Update the column type
 ALTER TABLE chunks ALTER COLUMN embedding TYPE vector(3072);
+
+-- Recreate the vector index for the new dimensions
+CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Drop and recreate vector search functions with updated dimensions
 
