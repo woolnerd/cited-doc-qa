@@ -3,74 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG Chatbot - Document Q&A</title>
+    <title>RAG Chatbot — FreeTime AI</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <h1>RAG Chatbot</h1>
-            <p class="subtitle">Upload documents and ask questions</p>
-        </div>
-    </header>
+    <div class="app-layout">
 
-    <div class="main-layout">
-        <!-- Left Sidebar -->
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <!-- Demo Warning -->
-            <div class="demo-warning">
-                ⚠️ <strong>Demo:</strong> Docs deleted in 24hrs
+
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <span class="brand-name">FreeTime AI</span>
+                <span class="brand-tag">RAG Demo</span>
             </div>
 
-            <!-- Upload Section -->
-            <section class="upload-section" id="uploadSection">
-                <div class="upload-area" id="uploadArea">
-                    <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <p class="upload-text">
-                        <strong>Click to upload</strong> or drag and drop
-                    </p>
-                    <p class="upload-hint">PDF, DOCX, or TXT (max 10MB)</p>
-                    <input type="file" id="fileInput" accept=".pdf,.docx,.txt" hidden>
-                </div>
+            <div class="sidebar-body">
 
-                <!-- Upload Progress -->
-                <div class="upload-progress hidden" id="uploadProgress">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+                <!-- Upload Section -->
+                <section class="upload-section" id="uploadSection">
+                    <div class="upload-area" id="uploadArea">
+                        <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p class="upload-text"><strong>Upload a document</strong></p>
+                        <p class="upload-hint">PDF, DOCX, or TXT — max 10MB</p>
+                        <input type="file" id="fileInput" accept=".pdf,.docx,.txt" hidden>
                     </div>
-                    <p class="progress-text" id="progressText">Uploading...</p>
-                </div>
 
-                <!-- Upload Status -->
-                <div class="upload-status hidden" id="uploadStatus"></div>
+                    <!-- Upload Progress -->
+                    <div class="upload-progress hidden" id="uploadProgress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">Uploading...</p>
+                    </div>
 
-                <!-- Uploaded Documents -->
-                <div class="documents-list hidden" id="documentsList">
-                    <h3>Documents</h3>
-                    <div id="documentsContainer"></div>
-                </div>
-            </section>
+                    <!-- Upload Status -->
+                    <div class="upload-status hidden" id="uploadStatus"></div>
+
+                    <!-- Uploaded Documents -->
+                    <div class="documents-list hidden" id="documentsList">
+                        <p class="documents-label">Documents</p>
+                        <div id="documentsContainer"></div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <p class="demo-notice">Docs are deleted after 24 hours.</p>
+                <p class="sidebar-credit">Built by <a href="mailto:hello@getfreetime.ai">Dave Woolner</a></p>
+            </div>
+
         </aside>
 
-        <!-- Main Chat Section -->
+        <!-- Main Chat -->
         <main class="chat-section">
-            <div class="chat-header">
-                <button id="newConversationButton" class="new-conversation-button hidden" title="Start a new conversation">
+            <div class="chat-toolbar">
+                <button id="newConversationButton" class="new-conversation-button hidden" title="New conversation">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    New Conversation
+                    New conversation
                 </button>
             </div>
+
             <div class="chat-container" id="chatContainer">
                 <div class="chat-messages" id="chatMessages">
                     <div class="welcome-message">
-                        <h2>Welcome!</h2>
-                        <p>Upload a document to get started, then ask me anything about it.</p>
+                        <p class="welcome-eyebrow">RAG Chatbot</p>
+                        <h1 class="welcome-heading">Ask anything about your documents.</h1>
+                        <p class="welcome-sub">Upload a file from the sidebar to get started.</p>
                     </div>
                 </div>
             </div>
@@ -91,16 +97,8 @@
                 </button>
             </div>
         </main>
-    </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2025 FreeTime AI. All rights reserved.</p>
-            <p>Contact: <a href="mailto:hello@getfreetime.ai">hello@getfreetime.ai</a></p>
-            <p>Built by Dave Woolner</p>
-        </div>
-    </footer>
+    </div>
 
     <script src="app.js"></script>
 </body>

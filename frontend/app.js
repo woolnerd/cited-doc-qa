@@ -424,7 +424,7 @@ function updateDocumentsList() {
   if (state.isLoadingDocuments && state.documents.length === 0) {
     elements.documentsList.classList.remove("hidden");
     elements.documentsContainer.innerHTML = `
-            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            <div style="text-align: center; padding: 2rem; color: var(--text-2);">
                 <div class="spinner" style="margin: 0 auto 1rem;"></div>
                 <p>Loading documents...</p>
             </div>
@@ -504,13 +504,13 @@ function enableChat() {
             <h2>Ready to answer your questions!</h2>
             <p style="margin-bottom: 1rem;">Try asking about your documents:</p>
             <div style="text-align: left; max-width: 500px; margin: 0 auto;">
-                <p style="margin: 0.5rem 0; color: var(--text-secondary); font-size: 0.95rem;">
+                <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
                     💬 "What are the key points in [document name]?"
                 </p>
-                <p style="margin: 0.5rem 0; color: var(--text-secondary); font-size: 0.95rem;">
+                <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
                     💬 "Summarize the main findings in [document name]"
                 </p>
-                <p style="margin: 0.5rem 0; color: var(--text-secondary); font-size: 0.95rem;">
+                <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
                     💬 "What does [document name] say about [specific topic]?"
                 </p>
             </div>
