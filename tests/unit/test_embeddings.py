@@ -23,7 +23,7 @@ def embedding_service(mock_genai):
 def test_init_success(mock_genai):
     """Test successful initialization of embedding service."""
     service = EmbeddingService()
-    assert service.model_name == "models/text-embedding-004"
+    assert service.model_name == "models/gemini-embedding-001"
     mock_genai.configure.assert_called_once()
 
 
@@ -47,7 +47,7 @@ def test_generate_embedding_success(embedding_service, mock_genai):
     assert result == mock_embedding
     assert len(result) == 768
     mock_genai.embed_content.assert_called_once_with(
-        model="models/text-embedding-004",
+        model="models/gemini-embedding-001",
         content=text,
         task_type="retrieval_document",
     )
@@ -157,7 +157,7 @@ def test_generate_query_embedding_success(embedding_service, mock_genai):
     assert result == mock_embedding
     assert len(result) == 768
     mock_genai.embed_content.assert_called_once_with(
-        model="models/text-embedding-004",
+        model="models/gemini-embedding-001",
         content=query,
         task_type="retrieval_query",
     )
