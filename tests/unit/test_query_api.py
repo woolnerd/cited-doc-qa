@@ -107,7 +107,7 @@ def sample_llm_response():
             }
         ],
         "metadata": {
-            "model": "anthropic/claude-3.5-sonnet",
+            "model": "anthropic/claude-sonnet-4-5",
             "temperature": 0.3,
             "tokens_used": {
                 "prompt_tokens": 150,
@@ -160,7 +160,7 @@ async def test_query_success(
 
         # Check metadata
         assert data["metadata"]["query"] == "What is Python?"
-        assert data["metadata"]["model"] == "anthropic/claude-3.5-sonnet"
+        assert data["metadata"]["model"] == "anthropic/claude-sonnet-4-5"
         assert data["metadata"]["tokens_used"]["total_tokens"] == 200
         assert "total_ms" in data["metadata"]["timing"]
 
