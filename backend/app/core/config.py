@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # Embedding Configuration
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
-    EMBEDDING_DIMENSIONS: int = 768
+    EMBEDDING_DIMENSIONS: int = 3072
 
     # Chunking Configuration
     CHUNK_SIZE_MIN: int = 400
