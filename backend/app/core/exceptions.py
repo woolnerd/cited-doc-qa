@@ -24,6 +24,19 @@ class FileValidationError(RAGChatbotException):
         super().__init__(message, status_code=400)
 
 
+class DemoLimitError(RAGChatbotException):
+    """Raised when a public demo usage limit is exceeded."""
+
+    def __init__(
+        self,
+        message: str = "This public demo limit has been reached.",
+        status_code: int = 429,
+        limit_type: str | None = None,
+    ):
+        self.limit_type = limit_type
+        super().__init__(message, status_code=status_code)
+
+
 class EmbeddingError(RAGChatbotException):
     """Raised when embedding generation fails."""
 

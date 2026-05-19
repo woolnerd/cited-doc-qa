@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import pytest
 from app.core.dependencies import get_database
+from app.core.exceptions import DemoLimitError
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -150,21 +151,57 @@ def test_upload_invalid_file_type(client_with_mock_db):
     assert "not allowed" in data["detail"].lower()
 
 
-def test_upload_file_too_large(client_with_mock_db):
-    """Test upload with file exceeding size limit."""
-    client, _ = client_with_mock_db
+def test_upload_large_file_allowed_when_demo_disabled(client_with_mock_db):
+    """Non-demo upload size enforcement is delegated away from the old endpoint check."""
+    client, mock_db = client_with_mock_db
 
-    # Create 11MB file (exceeds 10MB limit)
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "large.pdf",
+        "file_type": "pdf",
+        "upload_date": datetime.now(UTC),
+        "metadata": {"file_size": 11 * 1024 * 1024},
+    }
+
     large_content = b"x" * (11 * 1024 * 1024)
     files = {"file": create_test_file("large.pdf", large_content, "application/pdf")}
     data = {"session_id": "test-session-123"}
 
     response = client.post("/api/documents/upload", files=files, data=data)
 
-    assert response.status_code == 400
+    assert response.status_code == 201
+    data = response.json()
+    assert data["success"] is True
+    assert data["file_size"] == len(large_content)
+
+
+def test_upload_demo_file_size_limit_uses_demo_limit_service(client_with_mock_db):
+    """Demo file size rejection should come from DemoLimitService."""
+    client, mock_db = client_with_mock_db
+
+    large_content = b"x" * (11 * 1024 * 1024)
+    files = {"file": create_test_file("large.pdf", large_content, "application/pdf")}
+    data = {"session_id": "test-session-123"}
+
+    with patch("app.api.documents.DemoLimitService") as MockDemoLimitService:
+        mock_limits = MockDemoLimitService.return_value
+        mock_limits.check_upload_allowed = AsyncMock(
+            side_effect=DemoLimitError(
+                "Files in this public demo must be 10MB or smaller.",
+                status_code=413,
+                limit_type="file_size_limit",
+            )
+        )
+        mock_limits.record_upload = AsyncMock()
+
+        response = client.post("/api/documents/upload", files=files, data=data)
+
+    assert response.status_code == 413
     data = response.json()
     assert data["success"] is False
-    assert "exceeds" in data["detail"].lower()
+    assert "10MB or smaller" in data["detail"]
+    mock_db.fetchrow.assert_not_awaited()
 
 
 def test_upload_no_file(client_with_mock_db):
