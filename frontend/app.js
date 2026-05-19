@@ -52,7 +52,7 @@ const elements = {
 function init() {
   setupEventListeners();
   loadDocuments();
-  console.log("RAG Chatbot initialized");
+  console.log("Operational Knowledge Hub initialized");
 }
 
 // Event Listeners Setup
@@ -502,16 +502,22 @@ function enableChat() {
   if (welcomeMessage) {
     welcomeMessage.innerHTML = `
             <h2>Ready to answer your questions!</h2>
-            <p style="margin-bottom: 1rem;">Try asking about your documents:</p>
-            <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+            <p style="margin-bottom: 1rem;">Try asking about your operational documents:</p>
+            <div style="text-align: left; max-width: 560px; margin: 0 auto;">
                 <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
-                    💬 "What are the key points in [document name]?"
+                    💬 "Which vendor contracts renew this quarter?"
                 </p>
                 <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
-                    💬 "Summarize the main findings in [document name]"
+                    💬 "How is overtime calculated?"
                 </p>
                 <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
-                    💬 "What does [document name] say about [specific topic]?"
+                    💬 "What does the refund policy say?"
+                </p>
+                <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
+                    💬 "Where are OSHA procedures documented?"
+                </p>
+                <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
+                    💬 "What knowledge should be documented from long-time employees?"
                 </p>
             </div>
         `;

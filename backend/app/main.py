@@ -74,7 +74,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="A production-grade RAG chatbot with contextual chunking, hybrid search, and Claude integration.",
+    description="Operational Knowledge Hub: a RAG demo for acquisition entrepreneurs to query SOPs, contracts, policies, and reports.",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",

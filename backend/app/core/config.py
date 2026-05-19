@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Application
-    APP_NAME: str = "RAG Chatbot API"
+    APP_NAME: str = "Operational Knowledge Hub API"
     APP_VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"

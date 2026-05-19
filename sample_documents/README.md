@@ -1,18 +1,13 @@
-# Sample Documents
+# Operational Knowledge Hub Sample Documents
 
-This folder contains sample PDF documents for testing the RAG system.
+Business-oriented sample documents for testing the ETA RAG demo.
 
-## Usage
+These examples are fictional and intended for demo use only:
 
-These documents can be uploaded to test:
-- Document upload functionality
-- Embedding generation
-- Vector search
-- Full-text search
-- Query answering
+- `employee_handbook_overtime_policy.txt`
+- `vendor_contract_renewals.txt`
+- `customer_refund_policy.txt`
+- `warehouse_osha_sop.txt`
+- `tribal_knowledge_capture_plan.txt`
 
-## Adding Documents
-
-Place your test PDFs in this folder. They will be available for upload via the API or frontend.
-
-**Note:** Do not commit sensitive or personal documents to this repository.
+Upload one or more files, then try the suggested questions in the chat UI.

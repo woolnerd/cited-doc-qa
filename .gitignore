@@ -65,3 +65,7 @@ docker-compose.override.yml
 
 # OS
 Thumbs.db
+
+# Local AI agent metadata
+.pi/
+.claude/
