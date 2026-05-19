@@ -4,7 +4,16 @@ import json
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    status,
+)
 
 from app.core.dependencies import Database
 from app.core.exceptions import DocumentProcessingError, FileValidationError
@@ -17,6 +26,7 @@ from app.models.base import (
     DocumentProcessingResponse,
     DocumentUploadResponse,
 )
+from app.services.demo_limits import DemoLimitService
 from app.services.document_processor import DocumentProcessor
 
 logger = get_logger(__name__)
@@ -31,12 +41,9 @@ ALLOWED_MIME_TYPES = {
     "text/plain",
 }
 
-# Maximum file size: 10MB
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
-
 
 def validate_file(file: UploadFile) -> None:
-    """Validate uploaded file type and size.
+    """Validate uploaded file type.
 
     Args:
         file: The uploaded file
@@ -63,14 +70,6 @@ def validate_file(file: UploadFile) -> None:
             f"File {file.filename} has unexpected MIME type: {file.content_type}"
         )
 
-    # Check file size
-    if file.size and file.size > MAX_FILE_SIZE:
-        size_mb = file.size / (1024 * 1024)
-        max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
-        raise FileValidationError(
-            f"File size ({size_mb:.2f}MB) exceeds maximum allowed size ({max_size_mb}MB)"
-        )
-
 
 def get_file_type(filename: str) -> str:
     """Extract file type from filename.
@@ -91,6 +90,7 @@ def get_file_type(filename: str) -> str:
 )
 async def upload_document(
     *,
+    request: Request,
     file: UploadFile = File(...),
     session_id: str = Form(...),
     db: Database,
@@ -120,13 +120,13 @@ async def upload_document(
     file_content = await file.read()
     file_size = len(file_content)
 
-    # Validate size again with actual content
-    if file_size > MAX_FILE_SIZE:
-        size_mb = file_size / (1024 * 1024)
-        max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
-        raise FileValidationError(
-            f"File size ({size_mb:.2f}MB) exceeds maximum allowed size ({max_size_mb}MB)"
-        )
+    demo_limits = DemoLimitService(db=db)
+    client_host = request.client.host if request.client else None
+    await demo_limits.check_upload_allowed(
+        session_id=session_id,
+        ip_address=client_host,
+        file_size_bytes=file_size,
+    )
 
     # Reset file pointer for potential future reads
     await file.seek(0)
@@ -163,6 +163,13 @@ async def upload_document(
         document_id = UUID(str(result["id"]))
 
         logger.info(f"Document uploaded successfully: {document_id}")
+
+        await demo_limits.record_upload(
+            session_id=session_id,
+            ip_address=client_host,
+            file_size_bytes=file_size,
+            metadata={"file_type": file_type},
+        )
 
         return DocumentUploadResponse(
             success=True,

@@ -46,6 +46,7 @@ psql -h db.your-project.supabase.co \
 | Migration | Description | Date |
 |-----------|-------------|------|
 | 001 | Initial schema with pgvector, documents and chunks tables | 2024-10-27 |
+| 008 | Public demo usage event tracking | 2026-05-19 |
 
 ## Rollback
 

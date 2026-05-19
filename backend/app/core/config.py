@@ -1,6 +1,6 @@
 """Application configuration using Pydantic settings."""
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     DEMO_MAX_COMPLETION_TOKENS: int = Field(default=1000, ge=1)
     DEMO_MAX_RETRIEVED_CHUNKS: int = Field(default=10, ge=1)
     DEMO_REQUEST_TIMEOUT_SECONDS: int = Field(default=45, ge=1)
+    DEMO_USAGE_HASH_SALT: str = ""
 
     @property
     def DEMO_MAX_FILE_SIZE_BYTES(self) -> int:
@@ -50,6 +51,13 @@ class Settings(BaseSettings):
     def DEMO_MAX_TOTAL_UPLOAD_BYTES_PER_SESSION(self) -> int:
         """Demo per-session upload limit in bytes."""
         return self.DEMO_MAX_TOTAL_UPLOAD_MB_PER_SESSION * 1024 * 1024
+
+    @model_validator(mode="after")
+    def validate_demo_settings(self) -> "Settings":
+        """Validate settings that only become required in public demo mode."""
+        if self.DEMO_MODE and not self.DEMO_USAGE_HASH_SALT.strip():
+            raise ValueError("DEMO_USAGE_HASH_SALT is required when DEMO_MODE=true")
+        return self
 
     # Database (Supabase - legacy)
     SUPABASE_URL: str = "https://test.supabase.co"

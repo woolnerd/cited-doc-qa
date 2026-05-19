@@ -72,6 +72,13 @@ Add configurable DEMO_MODE settings for public demo safeguards
 
 ### 2. Add Usage Tracking and Limit Service
 
+**Status:** Complete.
+
+Implemented in `backend/app/services/demo_limits.py`,
+`backend/app/core/exceptions.py`, `backend/app/core/config.py`,
+`migrations/008_add_demo_usage_events.sql`, and
+`tests/unit/test_demo_limits.py`.
+
 **Scope**
 
 Create a backend service responsible for demo counters, hashed IP logging,
