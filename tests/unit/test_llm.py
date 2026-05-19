@@ -78,7 +78,7 @@ def test_service_initialization_success(mock_openai_client):
     assert service.api_key == "test-key"
     assert service.base_url == "https://test.openrouter.ai"
     assert service.client is mock_openai_client
-    assert service.model == "anthropic/claude-3.5-sonnet"
+    assert service.model == "anthropic/claude-4.5-sonnet"
 
 
 def test_service_initialization_uses_settings(mock_openai_client):
