@@ -1,5 +1,6 @@
 """Application configuration using Pydantic settings."""
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +26,30 @@ class Settings(BaseSettings):
     # Rate Limiting
     UPLOAD_RATE_LIMIT: str = "10/hour"
     QUERY_RATE_LIMIT: str = "30/hour"
+
+    # Public Demo Mode
+    DEMO_MODE: bool = False
+    DEMO_MAX_UPLOADS_PER_SESSION: int = Field(default=3, ge=1)
+    DEMO_MAX_QUERIES_PER_SESSION: int = Field(default=20, ge=1)
+    DEMO_MAX_TOTAL_UPLOAD_MB_PER_SESSION: int = Field(default=25, ge=1)
+    DEMO_MAX_FILE_SIZE_MB: int = Field(default=10, ge=1)
+    DEMO_MAX_QUERY_LENGTH: int = Field(default=1000, ge=1)
+    DEMO_RATE_LIMIT_WINDOW_MINUTES: int = Field(default=60, ge=1)
+    DEMO_MAX_QUERIES_PER_IP: int = Field(default=30, ge=1)
+    DEMO_GLOBAL_DAILY_QUERY_LIMIT: int = Field(default=250, ge=1)
+    DEMO_MAX_COMPLETION_TOKENS: int = Field(default=1000, ge=1)
+    DEMO_MAX_RETRIEVED_CHUNKS: int = Field(default=10, ge=1)
+    DEMO_REQUEST_TIMEOUT_SECONDS: int = Field(default=45, ge=1)
+
+    @property
+    def DEMO_MAX_FILE_SIZE_BYTES(self) -> int:
+        """Demo per-file upload limit in bytes."""
+        return self.DEMO_MAX_FILE_SIZE_MB * 1024 * 1024
+
+    @property
+    def DEMO_MAX_TOTAL_UPLOAD_BYTES_PER_SESSION(self) -> int:
+        """Demo per-session upload limit in bytes."""
+        return self.DEMO_MAX_TOTAL_UPLOAD_MB_PER_SESSION * 1024 * 1024
 
     # Database (Supabase - legacy)
     SUPABASE_URL: str = "https://test.supabase.co"

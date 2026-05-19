@@ -130,6 +130,28 @@ ENVIRONMENT=production
 LOG_LEVEL=WARNING
 ```
 
+For public demo deployments, enable demo safeguards and set conservative limits:
+
+```env
+DEMO_MODE=true
+DEMO_MAX_UPLOADS_PER_SESSION=3
+DEMO_MAX_QUERIES_PER_SESSION=20
+DEMO_MAX_TOTAL_UPLOAD_MB_PER_SESSION=25
+DEMO_MAX_FILE_SIZE_MB=10
+DEMO_MAX_QUERY_LENGTH=1000
+DEMO_RATE_LIMIT_WINDOW_MINUTES=60
+DEMO_MAX_QUERIES_PER_IP=30
+DEMO_GLOBAL_DAILY_QUERY_LIMIT=250
+DEMO_MAX_COMPLETION_TOKENS=1000
+DEMO_MAX_RETRIEVED_CHUNKS=10
+DEMO_REQUEST_TIMEOUT_SECONDS=45
+```
+
+Use dedicated provider API keys for public demos and configure provider-side
+budgets, quotas, and alerts outside the application. The application settings
+control request behavior; provider spending caps must be configured with each
+provider.
+
 ### Step 5: Configure GitHub Repository
 
 1. **Add Secrets:**
