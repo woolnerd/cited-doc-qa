@@ -115,6 +115,12 @@ Add database-backed demo usage tracking and limit service
 
 ### 3. Enforce Upload Protections
 
+**Status:** Complete.
+
+Implemented in `backend/app/api/documents.py`,
+`backend/app/services/demo_limits.py`, `tests/unit/test_demo_limits.py`, and
+`tests/unit/test_documents.py`.
+
 **Scope**
 
 Reject invalid uploads before text extraction, chunking, embeddings, or storage.

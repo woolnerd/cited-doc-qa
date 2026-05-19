@@ -15,8 +15,13 @@ from fastapi import (
     status,
 )
 
+from app.core.config import settings
 from app.core.dependencies import Database
-from app.core.exceptions import DocumentProcessingError, FileValidationError
+from app.core.exceptions import (
+    DemoLimitError,
+    DocumentProcessingError,
+    FileValidationError,
+)
 from app.core.logging import get_logger
 from app.models.base import (
     DocumentDeleteResponse,
@@ -42,7 +47,7 @@ ALLOWED_MIME_TYPES = {
 }
 
 
-def validate_file(file: UploadFile) -> None:
+def validate_file(file: UploadFile, *, strict_mime: bool = False) -> None:
     """Validate uploaded file type.
 
     Args:
@@ -64,8 +69,17 @@ def validate_file(file: UploadFile) -> None:
             f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    # Check MIME type if available
-    if file.content_type and file.content_type not in ALLOWED_MIME_TYPES:
+    # Check MIME type. Non-demo mode keeps the previous permissive behavior.
+    if strict_mime and file.content_type not in ALLOWED_MIME_TYPES:
+        raise FileValidationError(
+            f"File MIME type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    if (
+        not strict_mime
+        and file.content_type
+        and file.content_type not in ALLOWED_MIME_TYPES
+    ):
         logger.warning(
             f"File {file.filename} has unexpected MIME type: {file.content_type}"
         )
@@ -114,7 +128,7 @@ async def upload_document(
     )
 
     # Validate file
-    validate_file(file)
+    validate_file(file, strict_mime=settings.DEMO_MODE)
 
     # Read file content to get actual size
     file_content = await file.read()
@@ -253,6 +267,7 @@ async def get_document(
 async def process_document(
     document_id: UUID,
     *,
+    request: Request,
     file: UploadFile = File(...),
     db: Database,
 ) -> DocumentProcessingResponse:
@@ -277,7 +292,7 @@ async def process_document(
     """
     try:
         # Verify document exists
-        query = "SELECT filename, file_type FROM documents WHERE id = $1"
+        query = "SELECT filename, file_type, session_id FROM documents WHERE id = $1"
         doc_result = await db.fetchrow(query, document_id)
 
         if not doc_result:
@@ -288,9 +303,20 @@ async def process_document(
 
         filename = doc_result["filename"]
         file_type = doc_result["file_type"]
+        session_id = doc_result["session_id"]
 
         # Read file content
         file_content = await file.read()
+        file_size = len(file_content)
+
+        demo_limits = DemoLimitService(db=db)
+        client_host = request.client.host if request.client else None
+        await demo_limits.check_file_content_allowed(
+            session_id=session_id,
+            ip_address=client_host,
+            file_size_bytes=file_size,
+            route="/api/documents/process",
+        )
 
         # Process document through pipeline
         logger.info(f"Processing document {document_id}")
@@ -314,6 +340,8 @@ async def process_document(
         )
 
     except HTTPException:
+        raise
+    except DemoLimitError:
         raise
     except DocumentProcessingError as e:
         logger.error(f"Document processing failed for {document_id}: {e}")

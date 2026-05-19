@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
+from app.core.config import settings
 from app.core.exceptions import DocumentProcessingError
 from app.services.llm import LLMService
 
@@ -78,7 +79,7 @@ def test_service_initialization_success(mock_openai_client):
     assert service.api_key == "test-key"
     assert service.base_url == "https://test.openrouter.ai"
     assert service.client is mock_openai_client
-    assert service.model == "anthropic/claude-4.5-sonnet"
+    assert service.model == settings.LLM_MODEL
 
 
 def test_service_initialization_uses_settings(mock_openai_client):
@@ -182,7 +183,7 @@ def test_generate_answer_success(
     # Check that API was called correctly
     mock_openai_client.chat.completions.create.assert_called_once()
     call_args = mock_openai_client.chat.completions.create.call_args[1]
-    assert call_args["model"] == "anthropic/claude-3.5-sonnet"
+    assert call_args["model"] == settings.LLM_MODEL
     assert call_args["temperature"] == 0.3
     assert call_args["max_tokens"] == 2048
     assert len(call_args["messages"]) == 2
@@ -206,7 +207,7 @@ def test_generate_answer_success(
     # Check metadata
     metadata = result["metadata"]
     assert metadata["query"] == "What is Python?"
-    assert metadata["model"] == "anthropic/claude-3.5-sonnet"
+    assert metadata["model"] == settings.LLM_MODEL
     assert metadata["temperature"] == 0.3
     assert metadata["context_chunks"] == 2
     assert metadata["tokens_used"]["total_tokens"] == 200

@@ -190,6 +190,22 @@ async def test_check_upload_rejects_file_size_limit(service, mock_db):
 
 
 @pytest.mark.asyncio
+async def test_check_upload_rejects_tiny_file(service, mock_db):
+    """Tiny uploads should be rejected before storage or processing."""
+    with pytest.raises(DemoLimitError) as exc_info:
+        await service.check_upload_allowed(
+            session_id="session-1",
+            ip_address="203.0.113.10",
+            file_size_bytes=3,
+        )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.limit_type == "upload_content_limit"
+    mock_db.execute.assert_awaited_once()
+    mock_db.fetchval.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_check_upload_rejects_upload_count_limit(service, mock_db):
     """At-limit session upload counts should be rejected."""
     mock_db.fetchval.return_value = 2
