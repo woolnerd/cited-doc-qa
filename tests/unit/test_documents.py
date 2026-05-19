@@ -151,6 +151,46 @@ def test_upload_invalid_file_type(client_with_mock_db):
     assert "not allowed" in data["detail"].lower()
 
 
+def test_upload_unexpected_mime_allowed_when_demo_disabled(client_with_mock_db):
+    """Non-demo uploads keep the previous extension-first MIME behavior."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "test.pdf",
+        "file_type": "pdf",
+        "upload_date": datetime.now(UTC),
+        "metadata": {"file_size": 100},
+    }
+
+    files = {"file": create_test_file("test.pdf", b"%PDF-1.4 content", "text/html")}
+    data = {"session_id": "test-session-123"}
+
+    response = client.post("/api/documents/upload", files=files, data=data)
+
+    assert response.status_code == 201
+
+
+def test_upload_unexpected_mime_rejected_when_demo_enabled(
+    client_with_mock_db, monkeypatch
+):
+    """Demo uploads should require an allowed MIME type."""
+    client, mock_db = client_with_mock_db
+    monkeypatch.setattr("app.api.documents.settings.DEMO_MODE", True)
+
+    files = {"file": create_test_file("test.pdf", b"%PDF-1.4 content", "text/html")}
+    data = {"session_id": "test-session-123"}
+
+    response = client.post("/api/documents/upload", files=files, data=data)
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "mime type not allowed" in data["detail"].lower()
+    mock_db.fetchrow.assert_not_awaited()
+
+
 def test_upload_large_file_allowed_when_demo_disabled(client_with_mock_db):
     """Non-demo upload size enforcement is delegated away from the old endpoint check."""
     client, mock_db = client_with_mock_db
@@ -201,6 +241,33 @@ def test_upload_demo_file_size_limit_uses_demo_limit_service(client_with_mock_db
     data = response.json()
     assert data["success"] is False
     assert "10MB or smaller" in data["detail"]
+    mock_db.fetchrow.assert_not_awaited()
+
+
+def test_upload_demo_tiny_file_rejected_before_storage(client_with_mock_db):
+    """Tiny demo uploads should be rejected before document metadata is stored."""
+    client, mock_db = client_with_mock_db
+
+    files = {"file": create_test_file("tiny.txt", b"   ", "text/plain")}
+    data = {"session_id": "test-session-123"}
+
+    with patch("app.api.documents.DemoLimitService") as MockDemoLimitService:
+        mock_limits = MockDemoLimitService.return_value
+        mock_limits.check_upload_allowed = AsyncMock(
+            side_effect=DemoLimitError(
+                "Please upload a document with enough content to search.",
+                status_code=400,
+                limit_type="upload_content_limit",
+            )
+        )
+        mock_limits.record_upload = AsyncMock()
+
+        response = client.post("/api/documents/upload", files=files, data=data)
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "enough content" in data["detail"]
     mock_db.fetchrow.assert_not_awaited()
 
 
@@ -453,6 +520,7 @@ def test_process_document_success(client_with_mock_db):
     mock_db.fetchrow.return_value = {
         "filename": "test.pdf",
         "file_type": "pdf",
+        "session_id": "test-session-123",
     }
 
     # Mock DocumentProcessor
@@ -515,6 +583,7 @@ def test_process_document_processing_error(client_with_mock_db):
     mock_db.fetchrow.return_value = {
         "filename": "test.pdf",
         "file_type": "pdf",
+        "session_id": "test-session-123",
     }
 
     # Mock DocumentProcessor to raise error
@@ -537,6 +606,43 @@ def test_process_document_processing_error(client_with_mock_db):
         data = response.json()
         assert "detail" in data
         assert "processing failed" in data["detail"].lower()
+
+
+def test_process_document_demo_tiny_file_rejected_before_processor(client_with_mock_db):
+    """Demo file content checks should run before extraction and embedding work."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "filename": "test.txt",
+        "file_type": "txt",
+        "session_id": "test-session-123",
+    }
+
+    files = {"file": create_test_file("test.txt", b"   ", "text/plain")}
+
+    with (
+        patch("app.api.documents.DemoLimitService") as MockDemoLimitService,
+        patch("app.api.documents.DocumentProcessor") as MockProcessor,
+    ):
+        mock_limits = MockDemoLimitService.return_value
+        mock_limits.check_file_content_allowed = AsyncMock(
+            side_effect=DemoLimitError(
+                "Please upload a document with enough content to search.",
+                status_code=400,
+                limit_type="upload_content_limit",
+            )
+        )
+
+        response = client.post(
+            f"/api/documents/{mock_document_id}/process", files=files
+        )
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "enough content" in data["detail"]
+    MockProcessor.assert_not_called()
 
 
 def test_process_document_invalid_uuid(client_with_mock_db):

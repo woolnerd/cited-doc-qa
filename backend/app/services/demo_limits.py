@@ -25,8 +25,11 @@ LIMIT_SESSION_QUERY = "session_query_limit"
 LIMIT_IP_QUERY = "ip_query_limit"
 LIMIT_GLOBAL_DAILY_QUERY = "global_daily_query_limit"
 LIMIT_FILE_SIZE = "file_size_limit"
+LIMIT_UPLOAD_CONTENT = "upload_content_limit"
 LIMIT_SESSION_UPLOAD = "session_upload_limit"
 LIMIT_SESSION_UPLOAD_BYTES = "session_upload_bytes_limit"
+
+MIN_DEMO_UPLOAD_BYTES = 32
 
 
 class DemoLimitService:
@@ -152,16 +155,12 @@ class DemoLimitService:
         if not self.enabled:
             return
 
-        if file_size_bytes > self.settings.DEMO_MAX_FILE_SIZE_BYTES:
-            await self._reject(
-                session_id=session_id,
-                ip_address=ip_address,
-                route=route,
-                limit_type=LIMIT_FILE_SIZE,
-                message=f"Files in this public demo must be {self.settings.DEMO_MAX_FILE_SIZE_MB}MB or smaller.",
-                status_code=413,
-                request_bytes=file_size_bytes,
-            )
+        await self.check_file_content_allowed(
+            session_id=session_id,
+            ip_address=ip_address,
+            file_size_bytes=file_size_bytes,
+            route=route,
+        )
 
         upload_count = await self.get_session_upload_count(session_id)
         if upload_count >= self.settings.DEMO_MAX_UPLOADS_PER_SESSION:
@@ -188,6 +187,40 @@ class DemoLimitService:
                 status_code=413,
                 request_bytes=file_size_bytes,
                 metadata={"current_uploaded_bytes": uploaded_bytes},
+            )
+
+    async def check_file_content_allowed(
+        self,
+        *,
+        session_id: str,
+        ip_address: str | None,
+        file_size_bytes: int,
+        route: str,
+    ) -> None:
+        """Raise DemoLimitError if raw file content is unsuitable for demo mode."""
+        if not self.enabled:
+            return
+
+        if file_size_bytes < MIN_DEMO_UPLOAD_BYTES:
+            await self._reject(
+                session_id=session_id,
+                ip_address=ip_address,
+                route=route,
+                limit_type=LIMIT_UPLOAD_CONTENT,
+                message="Please upload a document with enough content to search.",
+                status_code=400,
+                request_bytes=file_size_bytes,
+            )
+
+        if file_size_bytes > self.settings.DEMO_MAX_FILE_SIZE_BYTES:
+            await self._reject(
+                session_id=session_id,
+                ip_address=ip_address,
+                route=route,
+                limit_type=LIMIT_FILE_SIZE,
+                message=f"Files in this public demo must be {self.settings.DEMO_MAX_FILE_SIZE_MB}MB or smaller.",
+                status_code=413,
+                request_bytes=file_size_bytes,
             )
 
     async def record_upload(

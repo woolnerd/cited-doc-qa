@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import pytest
+from app.core.config import settings
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -107,7 +108,7 @@ def sample_llm_response():
             }
         ],
         "metadata": {
-            "model": "anthropic/claude-3.5-sonnet",
+            "model": settings.LLM_MODEL,
             "temperature": 0.3,
             "tokens_used": {
                 "prompt_tokens": 150,
@@ -160,7 +161,7 @@ async def test_query_success(
 
         # Check metadata
         assert data["metadata"]["query"] == "What is Python?"
-        assert data["metadata"]["model"] == "anthropic/claude-3.5-sonnet"
+        assert data["metadata"]["model"] == settings.LLM_MODEL
         assert data["metadata"]["tokens_used"]["total_tokens"] == 200
         assert "total_ms" in data["metadata"]["timing"]
 
