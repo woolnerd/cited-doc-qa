@@ -21,6 +21,8 @@ EVENT_UPLOAD = "upload"
 EVENT_LIMIT_EXCEEDED = "limit_exceeded"
 
 LIMIT_DUPLICATE_QUERY = "duplicate_query"
+LIMIT_QUERY_CONTENT = "query_content_limit"
+LIMIT_QUERY_LENGTH = "query_length_limit"
 LIMIT_SESSION_QUERY = "session_query_limit"
 LIMIT_IP_QUERY = "ip_query_limit"
 LIMIT_GLOBAL_DAILY_QUERY = "global_daily_query_limit"
@@ -58,6 +60,41 @@ class DemoLimitService:
         """Normalize query text before duplicate detection."""
         return re.sub(r"\s+", " ", query.strip().lower())
 
+    async def check_query_content_allowed(
+        self,
+        *,
+        session_id: str,
+        ip_address: str | None,
+        query: str,
+        route: str = "/api/query",
+    ) -> None:
+        """Reject empty, whitespace-only, or overly short demo queries."""
+        if not self.enabled:
+            return
+
+        normalized_query = self.normalize_query(query)
+        compact_query = re.sub(r"[^a-z0-9]+", "", normalized_query)
+
+        if len(normalized_query) > self.settings.DEMO_MAX_QUERY_LENGTH:
+            await self._reject(
+                session_id=session_id,
+                ip_address=ip_address,
+                route=route,
+                limit_type=LIMIT_QUERY_LENGTH,
+                message=f"This public demo limits questions to {self.settings.DEMO_MAX_QUERY_LENGTH} characters.",
+                status_code=400,
+            )
+
+        if len(compact_query) < 3:
+            await self._reject(
+                session_id=session_id,
+                ip_address=ip_address,
+                route=route,
+                limit_type=LIMIT_QUERY_CONTENT,
+                message="Please ask a more specific question.",
+                status_code=400,
+            )
+
     async def check_query_allowed(
         self,
         *,
@@ -69,6 +106,13 @@ class DemoLimitService:
         """Raise DemoLimitError if a query would exceed demo limits."""
         if not self.enabled:
             return
+
+        await self.check_query_content_allowed(
+            session_id=session_id,
+            ip_address=ip_address,
+            query=query,
+            route=route,
+        )
 
         hashed_ip = self.hash_ip(ip_address)
         query_hash = self.hash_query(query)

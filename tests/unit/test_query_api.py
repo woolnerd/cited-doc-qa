@@ -14,6 +14,8 @@ def mock_db():
     """Mock DatabaseService."""
     mock = Mock()
     mock.fetch = AsyncMock()
+    mock.fetchval = AsyncMock(return_value=0)
+    mock.execute = AsyncMock(return_value="INSERT 0 1")
     return mock
 
 
@@ -199,8 +201,8 @@ async def test_query_with_top_k(
 
         # Verify rerank was called with correct top_k
         mock_rerank.rerank_with_metadata.assert_called_once()
-        call_args = mock_rerank.rerank_with_metadata.call_args[1]
-        assert call_args["top_k"] == 3
+        call_args = mock_rerank.rerank_with_metadata.call_args
+        assert call_args.args[2] == 3
 
 
 @pytest.mark.asyncio
@@ -300,6 +302,47 @@ async def test_query_invalid_request(client):
         "/api/query", json={"session_id": "test-session", "query": "test", "top_k": 21}
     )
     assert response.status_code == 422
+
+
+def test_query_demo_rejects_whitespace_only_query(client, monkeypatch):
+    """Demo mode should reject whitespace-only queries before search."""
+    monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
+
+    response = client.post(
+        "/api/query", json={"session_id": "test-session", "query": "   "}
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "specific question" in data["detail"].lower()
+
+
+def test_query_demo_timeout_returns_504(
+    client, monkeypatch, sample_hybrid_search_response
+):
+    """Demo mode timeout should return a 504 instead of being swallowed."""
+    monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
+    monkeypatch.setattr("app.api.query.settings.DEMO_REQUEST_TIMEOUT_SECONDS", 1)
+
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.run_blocking_in_process") as mock_run_blocking,
+    ):
+        mock_hybrid = MockHybridSearch.return_value
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
+        mock_run_blocking.side_effect = TimeoutError("timeout")
+
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
+
+    assert response.status_code == 504
+    data = response.json()
+    assert "took too long" in data["detail"].lower()
 
 
 @pytest.mark.asyncio
