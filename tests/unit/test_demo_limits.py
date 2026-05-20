@@ -93,6 +93,22 @@ async def test_check_query_allowed_when_counts_under_limits(service, mock_db):
 
 
 @pytest.mark.asyncio
+async def test_check_query_rejects_whitespace_query(service, mock_db):
+    """Whitespace-only queries should be rejected before rate checks."""
+    with pytest.raises(DemoLimitError) as exc_info:
+        await service.check_query_allowed(
+            session_id="session-1",
+            ip_address="203.0.113.10",
+            query="   ",
+        )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.limit_type == "query_content_limit"
+    mock_db.fetchval.assert_not_awaited()
+    mock_db.execute.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_check_query_rejects_duplicate_query(service, mock_db):
     """Rapid duplicate queries should produce a friendly 429."""
     mock_db.fetchval.return_value = 1
@@ -107,6 +123,22 @@ async def test_check_query_rejects_duplicate_query(service, mock_db):
     assert exc_info.value.status_code == 429
     assert exc_info.value.limit_type == "duplicate_query"
     assert "30 seconds" in exc_info.value.message
+    mock_db.execute.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_check_query_rejects_length_limit(service, mock_db):
+    """Overly long demo queries should be rejected before search."""
+    with pytest.raises(DemoLimitError) as exc_info:
+        await service.check_query_allowed(
+            session_id="session-1",
+            ip_address="203.0.113.10",
+            query="x" * 1001,
+        )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.limit_type == "query_length_limit"
+    mock_db.fetchval.assert_not_awaited()
     mock_db.execute.assert_awaited_once()
 
 

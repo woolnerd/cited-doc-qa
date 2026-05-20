@@ -154,6 +154,11 @@ Enforce public demo upload limits before document processing
 
 ### 4. Enforce Query Protections
 
+**Status:** Complete.
+
+Implemented in `backend/app/api/query.py`, `backend/app/services/demo_limits.py`,
+`tests/unit/test_demo_limits.py`, and `tests/unit/test_query_api.py`.
+
 **Scope**
 
 Reject abusive or expensive queries before retrieval, reranking, or LLM calls.
