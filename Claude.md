@@ -11,23 +11,26 @@ Production-ready RAG (Retrieval-Augmented Generation) chatbot system that allows
 ## Tech Stack
 
 ### Backend
+
 - **Framework:** FastAPI (Python 3.13+)
 - **Database:** PostgreSQL 15 (self-hosted on VPS) + pgvector extension
 - **Vector Search:** pgvector with IVFFlat indexing
 - **Full-Text Search:** PostgreSQL ts_vector with GIN indexing
 - **Embeddings:** Google Gemini (text-embedding-004, 768 dimensions)
 - **Reranking:** Cohere (rerank-english-v3.0) with 0.1 score threshold
-- **LLM Generation:** Claude 3.5 Sonnet via OpenRouter
+- **LLM Generation:** Claude 4.5 Sonnet via OpenRouter
 - **Session Isolation:** Multi-user demo support with session_id filtering
 - **Testing:** pytest with >60% coverage (target: 80%)
 
 ### Frontend
+
 - **Pure vanilla JavaScript** (no build step, no frameworks)
 - **HTML + CSS** with modern responsive design
 - **Server:** Simple Python HTTP server (`frontend/serve.py`)
 - **Ports:** Frontend (3000), Backend (8000)
 
 ### Infrastructure
+
 - **CI/CD:** GitHub Actions
 - **Code Quality:** pre-commit hooks (black, ruff, mypy, bandit)
 - **Version Control:** Git with conventional commits
@@ -112,6 +115,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### 3. Pre-commit Hooks
 
 Automatically run on commit:
+
 - `black` - Code formatting
 - `ruff` - Linting
 - `mypy` - Type checking
@@ -126,6 +130,7 @@ gh pr create --title "Add feature (Issue #N)" --body "..."
 ```
 
 Always include:
+
 - Summary of changes
 - Testing performed
 - Link to issue (auto-closes with "Fixes #N")
@@ -179,6 +184,7 @@ Without this migration:
 **What it fixes:**
 
 The initial schema created a GIN index on a pre-computed `fts` column:
+
 ```sql
 ALTER TABLE chunks ADD COLUMN fts tsvector
     GENERATED ALWAYS AS (to_tsvector('english', coalesce(contextual_content, content))) STORED;
@@ -188,12 +194,14 @@ CREATE INDEX idx_chunks_fts ON chunks USING GIN(fts);
 But the search functions were computing `to_tsvector('english', c.content)` at query time, bypassing the index!
 
 **Benefits after migration:**
+
 - ✅ Uses pre-computed GIN index (much faster)
 - ✅ No runtime tsvector computation
 - ✅ Searches both `contextual_content` and `content` (as originally designed)
 - ✅ Significantly improves full-text search performance
 
 **Affected functions:**
+
 - `search_chunks_fulltext`
 - `search_chunks_fulltext_by_document`
 - `search_chunks_fulltext_by_session`
@@ -238,7 +246,7 @@ But the search functions were computing `to_tsvector('english', c.content)` at q
    - Includes document names and chunk indices
 
 5. **LLM Generation:**
-   - Claude 3.5 Sonnet generates answer
+   - Claude 4.5 Sonnet generates answer
    - Cites sources with [1], [2], etc.
 
 ### Query Requirements
@@ -282,6 +290,7 @@ pytest tests/test_foo.py  # Specific file
 ### Environment Variables
 
 Required in `backend/.env`:
+
 ```bash
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_KEY=eyJxxx...
@@ -304,6 +313,7 @@ gh pr list                      # Open PRs
 ### Backend
 
 **FastAPI Endpoints:**
+
 ```python
 @router.post("/endpoint", response_model=ResponseModel)
 async def endpoint_name(
@@ -320,6 +330,7 @@ async def endpoint_name(
 ```
 
 **Services:**
+
 ```python
 class ServiceName:
     """Service docstring."""
@@ -333,6 +344,7 @@ class ServiceName:
 ```
 
 **Testing:**
+
 ```python
 def test_feature():
     """Test that feature works correctly."""
@@ -350,40 +362,45 @@ def test_feature():
 ### Frontend
 
 **Pure vanilla JS patterns:**
+
 ```javascript
 // State management
 const state = {
-    documents: [],
-    messages: [],
+  documents: [],
+  messages: [],
 };
 
 // API calls
 async function fetchData() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/endpoint`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data),
-        });
+  try {
+    const response = await fetch(`${API_BASE_URL}/endpoint`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-        if (!response.ok) {
-            throw new Error('Request failed');
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error:', error);
-        showError(error.message);
+    if (!response.ok) {
+      throw new Error("Request failed");
     }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error:", error);
+    showError(error.message);
+  }
 }
 
 // DOM updates
 function updateUI(data) {
-    elements.container.innerHTML = data.map(item => `
+  elements.container.innerHTML = data
+    .map(
+      (item) => `
         <div class="item">
             ${escapeHtml(item.name)}
         </div>
-    `).join('');
+    `,
+    )
+    .join("");
 }
 ```
 
@@ -392,6 +409,7 @@ function updateUI(data) {
 ### 1. TypeScript Warnings in app.js
 
 The IDE shows TypeScript diagnostics for `app.js` even though it's vanilla JS. Common warnings:
+
 - Unused variables (often needed for clarity)
 - Parameter types (no TypeScript in vanilla JS)
 
@@ -400,6 +418,7 @@ The IDE shows TypeScript diagnostics for `app.js` even though it's vanilla JS. C
 ### 2. Supabase Schema Cache
 
 Supabase caches schema/function definitions. After running migrations:
+
 - Changes may not be immediately visible
 - Backend may need restart
 - Wait 1-2 minutes for cache refresh
@@ -428,6 +447,7 @@ Changing embedding model requires:
 ### 5. Import Naming Collisions
 
 **Watch for shadowing in Python:**
+
 ```python
 # Bad - shadows fastapi.status module
 status = "ready"
@@ -621,6 +641,7 @@ crontab -e
 ```
 
 **Features**:
+
 - Deletes documents older than 24 hours by default
 - Protects global documents (excludes `session_id='global'`)
 - Cascades deletion to chunks and embeddings
@@ -786,6 +807,7 @@ Multi-user session isolation allowing concurrent demo users without data mixing:
 **Status:** ✅ **SUCCESSFUL** - Session isolation working perfectly on VPS!
 
 **Testing Performed:**
+
 1. ✅ Uploaded documents in Browser 1 (normal window)
 2. ✅ Opened Browser 2 (incognito) - documents from Browser 1 NOT visible
 3. ✅ Uploaded documents in Browser 2 - isolated from Browser 1
@@ -795,6 +817,7 @@ Multi-user session isolation allowing concurrent demo users without data mixing:
 7. ✅ Search quality - rerank threshold filtering irrelevant results
 
 **Database Container:**
+
 - Container: `n8n-test_postgres_1`
 - Database: `rag_db`
 - User: `rag_user`
@@ -837,10 +860,12 @@ See `deployment/vps/GLOBAL_DOCUMENTS.md` for complete guide.
 ### Important Files Changed
 
 **Migrations:**
+
 - `migrations/004_add_session_isolation.sql` - NEW (session_id column)
 - `migrations/005_add_session_search_functions.sql` - NEW (session-aware search)
 
 **Backend:**
+
 - `backend/app/models/base.py` - UPDATED (session_id in QueryRequest & DocumentListItem)
 - `backend/app/api/documents.py` - UPDATED (session isolation for upload/list/delete)
 - `backend/app/api/query.py` - UPDATED (pass session_id to search)
@@ -851,12 +876,15 @@ See `deployment/vps/GLOBAL_DOCUMENTS.md` for complete guide.
 - `backend/app/core/config.py` - UPDATED (RERANK_SCORE_THRESHOLD = 0.1)
 
 **Frontend:**
+
 - `frontend/app.js` - UPDATED (session generation, localStorage persistence)
 
 **Tests:**
+
 - `backend/tests/test_conversation_history.py` - UPDATED (add session_id to tests)
 
 **Documentation:**
+
 - `deployment/vps/VPS_TESTING.md` - NEW (testing guide)
 - `deployment/vps/GLOBAL_DOCUMENTS.md` - NEW (global docs guide)
 
