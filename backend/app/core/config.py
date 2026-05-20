@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     DEMO_MAX_COMPLETION_TOKENS: int = Field(default=1000, ge=1)
     DEMO_MAX_RETRIEVED_CHUNKS: int = Field(default=10, ge=1)
     DEMO_REQUEST_TIMEOUT_SECONDS: int = Field(default=45, ge=1)
+    DEMO_USAGE_RETENTION_DAYS: int = Field(default=7, ge=1)
     DEMO_USAGE_HASH_SALT: str = ""
 
     @property

@@ -301,3 +301,14 @@ async def test_cleanup_usage_records_returns_deleted_count(service, mock_db):
 
     assert deleted == 12
     mock_db.execute.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_count_usage_records_for_cleanup(service, mock_db):
+    """Cleanup dry runs should be able to count expired usage rows."""
+    mock_db.fetchval.return_value = 9
+
+    count = await service.count_usage_records_for_cleanup(older_than_days=14)
+
+    assert count == 9
+    mock_db.fetchval.assert_awaited_once()

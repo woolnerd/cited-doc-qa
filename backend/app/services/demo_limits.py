@@ -382,6 +382,18 @@ class DemoLimitService:
         )
         return self._rows_affected(status)
 
+    async def count_usage_records_for_cleanup(self, *, older_than_days: int = 7) -> int:
+        """Count demo usage records older than the requested retention window."""
+        value = await self.db.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM demo_usage_events
+            WHERE created_at < now() - ($1::int * interval '1 day')
+            """,
+            older_than_days,
+        )
+        return int(value or 0)
+
     async def _reject(
         self,
         *,
