@@ -235,6 +235,11 @@ Cap retrieval and LLM generation costs in DEMO_MODE
 Ensure demo documents and usage records expire while protected shared/global
 documents remain available.
 
+Implemented in `backend/scripts/cleanup_demo.py`,
+`backend/app/services/demo_limits.py`, `backend/app/core/config.py`,
+`backend/scripts/README.md`, `tests/unit/test_cleanup_demo.py`,
+`tests/unit/test_demo_limits.py`, and `tests/unit/test_config.py`.
+
 **Likely files**
 
 - `backend/scripts/cleanup_demo.py`
