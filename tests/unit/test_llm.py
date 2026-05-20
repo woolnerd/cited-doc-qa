@@ -3,10 +3,12 @@
 from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
+import httpx
 import pytest
 from app.core.config import settings
-from app.core.exceptions import DocumentProcessingError
+from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.services.llm import LLMService
+from openai import APIStatusError, RateLimitError
 
 
 @pytest.fixture
@@ -52,6 +54,28 @@ def sample_search_results():
             "rerank_score": 0.88,
         },
     ]
+
+
+@pytest.fixture
+def many_search_results():
+    """Sample search results large enough to exercise demo capping."""
+    doc_id = str(uuid4())
+    results = []
+    for idx in range(6):
+        results.append(
+            {
+                "chunk_id": f"chunk{idx + 1}",
+                "document_id": doc_id,
+                "content": f"Chunk {idx + 1} content.",
+                "contextual_content": f"Document: demo.pdf\n\nChunk {idx + 1} content.",
+                "metadata": {
+                    "document_name": "demo.pdf",
+                    "chunk_index": idx,
+                },
+                "rerank_score": 1.0 - (idx * 0.1),
+            }
+        )
+    return results
 
 
 @pytest.fixture
@@ -256,6 +280,126 @@ def test_generate_answer_custom_temperature_and_tokens(
     # Check metadata reflects custom values
     assert result["metadata"]["temperature"] == 0.7
     assert result["metadata"]["max_tokens"] == 1000
+
+
+def test_generate_answer_demo_caps_context_and_completion_tokens(
+    llm_service,
+    mock_openai_client,
+    many_search_results,
+    mock_completion_response,
+    monkeypatch,
+):
+    """Demo mode should cap both the context size and completion tokens."""
+    monkeypatch.setattr("app.services.llm.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.services.llm.settings.DEMO_MAX_RETRIEVED_CHUNKS", 3)
+    monkeypatch.setattr("app.services.llm.settings.DEMO_MAX_COMPLETION_TOKENS", 256)
+    mock_openai_client.chat.completions.create.return_value = mock_completion_response
+
+    result = llm_service.generate_answer(
+        query="What is Python?",
+        search_results=many_search_results,
+        max_tokens=1000,
+    )
+
+    call_args = mock_openai_client.chat.completions.create.call_args[1]
+    assert call_args["max_tokens"] == 256
+
+    user_message = call_args["messages"][1]["content"]
+    assert "Chunk 1 content." in user_message
+    assert "Chunk 3 content." in user_message
+    assert "Chunk 4 content." not in user_message
+
+    assert result["metadata"]["max_tokens"] == 256
+    assert result["metadata"]["context_chunks"] == 3
+    assert len(result["sources"]) == 3
+
+
+def test_generate_answer_with_retry_translates_rate_limit_error_after_retries(
+    llm_service, mock_openai_client, sample_search_results
+):
+    """Provider rate-limit failures should retry before surfacing friendly errors."""
+    request = httpx.Request("POST", "https://test.openrouter.ai/chat/completions")
+    response = httpx.Response(
+        429,
+        request=request,
+        json={"error": {"message": "rate limit exceeded"}},
+    )
+    mock_openai_client.chat.completions.create.side_effect = RateLimitError(
+        "Rate limit exceeded",
+        response=response,
+        body={"error": {"message": "rate limit exceeded"}},
+    )
+
+    with pytest.raises(ExternalAPIError) as exc_info:
+        llm_service.generate_answer_with_retry(
+            query="What is Python?",
+            search_results=sample_search_results,
+            retry_delay=0,
+        )
+
+    assert exc_info.value.status_code == 429
+    assert "temporarily busy" in exc_info.value.message.lower()
+    assert mock_openai_client.chat.completions.create.call_count == 3
+
+
+def test_generate_answer_with_retry_recovers_after_transient_rate_limit(
+    llm_service,
+    mock_openai_client,
+    sample_search_results,
+    mock_completion_response,
+):
+    """Transient 429s should still use the retry path."""
+    request = httpx.Request("POST", "https://test.openrouter.ai/chat/completions")
+    response = httpx.Response(
+        429,
+        request=request,
+        json={"error": {"message": "rate limit exceeded"}},
+    )
+    mock_openai_client.chat.completions.create.side_effect = [
+        RateLimitError(
+            "Rate limit exceeded",
+            response=response,
+            body={"error": {"message": "rate limit exceeded"}},
+        ),
+        mock_completion_response,
+    ]
+
+    result = llm_service.generate_answer_with_retry(
+        query="What is Python?",
+        search_results=sample_search_results,
+        retry_delay=0,
+    )
+
+    assert result["answer"] == "Python is a high-level programming language [1]."
+    assert mock_openai_client.chat.completions.create.call_count == 2
+
+
+def test_generate_answer_with_retry_preserves_provider_quota_status(
+    llm_service, mock_openai_client, sample_search_results
+):
+    """Provider 402 quota failures should not be rewritten as retryable 429s."""
+    request = httpx.Request("POST", "https://test.openrouter.ai/chat/completions")
+    response = httpx.Response(
+        402,
+        request=request,
+        json={"error": {"message": "insufficient credits"}},
+    )
+    mock_openai_client.chat.completions.create.side_effect = APIStatusError(
+        "Payment required",
+        response=response,
+        body={"error": {"message": "insufficient credits"}},
+    )
+
+    with pytest.raises(ExternalAPIError) as exc_info:
+        llm_service.generate_answer_with_retry(
+            query="What is Python?",
+            search_results=sample_search_results,
+            retry_delay=0,
+        )
+
+    assert exc_info.value.status_code == 402
+    assert "quota" in exc_info.value.message.lower()
+    assert mock_openai_client.chat.completions.create.call_count == 1
 
 
 def test_generate_answer_no_usage_info(

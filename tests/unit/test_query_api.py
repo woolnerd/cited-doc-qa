@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 from app.core.config import settings
+from app.core.exceptions import ExternalAPIError
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -343,6 +344,42 @@ def test_query_demo_timeout_returns_504(
     assert response.status_code == 504
     data = response.json()
     assert "took too long" in data["detail"].lower()
+
+
+def test_query_provider_rate_limit_returns_friendly_error(
+    client, sample_hybrid_search_response, sample_rerank_response
+):
+    """Provider quota failures should return a user-safe application message."""
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.RerankingService") as MockReranking,
+        patch("app.api.query.LLMService") as MockLLM,
+    ):
+        mock_hybrid = MockHybridSearch.return_value
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
+
+        mock_rerank = MockReranking.return_value
+        mock_rerank.rerank_with_metadata = Mock(return_value=sample_rerank_response)
+
+        mock_llm = MockLLM.return_value
+        mock_llm.generate_answer_with_retry = Mock(
+            side_effect=ExternalAPIError(
+                "OpenRouter",
+                "This answer service is temporarily busy. Please try again in a moment.",
+                status_code=429,
+            )
+        )
+
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
+
+    assert response.status_code == 429
+    data = response.json()
+    assert data["detail"] == (
+        "OpenRouter: This answer service is temporarily busy. Please try again in a moment."
+    )
 
 
 @pytest.mark.asyncio

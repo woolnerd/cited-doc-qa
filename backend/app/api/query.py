@@ -8,7 +8,11 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from app.core.config import settings
 from app.core.dependencies import Database
-from app.core.exceptions import DemoLimitError, DocumentProcessingError
+from app.core.exceptions import (
+    DemoLimitError,
+    DocumentProcessingError,
+    ExternalAPIError,
+)
 from app.core.logging import get_logger
 from app.models.base import QueryMetadata, QueryRequest, QueryResponse, SearchResult
 from app.services.cancellable_execution import run_blocking_in_process
@@ -84,6 +88,7 @@ def _llm_worker(
     query: str,
     search_results: list[dict],
     conversation_history: list[dict[str, str]] | None,
+    max_tokens: int | None,
 ) -> LLMResponse:
     """Run answer generation in a separate process."""
     llm_service = LLMService()
@@ -93,6 +98,7 @@ def _llm_worker(
             query=query,
             search_results=search_results,
             max_retries=3,
+            max_tokens=max_tokens,
             conversation_history=conversation_history,
         ),
     )
@@ -265,6 +271,7 @@ async def query(
                     request.query,
                     reranked_results,
                     conversation_history,
+                    settings.DEMO_MAX_COMPLETION_TOKENS,
                     timeout_seconds=settings.DEMO_REQUEST_TIMEOUT_SECONDS,
                 )
             else:
@@ -355,6 +362,9 @@ async def query(
 
     except HTTPException:
         raise
+    except ExternalAPIError as e:
+        logger.warning(f"Provider request failed: {e}")
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except DocumentProcessingError as e:
         logger.error(f"Query processing failed: {e}", exc_info=True)
         raise HTTPException(
