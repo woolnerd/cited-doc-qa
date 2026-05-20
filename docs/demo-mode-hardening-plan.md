@@ -198,6 +198,10 @@ Enforce public demo query limits before paid provider calls
 
 Cap downstream retrieval and generation work while demo mode is enabled.
 
+Implemented in `backend/app/services/llm.py`, `backend/app/api/query.py`,
+`backend/app/core/exceptions.py`, `tests/unit/test_llm.py`, and
+`tests/unit/test_query_api.py`.
+
 **Likely files**
 
 - `backend/app/api/query.py`
