@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     image: ${DOCKER_REGISTRY:-ghcr.io/woolnerd}/production-rag-system:${IMAGE_TAG:-latest}

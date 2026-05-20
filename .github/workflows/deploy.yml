@@ -92,14 +92,14 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
-            echo "🐳 Pulling latest Docker image..."
-            docker-compose -f docker-compose.prod.yml pull
+            echo "🔎 Checking Docker Compose v2..."
+            docker compose version
 
-            echo "🛑 Stopping old containers..."
-            docker-compose -f docker-compose.prod.yml down
+            echo "🐳 Pulling latest Docker image..."
+            docker compose -f docker-compose.prod.yml pull
 
             echo "🚀 Starting new containers..."
-            docker-compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             echo "⏳ Waiting for application to start..."
 
@@ -113,7 +113,7 @@ jobs:
 
               if [ $i -eq 12 ]; then
                 echo "❌ Deployment failed - health check timed out after 60 seconds"
-                docker-compose -f docker-compose.prod.yml logs --tail=50
+                docker compose -f docker-compose.prod.yml logs --tail=50
                 exit 1
               fi
 
@@ -126,7 +126,7 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          DEPLOYMENT_URL="${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetima.ai' }}"
+          DEPLOYMENT_URL="${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetime.ai' }}"
 
           echo "🧪 Running smoke tests..."
 
@@ -183,10 +183,9 @@ jobs:
             if [ -n "$PREV_IMAGE" ]; then
               echo "Rolling back to: $PREV_IMAGE"
 
-              # Update docker-compose to use previous image
+              # Update Docker Compose to use previous image
               export IMAGE_TAG=$PREV_IMAGE
-              docker-compose -f docker-compose.prod.yml down
-              docker-compose -f docker-compose.prod.yml up -d
+              docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
               # Verify rollback
               sleep 10
