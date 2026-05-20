@@ -2,6 +2,7 @@
 """Automated cleanup script for demo environment.
 
 Deletes documents and associated data older than 24 hours.
+Deletes demo usage records older than the configured retention window.
 This keeps the demo clean and prevents database bloat.
 """
 
@@ -14,21 +15,44 @@ from pathlib import Path
 # Add parent directory to path to import app modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.services.database import db
+from app.services.demo_limits import DemoLimitService
 
 logger = get_logger(__name__)
 
+PROTECTED_SESSION_IDS = ("global", "shared")
+
+
+def positive_int(value: str) -> int:
+    """Parse a positive integer CLI argument."""
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be a positive integer") from exc
+
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+
+    return parsed
+
 
 async def cleanup_old_documents(
-    hours: int = 24, dry_run: bool = False, exclude_global: bool = True
-) -> dict:
+    hours: int = 24,
+    dry_run: bool = False,
+    exclude_global: bool = True,
+    usage_retention_days: int | None = None,
+    cleanup_usage: bool = True,
+) -> dict[str, int]:
     """Delete documents older than specified hours.
 
     Args:
         hours: Age threshold in hours (default: 24)
         dry_run: If True, show what would be deleted without deleting
-        exclude_global: If True, don't delete global documents (default: True)
+        exclude_global: If True, don't delete protected documents (default: True)
+        usage_retention_days: Delete demo usage records older than this many days
+        cleanup_usage: If True, also clean up old demo usage records
 
     Returns:
         Dictionary with cleanup statistics
@@ -44,7 +68,11 @@ async def cleanup_old_documents(
         print(f"🧹 Starting cleanup for documents older than {hours} hours...")
         print(f"   Cutoff time: {cutoff.isoformat()}")
         print(f"   Dry run: {'Yes' if dry_run else 'No'}")
-        print(f"   Exclude global docs: {'Yes' if exclude_global else 'No'}\n")
+        print(f"   Exclude protected docs: {'Yes' if exclude_global else 'No'}")
+        if cleanup_usage:
+            usage_days = usage_retention_days or settings.DEMO_USAGE_RETENTION_DAYS
+            print(f"   Usage record retention: {usage_days} days")
+        print()
 
         # Build query to find old documents
         if exclude_global:
@@ -52,9 +80,10 @@ async def cleanup_old_documents(
                 SELECT id, filename, upload_date, session_id
                 FROM documents
                 WHERE upload_date < $1
-                  AND session_id != 'global'
+                  AND NOT (session_id = ANY($2::varchar[]))
                 ORDER BY upload_date
             """
+            old_docs = await db.fetch(query, cutoff, list(PROTECTED_SESSION_IDS))
         else:
             query = """
                 SELECT id, filename, upload_date, session_id
@@ -62,92 +91,152 @@ async def cleanup_old_documents(
                 WHERE upload_date < $1
                 ORDER BY upload_date
             """
+            old_docs = await db.fetch(query, cutoff)
 
-        old_docs = await db.fetch(query, cutoff)
+        stats: dict[str, int] = {
+            "documents_found": len(old_docs),
+            "documents_deleted": 0,
+            "chunks_found": 0,
+            "chunks_deleted": 0,
+            "sessions_affected": 0,
+            "usage_records_found": 0,
+            "usage_records_deleted": 0,
+        }
 
         if not old_docs:
             print("✅ No documents to clean up")
-            return {
-                "documents_found": 0,
-                "documents_deleted": 0,
-                "chunks_deleted": 0,
-                "sessions_affected": 0,
-            }
+        else:
+            print(f"📋 Found {len(old_docs)} documents to delete:\n")
 
-        print(f"📋 Found {len(old_docs)} documents to delete:\n")
+            # Track statistics
+            deleted_count = 0
+            total_chunks_deleted = 0
+            sessions = set()
 
-        # Track statistics
-        deleted_count = 0
-        total_chunks_deleted = 0
-        sessions = set()
+            for doc in old_docs:
+                doc_id = doc["id"]
+                filename = doc["filename"]
+                upload_date = doc["upload_date"]
+                session_id = doc["session_id"]
 
-        for doc in old_docs:
-            doc_id = doc["id"]
-            filename = doc["filename"]
-            upload_date = doc["upload_date"]
-            session_id = doc["session_id"]
+                sessions.add(session_id)
 
-            sessions.add(session_id)
+                age_hours = (datetime.now(UTC) - upload_date).total_seconds() / 3600
 
-            age_hours = (datetime.now(UTC) - upload_date).total_seconds() / 3600
+                try:
+                    # Count chunks before deletion
+                    chunk_count_query = """
+                        SELECT COUNT(*) as count FROM chunks WHERE document_id = $1
+                    """
+                    chunk_result = await db.fetchrow(chunk_count_query, doc_id)
+                    chunk_count = chunk_result["count"] if chunk_result else 0
 
-            try:
-                # Count chunks before deletion
-                chunk_count_query = """
-                    SELECT COUNT(*) as count FROM chunks WHERE document_id = $1
-                """
-                chunk_result = await db.fetchrow(chunk_count_query, doc_id)
-                chunk_count = chunk_result["count"] if chunk_result else 0
+                    if dry_run:
+                        print(
+                            f"   [DRY RUN] Would delete: {filename} "
+                            f"(age: {age_hours:.1f}h, {chunk_count} chunks, "
+                            f"session: {session_id[:8]}...)"
+                        )
+                    else:
+                        # Delete document (chunks cascade delete automatically)
+                        doc_query = "DELETE FROM documents WHERE id = $1"
+                        await db.execute(doc_query, doc_id)
 
-                if dry_run:
-                    print(
-                        f"   [DRY RUN] Would delete: {filename} "
-                        f"(age: {age_hours:.1f}h, {chunk_count} chunks, "
-                        f"session: {session_id[:8]}...)"
+                        print(
+                            f"   ✓ Deleted: {filename} "
+                            f"(age: {age_hours:.1f}h, {chunk_count} chunks, "
+                            f"session: {session_id[:8]}...)"
+                        )
+
+                    deleted_count += 1
+                    total_chunks_deleted += chunk_count
+
+                except Exception as e:
+                    print(f"   ✗ Failed to delete {filename}: {e}")
+                    logger.error(
+                        f"Failed to delete document {doc_id}: {e}", exc_info=True
                     )
-                else:
-                    # Delete document (chunks cascade delete automatically)
-                    doc_query = "DELETE FROM documents WHERE id = $1"
-                    await db.execute(doc_query, doc_id)
+                    continue
 
-                    print(
-                        f"   ✓ Deleted: {filename} "
-                        f"(age: {age_hours:.1f}h, {chunk_count} chunks, "
-                        f"session: {session_id[:8]}...)"
-                    )
+            stats.update(
+                {
+                    "documents_deleted": deleted_count if not dry_run else 0,
+                    "chunks_found": total_chunks_deleted,
+                    "chunks_deleted": total_chunks_deleted if not dry_run else 0,
+                    "sessions_affected": len(sessions),
+                }
+            )
 
-                deleted_count += 1
-                total_chunks_deleted += chunk_count
-
-            except Exception as e:
-                print(f"   ✗ Failed to delete {filename}: {e}")
-                logger.error(f"Failed to delete document {doc_id}: {e}", exc_info=True)
-                continue
+        if cleanup_usage:
+            usage_stats = await cleanup_old_usage_records(
+                older_than_days=usage_retention_days
+                or settings.DEMO_USAGE_RETENTION_DAYS,
+                dry_run=dry_run,
+            )
+            stats.update(usage_stats)
 
         # Print summary
         print(f"\n{'=' * 60}")
         if dry_run:
             print("🔍 DRY RUN SUMMARY")
-            print(f"Would delete: {deleted_count} documents")
+            print(f"Would delete: {stats['documents_found']} documents")
+            if cleanup_usage:
+                print(f"Would delete: {stats['usage_records_found']} usage records")
         else:
             print("🎉 CLEANUP COMPLETE")
-            print(f"Deleted: {deleted_count}/{len(old_docs)} documents")
+            print(f"Deleted: {stats['documents_deleted']}/{len(old_docs)} documents")
+            if cleanup_usage:
+                print(f"Deleted usage records: {stats['usage_records_deleted']}")
 
-        print(f"Total chunks: {total_chunks_deleted}")
-        print(f"Sessions affected: {len(sessions)}")
+        if dry_run:
+            print(f"Total chunks: {stats['chunks_found']}")
+        else:
+            print(f"Total chunks: {stats['chunks_deleted']}")
+        print(f"Sessions affected: {stats['sessions_affected']}")
         print(f"{'=' * 60}\n")
 
-        return {
-            "documents_found": len(old_docs),
-            "documents_deleted": deleted_count if not dry_run else 0,
-            "chunks_deleted": total_chunks_deleted if not dry_run else 0,
-            "sessions_affected": len(sessions),
-        }
+        return stats
 
     except Exception as e:
         print(f"❌ Cleanup failed: {e}")
         logger.error(f"Cleanup failed: {e}", exc_info=True)
         raise
+
+
+async def cleanup_old_usage_records(
+    *, older_than_days: int, dry_run: bool = False
+) -> dict[str, int]:
+    """Delete demo usage records older than the retention window."""
+    demo_limits = DemoLimitService(db=db)
+    usage_records_found = await demo_limits.count_usage_records_for_cleanup(
+        older_than_days=older_than_days
+    )
+
+    if usage_records_found == 0:
+        print("✅ No demo usage records to clean up")
+        return {"usage_records_found": 0, "usage_records_deleted": 0}
+
+    if dry_run:
+        print(
+            f"   [DRY RUN] Would delete {usage_records_found} demo usage records "
+            f"older than {older_than_days} days"
+        )
+        return {
+            "usage_records_found": usage_records_found,
+            "usage_records_deleted": 0,
+        }
+
+    usage_records_deleted = await demo_limits.cleanup_usage_records(
+        older_than_days=older_than_days
+    )
+    print(
+        f"   ✓ Deleted {usage_records_deleted} demo usage records "
+        f"older than {older_than_days} days"
+    )
+    return {
+        "usage_records_found": usage_records_found,
+        "usage_records_deleted": usage_records_deleted,
+    }
 
 
 async def main():
@@ -157,7 +246,7 @@ async def main():
     )
     parser.add_argument(
         "--hours",
-        type=int,
+        type=positive_int,
         default=24,
         help="Delete documents older than this many hours (default: 24)",
     )
@@ -169,7 +258,21 @@ async def main():
     parser.add_argument(
         "--include-global",
         action="store_true",
-        help="Include global documents in cleanup (default: exclude them)",
+        help="Include protected global/shared documents in cleanup (default: exclude them)",
+    )
+    parser.add_argument(
+        "--usage-retention-days",
+        type=positive_int,
+        default=settings.DEMO_USAGE_RETENTION_DAYS,
+        help=(
+            "Delete demo usage records older than this many days "
+            f"(default: {settings.DEMO_USAGE_RETENTION_DAYS})"
+        ),
+    )
+    parser.add_argument(
+        "--skip-usage-cleanup",
+        action="store_true",
+        help="Skip cleanup of old demo usage records",
     )
 
     args = parser.parse_args()
@@ -179,13 +282,20 @@ async def main():
             hours=args.hours,
             dry_run=args.dry_run,
             exclude_global=not args.include_global,
+            usage_retention_days=args.usage_retention_days,
+            cleanup_usage=not args.skip_usage_cleanup,
         )
 
         print("📊 Final Statistics:")
         print(f"   Documents found: {stats['documents_found']}")
         print(f"   Documents deleted: {stats['documents_deleted']}")
-        print(f"   Chunks deleted: {stats['chunks_deleted']}")
+        if args.dry_run:
+            print(f"   Chunks found: {stats['chunks_found']}")
+        else:
+            print(f"   Chunks deleted: {stats['chunks_deleted']}")
         print(f"   Sessions affected: {stats['sessions_affected']}")
+        print(f"   Usage records found: {stats['usage_records_found']}")
+        print(f"   Usage records deleted: {stats['usage_records_deleted']}")
 
         if args.dry_run:
             print("\n💡 Run without --dry-run to actually delete documents")

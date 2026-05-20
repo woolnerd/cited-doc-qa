@@ -3,11 +3,11 @@
 import time
 from typing import Any
 
-from openai import OpenAI
+from openai import APIStatusError, OpenAI, RateLimitError
 from openai.types.chat import ChatCompletion
 
 from app.core.config import settings
-from app.core.exceptions import DocumentProcessingError
+from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -115,6 +115,63 @@ Important:
         # Keep the most recent messages
         return conversation_history[-max_messages:]
 
+    def _limit_search_results(
+        self, search_results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Apply demo-mode retrieval caps before generation."""
+        if not settings.DEMO_MODE:
+            return search_results
+        return search_results[: settings.DEMO_MAX_RETRIEVED_CHUNKS]
+
+    def _limit_completion_tokens(self, max_tokens: int | None) -> int:
+        """Apply demo-mode completion token caps."""
+        effective_max_tokens = max_tokens if max_tokens is not None else self.max_tokens
+        if settings.DEMO_MODE:
+            return min(effective_max_tokens, settings.DEMO_MAX_COMPLETION_TOKENS)
+        return effective_max_tokens
+
+    def _translate_provider_error(
+        self, error: Exception, *, include_retryable: bool
+    ) -> ExternalAPIError | None:
+        """Map provider quota/rate-limit failures to a friendly app error."""
+        if isinstance(error, RateLimitError) and include_retryable:
+            return ExternalAPIError(
+                "OpenRouter",
+                "This answer service is temporarily busy. Please try again in a moment.",
+                status_code=429,
+            )
+
+        if isinstance(error, APIStatusError):
+            status_code = getattr(error, "status_code", None)
+            if status_code == 402:
+                return ExternalAPIError(
+                    "OpenRouter",
+                    "This answer service has reached its configured quota. Please try again later.",
+                    status_code=402,
+                )
+            if status_code == 429 and include_retryable:
+                return ExternalAPIError(
+                    "OpenRouter",
+                    "This answer service is temporarily busy. Please try again in a moment.",
+                    status_code=429,
+                )
+
+        message = str(error).lower()
+        if "insufficient_quota" in message:
+            return ExternalAPIError(
+                "OpenRouter",
+                "This answer service has reached its configured quota. Please try again later.",
+                status_code=402,
+            )
+        if include_retryable and "rate limit" in message:
+            return ExternalAPIError(
+                "OpenRouter",
+                "This answer service is temporarily busy. Please try again in a moment.",
+                status_code=429,
+            )
+
+        return None
+
     def generate_answer(
         self,
         query: str,
@@ -140,7 +197,8 @@ Important:
         """
         try:
             temperature = temperature if temperature is not None else self.temperature
-            max_tokens = max_tokens if max_tokens is not None else self.max_tokens
+            max_tokens = self._limit_completion_tokens(max_tokens)
+            search_results = self._limit_search_results(search_results)
 
             logger.info(
                 f"Generating answer for query: '{query[:50]}...' with {len(search_results)} context chunks"
@@ -175,12 +233,20 @@ Please provide a comprehensive answer based on the context above, including cita
             start_time = time.time()
 
             # Call LLM API
-            response: ChatCompletion = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
+            try:
+                response: ChatCompletion = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+            except Exception as e:
+                provider_error = self._translate_provider_error(
+                    e, include_retryable=False
+                )
+                if provider_error is not None:
+                    raise provider_error from e
+                raise
 
             generation_time = time.time() - start_time
 
@@ -231,6 +297,8 @@ Please provide a comprehensive answer based on the context above, including cita
                 },
             }
 
+        except ExternalAPIError:
+            raise
         except Exception as e:
             logger.error(f"Failed to generate answer: {e}", exc_info=True)
             raise DocumentProcessingError(f"Failed to generate answer: {e}") from e
@@ -273,6 +341,8 @@ Please provide a comprehensive answer based on the context above, including cita
                     max_tokens=max_tokens,
                     conversation_history=conversation_history,
                 )
+            except ExternalAPIError:
+                raise
             except Exception as e:
                 last_error = e
                 logger.warning(
@@ -286,6 +356,12 @@ Please provide a comprehensive answer based on the context above, including cita
 
         # All retries failed
         logger.error(f"Answer generation failed after {max_retries} attempts")
+        if last_error is not None:
+            provider_error = self._translate_provider_error(
+                last_error, include_retryable=True
+            )
+            if provider_error is not None:
+                raise provider_error from last_error
         raise DocumentProcessingError(
             f"Answer generation failed after {max_retries} attempts: {last_error}"
         ) from last_error

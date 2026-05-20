@@ -4,14 +4,15 @@ Utility scripts for database maintenance and demo management.
 
 ## cleanup_demo.py
 
-Automated cleanup script that deletes old documents and associated data from the database.
+Automated cleanup script that deletes old documents and associated data from the database. It also removes old public-demo usage records from `demo_usage_events`.
 
 ### Purpose
 
 - Prevents database bloat in demo environment
 - Removes documents older than 24 hours by default
 - Cascades deletion to associated chunks and embeddings
-- Protects global documents by default
+- Protects global/shared documents by default
+- Removes demo usage records older than `DEMO_USAGE_RETENTION_DAYS` days, default `7`
 
 ### Usage
 
@@ -47,6 +48,12 @@ python scripts/cleanup_demo.py
 # Include global documents in cleanup (dangerous!)
 /path/to/venv/bin/python backend/scripts/cleanup_demo.py --include-global
 
+# Keep demo usage records for 14 days instead of the configured default
+/path/to/venv/bin/python backend/scripts/cleanup_demo.py --usage-retention-days 14
+
+# Skip usage record cleanup
+/path/to/venv/bin/python backend/scripts/cleanup_demo.py --skip-usage-cleanup
+
 # Combine options
 /path/to/venv/bin/python backend/scripts/cleanup_demo.py --hours 12 --dry-run
 ```
@@ -57,7 +64,9 @@ python scripts/cleanup_demo.py
 |--------|---------|-------------|
 | `--hours N` | 24 | Delete documents older than N hours |
 | `--dry-run` | False | Preview deletions without actually deleting |
-| `--include-global` | False | Include global documents (normally excluded) |
+| `--include-global` | False | Include protected global/shared documents (normally excluded) |
+| `--usage-retention-days N` | `DEMO_USAGE_RETENTION_DAYS` | Delete usage records older than N days |
+| `--skip-usage-cleanup` | False | Skip usage record cleanup |
 
 ### Output Example
 
@@ -65,7 +74,8 @@ python scripts/cleanup_demo.py
 🧹 Starting cleanup for documents older than 24 hours...
    Cutoff time: 2025-11-09T16:30:00+00:00
    Dry run: No
-   Exclude global docs: Yes
+   Exclude protected docs: Yes
+   Usage record retention: 7 days
 
 📋 Found 15 documents to delete:
 
@@ -77,6 +87,7 @@ python scripts/cleanup_demo.py
 ============================================================
 🎉 CLEANUP COMPLETE
 Deleted: 15/15 documents
+Deleted usage records: 120
 Total chunks: 156
 Sessions affected: 8
 ============================================================
@@ -86,6 +97,8 @@ Sessions affected: 8
    Documents deleted: 15
    Chunks deleted: 156
    Sessions affected: 8
+   Usage records found: 120
+   Usage records deleted: 120
 ```
 
 ### Automated Scheduling
@@ -307,7 +320,7 @@ SELECT
 
 ### Safety Features
 
-1. **Global Document Protection**: By default, excludes documents with `session_id='global'`
+1. **Protected Document Handling**: By default, excludes documents with `session_id='global'` or `session_id='shared'`
 2. **Dry Run Mode**: Test before deleting with `--dry-run`
 3. **Cascade Deletion**: Automatically removes associated chunks (database foreign key)
 4. **Transaction Safety**: Each deletion is atomic

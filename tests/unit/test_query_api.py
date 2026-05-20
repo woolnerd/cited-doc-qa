@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import pytest
+from app.core.config import settings
+from app.core.exceptions import ExternalAPIError
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -13,6 +15,8 @@ def mock_db():
     """Mock DatabaseService."""
     mock = Mock()
     mock.fetch = AsyncMock()
+    mock.fetchval = AsyncMock(return_value=0)
+    mock.execute = AsyncMock(return_value="INSERT 0 1")
     return mock
 
 
@@ -107,7 +111,7 @@ def sample_llm_response():
             }
         ],
         "metadata": {
-            "model": "anthropic/claude-3.5-sonnet",
+            "model": settings.LLM_MODEL,
             "temperature": 0.3,
             "tokens_used": {
                 "prompt_tokens": 150,
@@ -160,7 +164,7 @@ async def test_query_success(
 
         # Check metadata
         assert data["metadata"]["query"] == "What is Python?"
-        assert data["metadata"]["model"] == "anthropic/claude-3.5-sonnet"
+        assert data["metadata"]["model"] == settings.LLM_MODEL
         assert data["metadata"]["tokens_used"]["total_tokens"] == 200
         assert "total_ms" in data["metadata"]["timing"]
 
@@ -198,8 +202,8 @@ async def test_query_with_top_k(
 
         # Verify rerank was called with correct top_k
         mock_rerank.rerank_with_metadata.assert_called_once()
-        call_args = mock_rerank.rerank_with_metadata.call_args[1]
-        assert call_args["top_k"] == 3
+        call_args = mock_rerank.rerank_with_metadata.call_args
+        assert call_args.args[2] == 3
 
 
 @pytest.mark.asyncio
@@ -299,6 +303,83 @@ async def test_query_invalid_request(client):
         "/api/query", json={"session_id": "test-session", "query": "test", "top_k": 21}
     )
     assert response.status_code == 422
+
+
+def test_query_demo_rejects_whitespace_only_query(client, monkeypatch):
+    """Demo mode should reject whitespace-only queries before search."""
+    monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
+
+    response = client.post(
+        "/api/query", json={"session_id": "test-session", "query": "   "}
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "specific question" in data["detail"].lower()
+
+
+def test_query_demo_timeout_returns_504(
+    client, monkeypatch, sample_hybrid_search_response
+):
+    """Demo mode timeout should return a 504 instead of being swallowed."""
+    monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
+    monkeypatch.setattr("app.api.query.settings.DEMO_REQUEST_TIMEOUT_SECONDS", 1)
+
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.run_blocking_in_process") as mock_run_blocking,
+    ):
+        mock_hybrid = MockHybridSearch.return_value
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
+        mock_run_blocking.side_effect = TimeoutError("timeout")
+
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
+
+    assert response.status_code == 504
+    data = response.json()
+    assert "took too long" in data["detail"].lower()
+
+
+def test_query_provider_rate_limit_returns_friendly_error(
+    client, sample_hybrid_search_response, sample_rerank_response
+):
+    """Provider quota failures should return a user-safe application message."""
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.RerankingService") as MockReranking,
+        patch("app.api.query.LLMService") as MockLLM,
+    ):
+        mock_hybrid = MockHybridSearch.return_value
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
+
+        mock_rerank = MockReranking.return_value
+        mock_rerank.rerank_with_metadata = Mock(return_value=sample_rerank_response)
+
+        mock_llm = MockLLM.return_value
+        mock_llm.generate_answer_with_retry = Mock(
+            side_effect=ExternalAPIError(
+                "OpenRouter",
+                "This answer service is temporarily busy. Please try again in a moment.",
+                status_code=429,
+            )
+        )
+
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
+
+    assert response.status_code == 429
+    data = response.json()
+    assert data["detail"] == (
+        "OpenRouter: This answer service is temporarily busy. Please try again in a moment."
+    )
 
 
 @pytest.mark.asyncio
