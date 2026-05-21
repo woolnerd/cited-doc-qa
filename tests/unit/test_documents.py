@@ -382,15 +382,17 @@ def test_get_document_source_url_for_global_document(client_with_mock_db, monkey
     )
 
 
-def test_get_document_source_url_infers_object_name(client_with_mock_db, monkeypatch):
-    """Source URLs fall back to the configured prefix and document filename."""
+def test_get_document_source_url_infers_object_name_for_global_document(
+    client_with_mock_db, monkeypatch
+):
+    """Global source URLs fall back to the configured prefix and document filename."""
     client, mock_db = client_with_mock_db
 
     mock_document_id = uuid4()
     mock_db.fetchrow.return_value = {
         "id": mock_document_id,
         "filename": "fallback.pdf",
-        "session_id": "test-session-123",
+        "session_id": "global",
         "metadata": {},
     }
     monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_BUCKET", "demo-bucket")
@@ -410,6 +412,31 @@ def test_get_document_source_url_infers_object_name(client_with_mock_db, monkeyp
         object_name="real_docs/fallback.pdf",
         ttl_seconds=900,
     )
+
+
+def test_get_document_source_url_unavailable_for_session_upload(
+    client_with_mock_db, monkeypatch
+):
+    """Session uploads are searchable but do not have stored source files."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "uploaded.pdf",
+        "session_id": "test-session-123",
+        "metadata": {},
+    }
+    monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_BUCKET", "demo-bucket")
+
+    with patch("app.api.documents.generate_gcs_signed_url") as mock_signed_url:
+        response = client.get(
+            f"/api/documents/{mock_document_id}/source-url?session_id=test-session-123"
+        )
+
+    assert response.status_code == 404
+    assert "not available" in response.json()["detail"].lower()
+    mock_signed_url.assert_not_called()
 
 
 def test_get_document_source_url_forbidden_for_other_session(client_with_mock_db):

@@ -524,6 +524,12 @@ async def get_document_source_url(
             )
 
         source_object = metadata.get("source_object")
+        if not source_object and doc_session_id != "global":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Original source file is not available for this uploaded document",
+            )
+
         if not source_object:
             prefix = settings.GCS_SOURCE_PREFIX.strip("/")
             source_object = (

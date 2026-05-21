@@ -32,6 +32,18 @@ const state = {
   sessionId: SESSION_ID,
 };
 
+function hasSourceDocument(document) {
+  return (
+    document &&
+    (document.session_id === "global" || Boolean(document.metadata?.source_object))
+  );
+}
+
+function sourceHasOriginal(source) {
+  const document = state.documents.find((doc) => doc.id === source.document_id);
+  return hasSourceDocument(document);
+}
+
 // DOM Elements
 const elements = {
   uploadArea: document.getElementById("uploadArea"),
@@ -500,6 +512,15 @@ function updateDocumentsList() {
                     </svg>
                 </button>
             `;
+      const viewButton = hasSourceDocument(doc)
+        ? `
+                <button class="document-action-button view-button" onclick="viewOriginalDocument('${doc.id}', event)" title="View original document">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" />
+                    </svg>
+                </button>
+            `
+        : "";
 
       return `
         <div class="document-item">
@@ -516,11 +537,7 @@ function updateDocumentsList() {
               doc.status
             }">${statusIcon} ${statusText}</span>
             <div class="document-actions">
-                <button class="document-action-button view-button" onclick="viewOriginalDocument('${doc.id}', event)" title="View original document">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" />
-                    </svg>
-                </button>
+                ${viewButton}
                 ${deleteButton}
             </div>
         </div>
@@ -664,16 +681,18 @@ function createSourceItem(source) {
   const actions = document.createElement("div");
   actions.className = "source-actions";
 
-  const viewButton = document.createElement("button");
-  viewButton.className = "source-view-button";
-  viewButton.title = "View original document";
-  viewButton.innerHTML =
-    '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" /></svg>';
-  viewButton.addEventListener("click", (event) =>
-    viewOriginalDocument(source.document_id, event)
-  );
+  if (sourceHasOriginal(source)) {
+    const viewButton = document.createElement("button");
+    viewButton.className = "source-view-button";
+    viewButton.title = "View original document";
+    viewButton.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" /></svg>';
+    viewButton.addEventListener("click", (event) =>
+      viewOriginalDocument(source.document_id, event)
+    );
+    actions.appendChild(viewButton);
+  }
 
-  actions.appendChild(viewButton);
   actions.appendChild(chevron);
 
   header.appendChild(title);
