@@ -313,6 +313,32 @@ async function deleteDocument(documentId) {
   }
 }
 
+async function viewOriginalDocument(documentId, event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/documents/${documentId}/source-url?session_id=${state.sessionId}`
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Original document is unavailable");
+    }
+
+    const result = await response.json();
+    window.open(result.url, "_blank", "noopener");
+  } catch (error) {
+    console.error("Source document error:", error);
+    showUploadStatus(
+      "error",
+      error.message || "Failed to open original document"
+    );
+  }
+}
+
 // Query Handling
 async function handleSendQuery() {
   const query = elements.queryInput.value.trim();
@@ -464,6 +490,16 @@ function updateDocumentsList() {
 
       const statusIcon = doc.status === "ready" ? "✓" : "⏳";
       const statusText = doc.status === "ready" ? "Ready" : "Processing";
+      const deleteButton =
+        doc.session_id === "global"
+          ? ""
+          : `
+                <button class="document-action-button delete-button" onclick="deleteDocument('${doc.id}')" title="Delete document">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            `;
 
       return `
         <div class="document-item">
@@ -479,13 +515,14 @@ function updateDocumentsList() {
             <span class="document-status status-${
               doc.status
             }">${statusIcon} ${statusText}</span>
-            <button class="delete-button" onclick="deleteDocument('${
-              doc.id
-            }')" title="Delete document">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-            </button>
+            <div class="document-actions">
+                <button class="document-action-button view-button" onclick="viewOriginalDocument('${doc.id}', event)" title="View original document">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" />
+                    </svg>
+                </button>
+                ${deleteButton}
+            </div>
         </div>
         `;
     })
@@ -624,8 +661,23 @@ function createSourceItem(source) {
   chevron.setAttribute("viewBox", "0 0 24 24");
   chevron.setAttribute("stroke", "currentColor");
 
+  const actions = document.createElement("div");
+  actions.className = "source-actions";
+
+  const viewButton = document.createElement("button");
+  viewButton.className = "source-view-button";
+  viewButton.title = "View original document";
+  viewButton.innerHTML =
+    '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" /></svg>';
+  viewButton.addEventListener("click", (event) =>
+    viewOriginalDocument(source.document_id, event)
+  );
+
+  actions.appendChild(viewButton);
+  actions.appendChild(chevron);
+
   header.appendChild(title);
-  header.appendChild(chevron);
+  header.appendChild(actions);
 
   // Content (collapsed by default)
   const content = document.createElement("div");

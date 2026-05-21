@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     DEMO_USAGE_RETENTION_DAYS: int = Field(default=7, ge=1)
     DEMO_USAGE_HASH_SALT: str = ""
 
+    # Source document viewing
+    GCS_SOURCE_BUCKET: str = ""
+    GCS_SOURCE_PREFIX: str = "real_docs"
+    GCS_SIGNED_URL_TTL_SECONDS: int = Field(default=900, ge=60)
+
     @property
     def DEMO_MAX_FILE_SIZE_BYTES(self) -> int:
         """Demo per-file upload limit in bytes."""
