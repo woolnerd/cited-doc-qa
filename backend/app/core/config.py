@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     DEMO_MAX_COMPLETION_TOKENS: int = Field(default=1000, ge=1)
     DEMO_MAX_RETRIEVED_CHUNKS: int = Field(default=10, ge=1)
     DEMO_REQUEST_TIMEOUT_SECONDS: int = Field(default=45, ge=1)
+    DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS: int = Field(default=5, ge=1)
     DEMO_USAGE_RETENTION_DAYS: int = Field(default=7, ge=1)
     DEMO_USAGE_HASH_SALT: str = ""
 
@@ -111,7 +112,7 @@ class Settings(BaseSettings):
 
     # LLM Configuration (via Openrouter)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    LLM_MODEL: str = "anthropic/claude-sonnet-4-5"  # Openrouter format
+    LLM_MODEL: str = "anthropic/claude-haiku-4.5"  # Openrouter format
     LLM_TEMPERATURE: float = 0.3
     LLM_MAX_TOKENS: int = 2048
 

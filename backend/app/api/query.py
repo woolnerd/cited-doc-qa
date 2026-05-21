@@ -202,12 +202,23 @@ async def query(
                     for msg in request.conversation_history
                 ]
                 if settings.DEMO_MODE:
-                    enhanced_query = await run_blocking_in_process(
-                        _enhance_query_worker,
-                        request.query,
-                        conversation_history,
-                        timeout_seconds=settings.DEMO_REQUEST_TIMEOUT_SECONDS,
-                    )
+                    try:
+                        enhanced_query = await run_blocking_in_process(
+                            _enhance_query_worker,
+                            request.query,
+                            conversation_history,
+                            timeout_seconds=(
+                                settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS
+                            ),
+                        )
+                    except TimeoutError:
+                        logger.warning(
+                            "Query enhancement timed out; using original query "
+                            "query_len=%d session_id=%s timeout_seconds=%d",
+                            len(request.query),
+                            request.session_id,
+                            settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS,
+                        )
                 else:
                     enhanced_query = await asyncio.to_thread(
                         query_enhancer.enhance_query,
@@ -273,25 +284,38 @@ async def query(
                 return response
 
             # Step 3: Reranking (use enhanced query for better relevance)
-            logger.info(f"Reranking {len(search_results)} results...")
-            if settings.DEMO_MODE:
-                rerank_response = await run_blocking_in_process(
-                    _rerank_worker,
-                    enhanced_query,
-                    search_results,
-                    request.top_k,
-                    timeout_seconds=settings.DEMO_REQUEST_TIMEOUT_SECONDS,
-                )
-            else:
+            if len(search_results) <= 1:
+                logger.info("Skipping rerank for %d result", len(search_results))
                 rerank_response = cast(
                     RerankResponse,
-                    await asyncio.to_thread(
-                        reranking_service.rerank_with_metadata,
+                    {
+                        "results": search_results[: request.top_k],
+                        "metadata": {
+                            "used_fallback": False,
+                            "timing": {"rerank_ms": 0.0},
+                        },
+                    },
+                )
+            else:
+                logger.info(f"Reranking {len(search_results)} results...")
+                if settings.DEMO_MODE:
+                    rerank_response = await run_blocking_in_process(
+                        _rerank_worker,
                         enhanced_query,
                         search_results,
                         request.top_k,
-                    ),
-                )
+                        timeout_seconds=settings.DEMO_REQUEST_TIMEOUT_SECONDS,
+                    )
+                else:
+                    rerank_response = cast(
+                        RerankResponse,
+                        await asyncio.to_thread(
+                            reranking_service.rerank_with_metadata,
+                            enhanced_query,
+                            search_results,
+                            request.top_k,
+                        ),
+                    )
 
             reranked_results = rerank_response["results"]
             rerank_metadata = rerank_response["metadata"]
