@@ -403,14 +403,16 @@ def test_query_demo_enhancement_timeout_uses_original_query(
 
     with (
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.LLMService") as MockLLM,
         patch("app.api.query.run_blocking_in_process") as mock_run_blocking,
     ):
         mock_hybrid = MockHybridSearch.return_value
         mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
+        mock_llm = MockLLM.return_value
+        mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
         mock_run_blocking.side_effect = [
             TimeoutError("enhancement timeout"),
             sample_rerank_response,
-            sample_llm_response,
         ]
         response = client.post(
             "/api/query",

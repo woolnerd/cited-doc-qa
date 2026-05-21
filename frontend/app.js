@@ -553,7 +553,11 @@ function addMessage(role, content, sources = [], metadata = {}) {
 
   const textDiv = document.createElement("div");
   textDiv.className = "message-text";
-  textDiv.textContent = content;
+  if (role === "assistant") {
+    textDiv.innerHTML = renderMarkdown(content);
+  } else {
+    textDiv.textContent = content;
+  }
   contentDiv.appendChild(textDiv);
 
   // Add sources for assistant messages
@@ -702,6 +706,60 @@ function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+function renderMarkdown(content) {
+  const lines = escapeHtml(content).split("\n");
+  const html = [];
+  let listItems = [];
+  let listType = null;
+
+  const flushList = () => {
+    if (listItems.length === 0) return;
+    const tag = listType === "ol" ? "ol" : "ul";
+    html.push(`<${tag}>${listItems.map((item) => `<li>${item}</li>`).join("")}</${tag}>`);
+    listItems = [];
+    listType = null;
+  };
+
+  const formatInline = (text) =>
+    text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+    if (unorderedMatch || orderedMatch) {
+      const nextListType = orderedMatch ? "ol" : "ul";
+      if (listType && listType !== nextListType) {
+        flushList();
+      }
+      listType = nextListType;
+      listItems.push(formatInline((orderedMatch || unorderedMatch)[1]));
+      return;
+    }
+
+    flushList();
+
+    if (trimmed.startsWith("### ")) {
+      html.push(`<h4>${formatInline(trimmed.slice(4))}</h4>`);
+    } else if (trimmed.startsWith("## ")) {
+      html.push(`<h3>${formatInline(trimmed.slice(3))}</h3>`);
+    } else if (trimmed.startsWith("# ")) {
+      html.push(`<h2>${formatInline(trimmed.slice(2))}</h2>`);
+    } else {
+      html.push(`<p>${formatInline(trimmed)}</p>`);
+    }
+  });
+
+  flushList();
+  return html.join("");
 }
 
 // Initialize on load

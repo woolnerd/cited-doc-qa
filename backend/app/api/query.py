@@ -113,26 +113,6 @@ def _rerank_worker(
     )
 
 
-def _llm_worker(
-    query: str,
-    search_results: list[dict],
-    conversation_history: list[dict[str, str]] | None,
-    max_tokens: int | None,
-) -> LLMResponse:
-    """Run answer generation in a separate process."""
-    llm_service = LLMService()
-    return cast(
-        LLMResponse,
-        llm_service.generate_answer_with_retry(
-            query=query,
-            search_results=search_results,
-            max_retries=3,
-            max_tokens=max_tokens,
-            conversation_history=conversation_history,
-        ),
-    )
-
-
 @router.post("/query", response_model=QueryResponse, status_code=status.HTTP_200_OK)
 async def query(
     request: QueryRequest,
@@ -330,29 +310,22 @@ async def query(
                     for msg in request.conversation_history
                 ]
 
-            if settings.DEMO_MODE:
-                llm_response = await run_blocking_in_process(
-                    _llm_worker,
+            max_tokens = (
+                settings.DEMO_MAX_COMPLETION_TOKENS if settings.DEMO_MODE else None
+            )
+            llm_response = cast(
+                LLMResponse,
+                await asyncio.to_thread(
+                    llm_service.generate_answer_with_retry,
                     request.query,
                     reranked_results,
+                    3,
+                    1.0,
+                    None,
+                    max_tokens,
                     llm_conversation_history,
-                    settings.DEMO_MAX_COMPLETION_TOKENS,
-                    timeout_seconds=settings.DEMO_REQUEST_TIMEOUT_SECONDS,
-                )
-            else:
-                llm_response = cast(
-                    LLMResponse,
-                    await asyncio.to_thread(
-                        llm_service.generate_answer_with_retry,
-                        request.query,
-                        reranked_results,
-                        3,
-                        1.0,
-                        None,
-                        None,
-                        llm_conversation_history,
-                    ),
-                )
+                ),
+            )
 
             sources = [
                 SearchResult(
