@@ -252,8 +252,17 @@ body {
 }
 
 .document-status {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: start;
+    align-self: start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: max-content;
     font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
+    line-height: 1;
+    padding: 0.35rem 0.65rem;
     border-radius: 9999px;
     font-weight: 500;
     white-space: nowrap;
