@@ -96,7 +96,7 @@ class Settings(BaseSettings):
     # Search Configuration
     SEARCH_TOP_K: int = 10  # Number of top results to return
     SEARCH_SIMILARITY_THRESHOLD: float = (
-        0.5  # Minimum similarity score (0-1) - Lowered for better semantic recall
+        0.45  # Minimum similarity score (0-1) - Lowered for better semantic recall
     )
     VECTOR_SEARCH_LIMIT: int = 30
     FULL_TEXT_SEARCH_LIMIT: int = 30
