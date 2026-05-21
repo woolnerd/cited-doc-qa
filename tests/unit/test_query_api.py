@@ -1,5 +1,7 @@
 """Tests for query API endpoint."""
 
+import asyncio
+import time
 from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
@@ -369,13 +371,14 @@ def test_query_demo_timeout_returns_504(
     monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
     monkeypatch.setattr("app.api.query.settings.DEMO_REQUEST_TIMEOUT_SECONDS", 1)
 
-    with (
-        patch("app.api.query.HybridSearchService") as MockHybridSearch,
-        patch("app.api.query.run_blocking_in_process") as mock_run_blocking,
-    ):
+    with (patch("app.api.query.HybridSearchService") as MockHybridSearch,):
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
-        mock_run_blocking.side_effect = TimeoutError("timeout")
+
+        async def slow_search(*args, **kwargs):
+            await asyncio.sleep(2)
+            return sample_hybrid_search_response
+
+        mock_hybrid.search = AsyncMock(side_effect=slow_search)
 
         response = client.post(
             "/api/query",
@@ -398,22 +401,25 @@ def test_query_demo_enhancement_timeout_uses_original_query(
     monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
     monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
     monkeypatch.setattr(
-        "app.api.query.settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS", 1
+        "app.api.query.settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS", 0.01
     )
 
     with (
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.QueryEnhancementService") as MockQueryEnhancement,
+        patch("app.api.query.RerankingService") as MockReranking,
         patch("app.api.query.LLMService") as MockLLM,
-        patch("app.api.query.run_blocking_in_process") as mock_run_blocking,
     ):
         mock_hybrid = MockHybridSearch.return_value
         mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
+        mock_enhancer = MockQueryEnhancement.return_value
+        mock_enhancer.enhance_query = Mock(
+            side_effect=lambda *args, **kwargs: time.sleep(0.05) or "enhanced query"
+        )
+        mock_rerank = MockReranking.return_value
+        mock_rerank.rerank_with_metadata = Mock(return_value=sample_rerank_response)
         mock_llm = MockLLM.return_value
         mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
-        mock_run_blocking.side_effect = [
-            TimeoutError("enhancement timeout"),
-            sample_rerank_response,
-        ]
         response = client.post(
             "/api/query",
             json={

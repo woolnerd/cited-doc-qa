@@ -16,7 +16,6 @@ from app.core.exceptions import (
 )
 from app.core.logging import get_logger
 from app.models.base import QueryMetadata, QueryRequest, QueryResponse, SearchResult
-from app.services.cancellable_execution import run_blocking_in_process
 from app.services.demo_limits import DemoLimitService
 from app.services.hybrid_search import HybridSearchService
 from app.services.llm import LLMService
@@ -85,32 +84,6 @@ class LLMResponse(TypedDict):
     answer: str
     sources: list[LLMSource]
     metadata: LLMMetadata
-
-
-def _enhance_query_worker(
-    query: str, conversation_history: list[dict[str, str]]
-) -> str:
-    """Run query enhancement in a separate process."""
-    query_enhancer = QueryEnhancementService()
-    return query_enhancer.enhance_query(
-        query=query,
-        conversation_history=conversation_history,
-    )
-
-
-def _rerank_worker(
-    query: str, search_results: list[dict], top_k: int
-) -> RerankResponse:
-    """Run reranking in a separate process."""
-    reranking_service = RerankingService()
-    return cast(
-        RerankResponse,
-        reranking_service.rerank_with_metadata(
-            query=query,
-            results=search_results,
-            top_k=top_k,
-        ),
-    )
 
 
 @router.post("/query", response_model=QueryResponse, status_code=status.HTTP_200_OK)
@@ -183,18 +156,18 @@ async def query(
                 ]
                 if settings.DEMO_MODE:
                     try:
-                        enhanced_query = await run_blocking_in_process(
-                            _enhance_query_worker,
-                            request.query,
-                            conversation_history,
-                            timeout_seconds=(
-                                settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS
+                        enhanced_query = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                query_enhancer.enhance_query,
+                                request.query,
+                                conversation_history,
                             ),
+                            timeout=settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS,
                         )
                     except TimeoutError:
                         logger.warning(
                             "Query enhancement timed out; using original query "
-                            "query_len=%d session_id=%s timeout_seconds=%d",
+                            "query_len=%d session_id=%s timeout_seconds=%.2f",
                             len(request.query),
                             request.session_id,
                             settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS,
@@ -278,24 +251,15 @@ async def query(
                 )
             else:
                 logger.info(f"Reranking {len(search_results)} results...")
-                if settings.DEMO_MODE:
-                    rerank_response = await run_blocking_in_process(
-                        _rerank_worker,
+                rerank_response = cast(
+                    RerankResponse,
+                    await asyncio.to_thread(
+                        reranking_service.rerank_with_metadata,
                         enhanced_query,
                         search_results,
                         request.top_k,
-                        timeout_seconds=settings.DEMO_REQUEST_TIMEOUT_SECONDS,
-                    )
-                else:
-                    rerank_response = cast(
-                        RerankResponse,
-                        await asyncio.to_thread(
-                            reranking_service.rerank_with_metadata,
-                            enhanced_query,
-                            search_results,
-                            request.top_k,
-                        ),
-                    )
+                    ),
+                )
 
             reranked_results = rerank_response["results"]
             rerank_metadata = rerank_response["metadata"]
