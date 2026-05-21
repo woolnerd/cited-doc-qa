@@ -1,13 +1,14 @@
 services:
   app:
-    image: ${DOCKER_REGISTRY:-ghcr.io/woolnerd}/production-rag-system:${IMAGE_TAG:-latest}
-    container_name: rag-chatbot-prod
+    image: ${DOCKER_REGISTRY:-ghcr.io/woolnerd}/eta-rag-demo:${IMAGE_TAG:-latest}
+    container_name: eta-rag-demo
     ports:
-      - "8001:8000"
+      - "8002:8000"
     environment:
       - ENVIRONMENT=production
       - LOG_LEVEL=WARNING
     env_file:
+      - .env
       - .env.production
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

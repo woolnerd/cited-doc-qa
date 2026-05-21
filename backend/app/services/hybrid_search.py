@@ -4,7 +4,7 @@ import time
 from typing import Any
 
 from app.core.config import settings
-from app.core.exceptions import DocumentProcessingError
+from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.core.logging import get_logger
 from app.services.database import DatabaseService
 from app.services.embeddings import EmbeddingService
@@ -229,6 +229,8 @@ class HybridSearchService:
 
         except DocumentProcessingError:
             raise
+        except ExternalAPIError:
+            raise
         except Exception as e:
             logger.error(f"Hybrid search failed: {e}", exc_info=True)
             raise DocumentProcessingError(f"Hybrid search failed: {e}") from e
@@ -338,6 +340,8 @@ class HybridSearchService:
             }
 
         except DocumentProcessingError:
+            raise
+        except ExternalAPIError:
             raise
         except Exception as e:
             logger.error(f"Hybrid search by document failed: {e}", exc_info=True)

@@ -87,6 +87,23 @@ def test_service_initialization_success(mock_cohere_client):
     assert service.model == "rerank-english-v3.0"
 
 
+def test_service_initialization_openrouter(monkeypatch, mock_cohere_client):
+    """OpenRouter reranking should not initialize the Cohere client."""
+    monkeypatch.setattr("app.services.reranking.settings.RERANK_PROVIDER", "openrouter")
+    monkeypatch.setattr(
+        "app.services.reranking.settings.RERANK_MODEL",
+        "cohere/rerank-v3.5",
+    )
+
+    service = RerankingService(api_key="test-openrouter-key")
+
+    assert service.provider == "openrouter"
+    assert service.api_key == "test-openrouter-key"
+    assert service.client is None
+    assert service.model == "cohere/rerank-v3.5"
+    mock_cohere_client.rerank.assert_not_called()
+
+
 def test_service_initialization_uses_settings(mock_cohere_client):
     """Test that service uses settings when no API key provided."""
     service = RerankingService()
@@ -103,7 +120,7 @@ def test_service_initialization_failure():
         side_effect=Exception("API error"),
     ):
         with pytest.raises(
-            DocumentProcessingError, match="Failed to initialize Cohere client"
+            DocumentProcessingError, match="Failed to initialize reranking client"
         ):
             RerankingService(api_key="test-key")
 
@@ -194,6 +211,36 @@ def test_rerank_uses_contextual_content(
     # Check that contextual_content was used
     assert "Document: test.pdf" in documents[0]
     assert "Python is a programming language." in documents[0]
+
+
+def test_rerank_openrouter_success(monkeypatch, sample_search_results):
+    """OpenRouter reranking should call the compatible rerank endpoint."""
+    monkeypatch.setattr("app.services.reranking.settings.RERANK_PROVIDER", "openrouter")
+    monkeypatch.setattr(
+        "app.services.reranking.settings.RERANK_MODEL",
+        "cohere/rerank-v3.5",
+    )
+
+    mock_response = Mock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "results": [
+            {"index": 2, "relevance_score": 0.97},
+            {"index": 0, "relevance_score": 0.84},
+        ]
+    }
+
+    with patch("app.services.reranking.httpx.post", return_value=mock_response) as post:
+        service = RerankingService(api_key="test-openrouter-key")
+        results = service.rerank("test query", sample_search_results, top_k=2)
+
+    assert [result["chunk_id"] for result in results] == ["chunk3", "chunk1"]
+    assert results[0]["rerank_score"] == 0.97
+    post.assert_called_once()
+    payload = post.call_args.kwargs["json"]
+    assert payload["model"] == "cohere/rerank-v3.5"
+    assert payload["query"] == "test query"
+    assert payload["top_n"] == 2
 
 
 def test_rerank_retry_on_cohere_error(

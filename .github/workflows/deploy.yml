@@ -72,7 +72,7 @@ jobs:
     if: vars.VPS_CONFIGURED == 'true'
     environment:
       name: production
-      url: ${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetime.ai' }}
+      url: ${{ vars.DEPLOYMENT_URL || 'http://67.217.241.245:8002' }}
 
     steps:
       - name: Checkout deployment scripts
@@ -86,7 +86,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /root/production-rag-system
+            cd /root/eta-rag-demo
 
             echo "📥 Pulling latest code..."
             git fetch origin
@@ -106,7 +106,7 @@ jobs:
             # Wait up to 60 seconds for health check to pass
             for i in {1..12}; do
               echo "Attempt $i/12: Checking health endpoint..."
-              if curl -f http://localhost:8001/health > /dev/null 2>&1; then
+              if curl -f http://localhost:8002/health > /dev/null 2>&1; then
                 echo "✅ Deployment successful - health check passed"
                 break
               fi
@@ -126,7 +126,7 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          DEPLOYMENT_URL="${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetime.ai' }}"
+          DEPLOYMENT_URL="${{ vars.DEPLOYMENT_URL || 'http://67.217.241.245:8002' }}"
 
           echo "🧪 Running smoke tests..."
 
@@ -155,7 +155,7 @@ jobs:
           echo "**Environment:** production" >> $GITHUB_STEP_SUMMARY
           echo "**Host:** \`${{ secrets.VPS_HOST }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** \`${{ needs.build-and-push.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** ${{ vars.DEPLOYMENT_URL || 'https://rag.getfreetime.ai' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ vars.DEPLOYMENT_URL || 'http://67.217.241.245:8002' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
   rollback:
@@ -173,12 +173,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /root/production-rag-system
+            cd /root/eta-rag-demo
 
             echo "🔄 Rolling back to previous version..."
 
             # Get previous image tag
-            PREV_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep production-rag-system | sed -n '2p')
+            PREV_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep eta-rag-demo | sed -n '2p')
 
             if [ -n "$PREV_IMAGE" ]; then
               echo "Rolling back to: $PREV_IMAGE"
@@ -189,7 +189,7 @@ jobs:
 
               # Verify rollback
               sleep 10
-              if curl -f http://localhost:8001/health > /dev/null 2>&1; then
+              if curl -f http://localhost:8002/health > /dev/null 2>&1; then
                 echo "✅ Rollback successful"
               else
                 echo "❌ Rollback failed"

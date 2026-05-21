@@ -83,6 +83,7 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = "test-openrouter-key"  # Claude LLM via Openrouter
 
     # Embedding Configuration
+    EMBEDDING_PROVIDER: str = "gemini"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
     EMBEDDING_DIMENSIONS: int = 3072
 
@@ -102,6 +103,7 @@ class Settings(BaseSettings):
     RRF_K: int = 60
 
     # Reranking Configuration
+    RERANK_PROVIDER: str = "cohere"
     RERANK_MODEL: str = "rerank-english-v3.0"
     RERANK_MAX_RETRIES: int = 3
     RERANK_RETRY_DELAY: float = 1.0  # seconds

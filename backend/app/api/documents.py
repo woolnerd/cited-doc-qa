@@ -20,6 +20,7 @@ from app.core.dependencies import Database
 from app.core.exceptions import (
     DemoLimitError,
     DocumentProcessingError,
+    ExternalAPIError,
     FileValidationError,
 )
 from app.core.logging import get_logger
@@ -129,6 +130,7 @@ async def upload_document(
 
     # Validate file
     validate_file(file, strict_mime=settings.DEMO_MODE)
+    filename = file.filename or ""
 
     # Read file content to get actual size
     file_content = await file.read()
@@ -146,7 +148,7 @@ async def upload_document(
     await file.seek(0)
 
     # Extract file metadata
-    file_type = get_file_type(file.filename)
+    file_type = get_file_type(filename)
     upload_date = datetime.now(UTC)
 
     # Store document metadata in PostgreSQL
@@ -165,7 +167,7 @@ async def upload_document(
         """
 
         result = await db.fetchrow(
-            query, file.filename, file_type, upload_date, session_id, metadata_json
+            query, filename, file_type, upload_date, session_id, metadata_json
         )
 
         if not result:
@@ -189,7 +191,7 @@ async def upload_document(
             success=True,
             message="Document uploaded successfully",
             document_id=document_id,
-            filename=file.filename,
+            filename=filename,
             file_type=file_type,
             file_size=file_size,
             upload_date=upload_date,
@@ -343,6 +345,18 @@ async def process_document(
         raise
     except DemoLimitError:
         raise
+    except ExternalAPIError as e:
+        logger.warning(f"Document provider failed for {document_id}: {e.message}")
+        # Delete the failed document from database
+        try:
+            await db.execute("DELETE FROM documents WHERE id = $1", document_id)
+            logger.info(f"Deleted failed document {document_id}")
+        except Exception as del_error:
+            logger.error(f"Failed to delete document {document_id}: {del_error}")
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.message,
+        ) from e
     except DocumentProcessingError as e:
         logger.error(f"Document processing failed for {document_id}: {e}")
         # Delete the failed document from database
