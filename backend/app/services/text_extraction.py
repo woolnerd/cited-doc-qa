@@ -3,7 +3,7 @@
 import io
 
 import docx
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 
 from app.core.exceptions import DocumentProcessingError
 from app.core.logging import get_logger
