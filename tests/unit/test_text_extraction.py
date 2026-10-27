@@ -6,7 +6,7 @@ import pytest
 from app.core.exceptions import DocumentProcessingError
 from app.services.text_extraction import TextExtractor
 from docx import Document
-from PyPDF2 import PdfWriter
+from pypdf import PdfWriter
 
 
 def create_test_pdf(text_content: str) -> bytes:
