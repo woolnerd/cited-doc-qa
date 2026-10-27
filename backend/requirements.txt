@@ -1,7 +1,7 @@
 # FastAPI and server
-fastapi==0.115.0
-uvicorn[standard]==0.32.0
-python-multipart==0.0.12
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
 
 # Database
 asyncpg==0.29.0
@@ -15,15 +15,25 @@ cohere==5.11.0
 openai==1.58.1  # For Openrouter (Claude via OpenAI-compatible API)
 google-cloud-storage==2.19.0  # Signed URLs for source document viewing
 
+# Security floors for transitive dependencies (October 2026 advisories)
+starlette>=1.10.0  # BadHost CVE-2026-48710 + later Starlette advisories
+certifi>=2026.10.19  # eMudhra/emSign CA compromise
+anyio>=4.14.2
+pillow>=13.0.0
+pyjwt>=2.15.1
+brotli>=1.2.1
+h11>=0.16.0
+idna>=3.15
+
 # Document Processing
-PyPDF2==3.0.1
+pypdf==6.21.3  # maintained successor to PyPDF2 (PyPDF2 is abandoned; GHSA-4vvm-4w3v-6mr8)
 python-docx==1.1.2
 tiktoken==0.8.0
 
 # Utilities
 pydantic==2.9.2
 pydantic-settings==2.6.0
-python-dotenv==1.0.1
+python-dotenv==1.2.4
 httpx==0.27.2
 
 # Development & Testing
@@ -33,7 +43,7 @@ pytest-cov==6.0.0
 pytest-mock==3.14.0
 pytest-benchmark==4.0.0
 reportlab==4.2.5
-black==24.10.0
+black==26.10.1
 ruff==0.7.3
 mypy==1.13.0
 pre-commit==4.0.1
