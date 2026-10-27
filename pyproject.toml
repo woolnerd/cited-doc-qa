@@ -58,7 +58,6 @@ module = [
     "google.generativeai.*",
     "cohere.*",
     "anthropic.*",
-    "PyPDF2.*",
     "docx.*",
 ]
 ignore_missing_imports = true

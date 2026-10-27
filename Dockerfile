@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for production-ready RAG chatbot backend
 # Stage 1: Builder - Install dependencies
-FROM python:3.11-slim as builder
+FROM python:3.11.18-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime - Create minimal production image
-FROM python:3.11-slim
+FROM python:3.11.18-slim
 
 # Set working directory
 WORKDIR /app
