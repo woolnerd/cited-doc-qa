@@ -252,8 +252,17 @@ body {
 }
 
 .document-status {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: start;
+    align-self: start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: max-content;
     font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
+    line-height: 1;
+    padding: 0.35rem 0.65rem;
     border-radius: 9999px;
     font-weight: 500;
     white-space: nowrap;
@@ -276,7 +285,16 @@ body {
     padding: 0.375rem;
 }
 
-.delete-button {
+.document-actions {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.document-action-button {
     padding: 0.25rem;
     background: transparent;
     border: none;
@@ -287,9 +305,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    grid-column: 3;
-    grid-row: 1;
-    align-self: start;
+}
+
+.view-button:hover {
+    background: #eef2ff;
+    color: var(--accent);
 }
 
 .delete-button:hover {
@@ -297,7 +317,7 @@ body {
     color: var(--error);
 }
 
-.delete-button svg {
+.document-action-button svg {
     width: 1rem;
     height: 1rem;
 }
@@ -463,8 +483,40 @@ body {
 }
 
 .message-text {
-    white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+.message-text > * + * {
+    margin-top: 0.65rem;
+}
+
+.message-text h2,
+.message-text h3,
+.message-text h4 {
+    color: var(--text-1);
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+.message-text h2 {
+    font-size: 1rem;
+}
+
+.message-text h3 {
+    font-size: 0.95rem;
+}
+
+.message-text h4 {
+    font-size: 0.9rem;
+}
+
+.message-text ul,
+.message-text ol {
+    padding-left: 1.25rem;
+}
+
+.message-text li + li {
+    margin-top: 0.25rem;
 }
 
 /* Sources */
@@ -511,6 +563,37 @@ body {
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-1);
+    min-width: 0;
+}
+
+.source-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+.source-view-button {
+    padding: 0.25rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-3);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.source-view-button:hover {
+    background: #eef2ff;
+    color: var(--accent);
+}
+
+.source-view-button svg {
+    width: 1rem;
+    height: 1rem;
 }
 
 .citation-badge {

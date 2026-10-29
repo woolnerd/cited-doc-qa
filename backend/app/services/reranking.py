@@ -4,6 +4,7 @@ import time
 from typing import Any
 
 import cohere
+import httpx
 from cohere.core.api_error import ApiError as CohereApiError
 
 from app.core.config import settings
@@ -26,16 +27,32 @@ class RerankingService:
             DocumentProcessingError: If Cohere client initialization fails
         """
         try:
-            self.api_key = api_key or settings.COHERE_API_KEY
-            self.client = cohere.ClientV2(api_key=self.api_key)
+            self.provider = settings.RERANK_PROVIDER.lower()
+            self.api_key = api_key or (
+                settings.OPENROUTER_API_KEY
+                if self.provider == "openrouter"
+                else settings.COHERE_API_KEY
+            )
             self.model = settings.RERANK_MODEL
             self.max_retries = settings.RERANK_MAX_RETRIES
             self.retry_delay = settings.RERANK_RETRY_DELAY
-            logger.info(f"Reranking service initialized with model: {self.model}")
+            self.openrouter_base_url = settings.OPENROUTER_BASE_URL.rstrip("/")
+            self.client = None
+
+            if self.provider == "cohere":
+                self.client = cohere.ClientV2(api_key=self.api_key)
+            elif self.provider != "openrouter":
+                raise DocumentProcessingError(
+                    f"Unsupported rerank provider: {settings.RERANK_PROVIDER}"
+                )
+
+            logger.info(
+                f"Reranking service initialized with provider={self.provider}, model={self.model}"
+            )
         except Exception as e:
-            logger.error(f"Failed to initialize Cohere client: {e}", exc_info=True)
+            logger.error(f"Failed to initialize reranking client: {e}", exc_info=True)
             raise DocumentProcessingError(
-                f"Failed to initialize Cohere client: {e}"
+                f"Failed to initialize reranking client: {e}"
             ) from e
 
     def _exponential_backoff(self, attempt: int) -> float:
@@ -48,6 +65,45 @@ class RerankingService:
             Delay in seconds
         """
         return float(self.retry_delay * (2**attempt))
+
+    def _rerank_via_provider(
+        self, query: str, documents: list[str], top_n: int
+    ) -> list[tuple[int, float]]:
+        """Call the configured rerank provider and return index/score pairs."""
+        if self.provider == "openrouter":
+            http_response = httpx.post(
+                f"{self.openrouter_base_url}/rerank",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "query": query,
+                    "documents": documents,
+                    "top_n": top_n,
+                },
+                timeout=30.0,
+            )
+            http_response.raise_for_status()
+            return [
+                (int(item["index"]), float(item["relevance_score"]))
+                for item in http_response.json().get("results", [])
+            ]
+
+        if self.client is None:
+            raise DocumentProcessingError("Reranking client is not initialized")
+
+        cohere_response: Any = self.client.rerank(
+            model=self.model,
+            query=query,
+            documents=documents,
+            top_n=top_n,
+        )
+        return [
+            (int(result.index), float(result.relevance_score))
+            for result in cohere_response.results
+        ]
 
     def rerank(
         self,
@@ -85,14 +141,12 @@ class RerankingService:
         ]
 
         # Attempt reranking with retry logic
-        last_error = None
+        last_error: Exception | None = None
         for attempt in range(self.max_retries):
             try:
                 start_time = time.time()
 
-                # Call Cohere rerank API
-                response = self.client.rerank(
-                    model=self.model,
+                rerank_results = self._rerank_via_provider(
                     query=query,
                     documents=documents,
                     top_n=min(top_k, len(documents)),
@@ -100,14 +154,13 @@ class RerankingService:
 
                 rerank_time = time.time() - start_time
                 logger.info(
-                    f"Reranking completed in {rerank_time:.3f}s, returned {len(response.results)} results"
+                    f"Reranking completed in {rerank_time:.3f}s, returned {len(rerank_results)} results"
                 )
 
                 # Process reranked results and filter by threshold
                 reranked_results = []
-                for idx, rerank_result in enumerate(response.results):
-                    original_result = results[rerank_result.index]
-                    rerank_score = rerank_result.relevance_score
+                for idx, (result_index, rerank_score) in enumerate(rerank_results):
+                    original_result = results[result_index]
 
                     # Filter out results below threshold
                     if rerank_score < settings.RERANK_SCORE_THRESHOLD:

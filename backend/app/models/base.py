@@ -186,3 +186,12 @@ class DocumentDeleteResponse(BaseResponse):
     chunks_deleted: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentSourceUrlResponse(BaseResponse):
+    """Response model for a short-lived source document URL."""
+
+    url: str
+    expires_in_seconds: int
+
+    model_config = ConfigDict(from_attributes=True)

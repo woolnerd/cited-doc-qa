@@ -1,7 +1,7 @@
 """Document upload and management endpoints."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import (
@@ -20,6 +20,7 @@ from app.core.dependencies import Database
 from app.core.exceptions import (
     DemoLimitError,
     DocumentProcessingError,
+    ExternalAPIError,
     FileValidationError,
 )
 from app.core.logging import get_logger
@@ -29,6 +30,7 @@ from app.models.base import (
     DocumentListResponse,
     DocumentMetadata,
     DocumentProcessingResponse,
+    DocumentSourceUrlResponse,
     DocumentUploadResponse,
 )
 from app.services.demo_limits import DemoLimitService
@@ -97,6 +99,35 @@ def get_file_type(filename: str) -> str:
     return filename.rsplit(".", 1)[-1].lower() if "." in filename else "unknown"
 
 
+def parse_metadata(metadata: object) -> dict:
+    """Normalize JSON metadata from asyncpg."""
+    if isinstance(metadata, dict):
+        return metadata
+    if isinstance(metadata, str):
+        try:
+            parsed = json.loads(metadata)
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
+def generate_gcs_signed_url(
+    *, bucket_name: str, object_name: str, ttl_seconds: int
+) -> str:
+    """Create a short-lived signed URL for a GCS object."""
+    from google.cloud import storage
+
+    client = storage.Client()
+    blob = client.bucket(bucket_name).blob(object_name)
+    signed_url = blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(seconds=ttl_seconds),
+        method="GET",
+    )
+    return str(signed_url)
+
+
 @router.post(
     "/upload",
     response_model=DocumentUploadResponse,
@@ -129,6 +160,7 @@ async def upload_document(
 
     # Validate file
     validate_file(file, strict_mime=settings.DEMO_MODE)
+    filename = file.filename or ""
 
     # Read file content to get actual size
     file_content = await file.read()
@@ -146,7 +178,7 @@ async def upload_document(
     await file.seek(0)
 
     # Extract file metadata
-    file_type = get_file_type(file.filename)
+    file_type = get_file_type(filename)
     upload_date = datetime.now(UTC)
 
     # Store document metadata in PostgreSQL
@@ -165,7 +197,7 @@ async def upload_document(
         """
 
         result = await db.fetchrow(
-            query, file.filename, file_type, upload_date, session_id, metadata_json
+            query, filename, file_type, upload_date, session_id, metadata_json
         )
 
         if not result:
@@ -189,7 +221,7 @@ async def upload_document(
             success=True,
             message="Document uploaded successfully",
             document_id=document_id,
-            filename=file.filename,
+            filename=filename,
             file_type=file_type,
             file_size=file_size,
             upload_date=upload_date,
@@ -237,13 +269,7 @@ async def get_document(
                 detail=f"Document {document_id} not found",
             )
 
-        # Parse metadata if it's a JSON string
-        metadata = result["metadata"]
-        if isinstance(metadata, str):
-            try:
-                metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                metadata = {}
+        metadata = parse_metadata(result["metadata"])
 
         return DocumentMetadata(
             id=UUID(str(result["id"])),
@@ -343,6 +369,18 @@ async def process_document(
         raise
     except DemoLimitError:
         raise
+    except ExternalAPIError as e:
+        logger.warning(f"Document provider failed for {document_id}: {e.message}")
+        # Delete the failed document from database
+        try:
+            await db.execute("DELETE FROM documents WHERE id = $1", document_id)
+            logger.info(f"Deleted failed document {document_id}")
+        except Exception as del_error:
+            logger.error(f"Failed to delete document {document_id}: {del_error}")
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.message,
+        ) from e
     except DocumentProcessingError as e:
         logger.error(f"Document processing failed for {document_id}: {e}")
         # Delete the failed document from database
@@ -416,13 +454,7 @@ async def list_documents(
             # Determine status based on chunk count
             doc_status = "ready" if chunk_count > 0 else "processing"
 
-            # Parse metadata if it's a JSON string
-            metadata = row["metadata"]
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    metadata = {}
+            metadata = parse_metadata(row["metadata"])
 
             documents.append(
                 DocumentListItem(
@@ -451,6 +483,82 @@ async def list_documents(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve documents",
+        ) from e
+
+
+@router.get("/{document_id}/source-url", response_model=DocumentSourceUrlResponse)
+async def get_document_source_url(
+    document_id: UUID,
+    session_id: str = Query(...),
+    *,
+    db: Database,
+) -> DocumentSourceUrlResponse:
+    """Return a short-lived URL for viewing the original source document."""
+    try:
+        query = """
+            SELECT id, filename, session_id, metadata
+            FROM documents
+            WHERE id = $1
+        """
+        doc = await db.fetchrow(query, document_id)
+
+        if not doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document {document_id} not found",
+            )
+
+        doc_session_id = doc["session_id"]
+        if doc_session_id != "global" and doc_session_id != session_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view documents from your own session",
+            )
+
+        metadata = parse_metadata(doc["metadata"])
+        bucket_name = metadata.get("source_bucket") or settings.GCS_SOURCE_BUCKET
+        if not bucket_name:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Source document viewing is not configured",
+            )
+
+        source_object = metadata.get("source_object")
+        if not source_object and doc_session_id != "global":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Original source file is not available for this uploaded document",
+            )
+
+        if not source_object:
+            prefix = settings.GCS_SOURCE_PREFIX.strip("/")
+            source_object = (
+                f"{prefix}/{doc['filename']}" if prefix else str(doc["filename"])
+            )
+
+        url = generate_gcs_signed_url(
+            bucket_name=bucket_name,
+            object_name=source_object,
+            ttl_seconds=settings.GCS_SIGNED_URL_TTL_SECONDS,
+        )
+
+        return DocumentSourceUrlResponse(
+            success=True,
+            message="Source document URL generated",
+            url=url,
+            expires_in_seconds=settings.GCS_SIGNED_URL_TTL_SECONDS,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Error generating source URL for document {document_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate source document URL",
         ) from e
 
 

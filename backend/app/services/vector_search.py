@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from app.core.config import settings
-from app.core.exceptions import DocumentProcessingError
+from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.core.logging import get_logger
 from app.services.database import DatabaseService
 from app.services.embeddings import EmbeddingService
@@ -111,6 +111,8 @@ class VectorSearchService:
 
         except DocumentProcessingError:
             raise
+        except ExternalAPIError:
+            raise
         except Exception as e:
             logger.error(f"Vector search failed: {e}", exc_info=True)
             raise DocumentProcessingError(f"Vector search failed: {e}") from e
@@ -198,6 +200,8 @@ class VectorSearchService:
             return formatted_results
 
         except DocumentProcessingError:
+            raise
+        except ExternalAPIError:
             raise
         except Exception as e:
             logger.error(f"Vector search by document failed: {e}", exc_info=True)

@@ -1,9 +1,9 @@
 """Tests for Gemini embedding service."""
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
-from app.core.exceptions import DocumentProcessingError
+from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.services.embeddings import EmbeddingService
 
 
@@ -76,6 +76,18 @@ def test_generate_embedding_api_error(embedding_service, mock_genai):
     """Test embedding generation with API error."""
     mock_genai.embed_content.side_effect = Exception("API rate limit exceeded")
 
+    with pytest.raises(ExternalAPIError) as exc_info:
+        embedding_service.generate_embedding("test")
+
+    assert exc_info.value.status_code == 429
+    assert "quota" in exc_info.value.message.lower()
+    assert "rate limit exceeded" not in exc_info.value.message
+
+
+def test_generate_embedding_non_quota_api_error(embedding_service, mock_genai):
+    """Non-quota provider failures should keep the generic processing error path."""
+    mock_genai.embed_content.side_effect = Exception("Network error")
+
     with pytest.raises(DocumentProcessingError, match="Failed to generate embedding"):
         embedding_service.generate_embedding("test")
 
@@ -146,6 +158,41 @@ def test_generate_embeddings_batch_custom_batch_size(embedding_service, mock_gen
     assert mock_genai.embed_content.call_count == 10
 
 
+def test_generate_embeddings_batch_openrouter(monkeypatch, mock_genai):
+    """OpenRouter embeddings should be requested in one batch."""
+    monkeypatch.setattr(
+        "app.services.embeddings.settings.EMBEDDING_PROVIDER", "openrouter"
+    )
+    monkeypatch.setattr(
+        "app.services.embeddings.settings.EMBEDDING_MODEL",
+        "openai/text-embedding-3-large",
+    )
+
+    mock_response = Mock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "data": [
+            {"embedding": [0.1] * 3072},
+            {"embedding": [0.2] * 3072},
+        ]
+    }
+
+    with patch(
+        "app.services.embeddings.httpx.post", return_value=mock_response
+    ) as post:
+        service = EmbeddingService()
+        results = service.generate_embeddings_batch(["Text 1", "", "Text 2"])
+
+    assert results[0] == [0.1] * 3072
+    assert results[1] == [0.0] * 3072
+    assert results[2] == [0.2] * 3072
+    mock_genai.configure.assert_not_called()
+    post.assert_called_once()
+    payload = post.call_args.kwargs["json"]
+    assert payload["model"] == "openai/text-embedding-3-large"
+    assert payload["input"] == ["Text 1", "Text 2"]
+
+
 def test_generate_query_embedding_success(embedding_service, mock_genai):
     """Test successful query embedding generation."""
     mock_embedding = [0.2] * 3072
@@ -183,11 +230,20 @@ def test_generate_query_embedding_wrong_dimensions(embedding_service, mock_genai
 
 def test_generate_query_embedding_api_error(embedding_service, mock_genai):
     """Test query embedding with API error."""
+    mock_genai.embed_content.side_effect = Exception("429 quota exceeded")
+
+    with pytest.raises(ExternalAPIError) as exc_info:
+        embedding_service.generate_query_embedding("test query")
+
+    assert exc_info.value.status_code == 429
+    assert "quota" in exc_info.value.message.lower()
+
+
+def test_generate_query_embedding_non_quota_api_error(embedding_service, mock_genai):
+    """Non-quota query embedding failures should keep the generic error path."""
     mock_genai.embed_content.side_effect = Exception("Network error")
 
-    with pytest.raises(
-        DocumentProcessingError, match="Failed to generate query embedding"
-    ):
+    with pytest.raises(DocumentProcessingError, match="Failed to generate query"):
         embedding_service.generate_query_embedding("test query")
 
 

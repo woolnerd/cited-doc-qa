@@ -4,7 +4,7 @@ import json
 from typing import Any
 from uuid import UUID
 
-from app.core.exceptions import DocumentProcessingError
+from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.core.logging import get_logger
 from app.services.chunking import ChunkingService
 from app.services.database import DatabaseService
@@ -88,6 +88,8 @@ class DocumentProcessor:
                     chunk_texts
                 )
                 logger.info(f"Generated {len(embeddings)} embeddings")
+            except ExternalAPIError:
+                raise
             except Exception as e:
                 logger.error(f"Embedding generation failed: {e}")
                 raise DocumentProcessingError(f"Failed to process document: {e}") from e
@@ -114,6 +116,8 @@ class DocumentProcessor:
             }
 
         except DocumentProcessingError:
+            raise
+        except ExternalAPIError:
             raise
         except Exception as e:
             logger.error(

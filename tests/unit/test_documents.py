@@ -348,6 +348,137 @@ def test_get_document_invalid_uuid(client_with_mock_db):
     assert response.status_code == 422  # Unprocessable Entity
 
 
+def test_get_document_source_url_for_global_document(client_with_mock_db, monkeypatch):
+    """Global demo documents can return a short-lived source URL."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "source.pdf",
+        "session_id": "global",
+        "metadata": {"source_object": "real_docs/source.pdf"},
+    }
+    monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_BUCKET", "demo-bucket")
+    monkeypatch.setattr("app.api.documents.settings.GCS_SIGNED_URL_TTL_SECONDS", 900)
+
+    with patch(
+        "app.api.documents.generate_gcs_signed_url",
+        return_value="https://storage.example/source.pdf?signature=test",
+    ) as mock_signed_url:
+        response = client.get(
+            f"/api/documents/{mock_document_id}/source-url?session_id=test-session-123"
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["url"] == "https://storage.example/source.pdf?signature=test"
+    assert data["expires_in_seconds"] == 900
+    mock_signed_url.assert_called_once_with(
+        bucket_name="demo-bucket",
+        object_name="real_docs/source.pdf",
+        ttl_seconds=900,
+    )
+
+
+def test_get_document_source_url_infers_object_name_for_global_document(
+    client_with_mock_db, monkeypatch
+):
+    """Global source URLs fall back to the configured prefix and document filename."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "fallback.pdf",
+        "session_id": "global",
+        "metadata": {},
+    }
+    monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_BUCKET", "demo-bucket")
+    monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_PREFIX", "real_docs")
+
+    with patch(
+        "app.api.documents.generate_gcs_signed_url",
+        return_value="https://storage.example/fallback.pdf?signature=test",
+    ) as mock_signed_url:
+        response = client.get(
+            f"/api/documents/{mock_document_id}/source-url?session_id=test-session-123"
+        )
+
+    assert response.status_code == 200
+    mock_signed_url.assert_called_once_with(
+        bucket_name="demo-bucket",
+        object_name="real_docs/fallback.pdf",
+        ttl_seconds=900,
+    )
+
+
+def test_get_document_source_url_unavailable_for_session_upload(
+    client_with_mock_db, monkeypatch
+):
+    """Session uploads are searchable but do not have stored source files."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "uploaded.pdf",
+        "session_id": "test-session-123",
+        "metadata": {},
+    }
+    monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_BUCKET", "demo-bucket")
+
+    with patch("app.api.documents.generate_gcs_signed_url") as mock_signed_url:
+        response = client.get(
+            f"/api/documents/{mock_document_id}/source-url?session_id=test-session-123"
+        )
+
+    assert response.status_code == 404
+    assert "not available" in response.json()["detail"].lower()
+    mock_signed_url.assert_not_called()
+
+
+def test_get_document_source_url_forbidden_for_other_session(client_with_mock_db):
+    """Session documents should only be viewable by their owning session."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "private.pdf",
+        "session_id": "other-session",
+        "metadata": {},
+    }
+
+    response = client.get(
+        f"/api/documents/{mock_document_id}/source-url?session_id=test-session-123"
+    )
+
+    assert response.status_code == 403
+
+
+def test_get_document_source_url_not_configured(client_with_mock_db, monkeypatch):
+    """Missing bucket config should produce a clear service error."""
+    client, mock_db = client_with_mock_db
+
+    mock_document_id = uuid4()
+    mock_db.fetchrow.return_value = {
+        "id": mock_document_id,
+        "filename": "source.pdf",
+        "session_id": "global",
+        "metadata": {},
+    }
+    monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_BUCKET", "")
+
+    response = client.get(
+        f"/api/documents/{mock_document_id}/source-url?session_id=test-session-123"
+    )
+
+    assert response.status_code == 503
+    assert "not configured" in response.json()["detail"].lower()
+
+
 def test_list_documents_success(client_with_mock_db):
     """Test successful document list retrieval."""
     client, mock_db = client_with_mock_db

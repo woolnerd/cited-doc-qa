@@ -1,0 +1,28 @@
+Acme Operations Group — Transition Knowledge Capture Plan
+Prepared for new ownership onboarding
+
+The following knowledge should be documented from long-time employees during the first 90 days after acquisition:
+
+Customer-specific preferences:
+- Which customers require special packaging, labeling, delivery windows, or invoice formats.
+- Which accounts have informal pricing exceptions or approval workflows.
+
+Vendor and supplier knowledge:
+- Backup vendors for critical materials.
+- Which vendor contacts solve issues fastest.
+- Seasonal lead time risks and ordering shortcuts.
+
+Production and operations know-how:
+- Machine setup tricks that are not in written SOPs.
+- Common quality defects and how experienced operators identify them early.
+- Maintenance warning signs before expensive downtime.
+
+People and culture:
+- Informal team leaders on each shift.
+- Employees at retention risk after the ownership transition.
+- Training gaps for newer managers.
+
+Finance and administration:
+- Month-end close workarounds.
+- Recurring manual adjustments.
+- Customer collections history that is not obvious from the accounting system.

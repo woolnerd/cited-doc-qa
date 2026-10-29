@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from app.core.exceptions import DocumentProcessingError
+from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.services.document_processor import DocumentProcessor
 
 
@@ -191,6 +191,24 @@ async def test_process_document_embedding_failure(
 
 
 @pytest.mark.asyncio
+async def test_process_document_preserves_provider_embedding_error(
+    document_processor, sample_document_data, mock_embedding_service
+):
+    """Friendly provider errors should not be wrapped with raw processing text."""
+    mock_embedding_service.generate_embeddings_batch.side_effect = ExternalAPIError(
+        "Embedding provider",
+        "The document analysis service has reached its configured quota. Please try again later.",
+        status_code=429,
+    )
+
+    with pytest.raises(ExternalAPIError) as exc_info:
+        await document_processor.process_document(**sample_document_data)
+
+    assert exc_info.value.status_code == 429
+    assert "quota" in exc_info.value.message.lower()
+
+
+@pytest.mark.asyncio
 async def test_process_document_storage_failure(
     document_processor, sample_document_data, mock_db_service
 ):
@@ -238,44 +256,52 @@ async def test_process_document_logs_progress(
 @pytest.mark.asyncio
 async def test_process_document_with_different_file_types(mock_db_service):
     """Test processing different file types."""
-    processor = DocumentProcessor(db_service=mock_db_service)
+    mock_text_extractor = MagicMock()
+    mock_chunking_service = MagicMock()
+    mock_embedding_service = MagicMock()
+    processor = DocumentProcessor(
+        db_service=mock_db_service,
+        text_extractor=mock_text_extractor,
+        chunking_service=mock_chunking_service,
+        embedding_service=mock_embedding_service,
+    )
 
     file_types = ["pdf", "docx", "txt"]
 
     for file_type in file_types:
-        with patch.object(processor.text_extractor, "extract_text") as mock_extract:
-            mock_extract.return_value = "Extracted text."
+        mock_text_extractor.extract_text.return_value = "Extracted text."
+        mock_chunking_service.chunk_text.return_value = [
+            {
+                "content": "Extracted text.",
+                "contextual_content": f"Document: test.{file_type} (Type: {file_type})\n\nExtracted text.",
+                "token_count": 10,
+                "chunk_index": 0,
+            }
+        ]
+        mock_embedding_service.generate_embeddings_batch.return_value = [[0.1] * 3072]
 
-            with patch.object(processor.chunking_service, "chunk_text") as mock_chunk:
-                mock_chunk.return_value = [
-                    {
-                        "content": "Extracted text.",
-                        "contextual_content": f"Document: test.{file_type} (Type: {file_type})\n\nExtracted text.",
-                        "token_count": 10,
-                        "chunk_index": 0,
-                    }
-                ]
+        result = await processor.process_document(
+            document_id=uuid4(),
+            file_content=b"test content",
+            filename=f"test.{file_type}",
+            file_type=file_type,
+        )
 
-                with patch.object(
-                    processor.embedding_service, "generate_embeddings_batch"
-                ) as mock_embed:
-                    mock_embed.return_value = [[0.1] * 768]
-
-                    result = await processor.process_document(
-                        document_id=uuid4(),
-                        file_content=b"test content",
-                        filename=f"test.{file_type}",
-                        file_type=file_type,
-                    )
-
-                    assert result["status"] == "completed"
-                    mock_extract.assert_called_with(b"test content", file_type)
+        assert result["status"] == "completed"
+        mock_text_extractor.extract_text.assert_called_with(b"test content", file_type)
 
 
 @pytest.mark.asyncio
-async def test_store_chunks_validates_counts(mock_db_service):
+async def test_store_chunks_validates_counts(
+    mock_db_service, mock_text_extractor, mock_chunking_service, mock_embedding_service
+):
     """Test that _store_chunks validates chunk and embedding counts."""
-    processor = DocumentProcessor(db_service=mock_db_service)
+    processor = DocumentProcessor(
+        db_service=mock_db_service,
+        text_extractor=mock_text_extractor,
+        chunking_service=mock_chunking_service,
+        embedding_service=mock_embedding_service,
+    )
 
     chunks = [
         {
@@ -294,9 +320,16 @@ async def test_store_chunks_validates_counts(mock_db_service):
 
 
 @pytest.mark.asyncio
-async def test_store_chunks_includes_metadata(mock_db_service):
+async def test_store_chunks_includes_metadata(
+    mock_db_service, mock_text_extractor, mock_chunking_service, mock_embedding_service
+):
     """Test that stored chunks include proper metadata."""
-    processor = DocumentProcessor(db_service=mock_db_service)
+    processor = DocumentProcessor(
+        db_service=mock_db_service,
+        text_extractor=mock_text_extractor,
+        chunking_service=mock_chunking_service,
+        embedding_service=mock_embedding_service,
+    )
 
     chunks = [
         {
@@ -321,12 +354,20 @@ async def test_store_chunks_includes_metadata(mock_db_service):
 
 def test_processor_initialization_creates_default_services(mock_db_service):
     """Test that processor creates default services if none provided."""
-    processor = DocumentProcessor(db_service=mock_db_service)
+    with (
+        patch("app.services.document_processor.TextExtractor") as mock_extractor,
+        patch("app.services.document_processor.ChunkingService") as mock_chunking,
+        patch("app.services.document_processor.EmbeddingService") as mock_embedding,
+    ):
+        processor = DocumentProcessor(db_service=mock_db_service)
 
     assert processor.text_extractor is not None
     assert processor.chunking_service is not None
     assert processor.embedding_service is not None
     assert processor.db is mock_db_service
+    mock_extractor.assert_called_once()
+    mock_chunking.assert_called_once()
+    mock_embedding.assert_called_once()
 
 
 def test_processor_initialization_uses_provided_services(

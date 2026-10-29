@@ -1,18 +1,14 @@
 # Sample Documents
 
-This folder contains sample PDF documents for testing the RAG system.
+Fictional sample documents for testing the RAG system. They can be uploaded via the API or frontend to test document upload, embedding generation, hybrid search, and query answering.
 
-## Usage
+- `Benefits_Overview.docx`
+- `Employee_Handbook.txt`
+- `Performance_Review_Guidelines.pdf`
+- `employee_handbook_overtime_policy.txt`
+- `vendor_contract_renewals.txt`
+- `customer_refund_policy.txt`
+- `warehouse_osha_sop.txt`
+- `tribal_knowledge_capture_plan.txt`
 
-These documents can be uploaded to test:
-- Document upload functionality
-- Embedding generation
-- Vector search
-- Full-text search
-- Query answering
-
-## Adding Documents
-
-Place your test PDFs in this folder. They will be available for upload via the API or frontend.
-
-**Note:** Do not commit sensitive or personal documents to this repository.
+**Note:** Only commit synthetic documents. Never commit real or personal documents (bills, contracts, statements) to this repository.

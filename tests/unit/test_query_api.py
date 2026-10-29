@@ -1,5 +1,7 @@
 """Tests for query API endpoint."""
 
+import asyncio
+import time
 from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
@@ -66,6 +68,15 @@ def sample_hybrid_search_response():
                 "total_ms": 150.0,
             }
         },
+    }
+
+
+@pytest.fixture
+def single_result_hybrid_search_response(sample_hybrid_search_response):
+    """Hybrid search response with one result."""
+    return {
+        **sample_hybrid_search_response,
+        "results": sample_hybrid_search_response["results"][:1],
     }
 
 
@@ -252,6 +263,38 @@ async def test_query_with_document_id(
 
 
 @pytest.mark.asyncio
+async def test_query_skips_rerank_for_single_result(
+    client,
+    single_result_hybrid_search_response,
+    sample_llm_response,
+):
+    """A single search result should not spend time calling the reranker."""
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.RerankingService") as MockReranking,
+        patch("app.api.query.LLMService") as MockLLM,
+    ):
+        mock_hybrid = MockHybridSearch.return_value
+        mock_hybrid.search = AsyncMock(
+            return_value=single_result_hybrid_search_response
+        )
+
+        mock_rerank = MockReranking.return_value
+
+        mock_llm = MockLLM.return_value
+        mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
+
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
+
+    assert response.status_code == 200
+    mock_rerank.rerank_with_metadata.assert_not_called()
+    assert response.json()["metadata"]["timing"]["rerank_ms"] == 0.0
+
+
+@pytest.mark.asyncio
 async def test_query_no_results(client):
     """Test query when no search results found."""
     with (patch("app.api.query.HybridSearchService") as MockHybridSearch,):
@@ -328,13 +371,14 @@ def test_query_demo_timeout_returns_504(
     monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
     monkeypatch.setattr("app.api.query.settings.DEMO_REQUEST_TIMEOUT_SECONDS", 1)
 
-    with (
-        patch("app.api.query.HybridSearchService") as MockHybridSearch,
-        patch("app.api.query.run_blocking_in_process") as mock_run_blocking,
-    ):
+    with (patch("app.api.query.HybridSearchService") as MockHybridSearch,):
         mock_hybrid = MockHybridSearch.return_value
-        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
-        mock_run_blocking.side_effect = TimeoutError("timeout")
+
+        async def slow_search(*args, **kwargs):
+            await asyncio.sleep(2)
+            return sample_hybrid_search_response
+
+        mock_hybrid.search = AsyncMock(side_effect=slow_search)
 
         response = client.post(
             "/api/query",
@@ -344,6 +388,53 @@ def test_query_demo_timeout_returns_504(
     assert response.status_code == 504
     data = response.json()
     assert "took too long" in data["detail"].lower()
+
+
+def test_query_demo_enhancement_timeout_uses_original_query(
+    client,
+    monkeypatch,
+    sample_hybrid_search_response,
+    sample_rerank_response,
+    sample_llm_response,
+):
+    """Demo query enhancement should fail open instead of consuming the request."""
+    monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.api.query.settings.DEMO_USAGE_HASH_SALT", "test-salt")
+    monkeypatch.setattr(
+        "app.api.query.settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS", 0.01
+    )
+
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.QueryEnhancementService") as MockQueryEnhancement,
+        patch("app.api.query.RerankingService") as MockReranking,
+        patch("app.api.query.LLMService") as MockLLM,
+    ):
+        mock_hybrid = MockHybridSearch.return_value
+        mock_hybrid.search = AsyncMock(return_value=sample_hybrid_search_response)
+        mock_enhancer = MockQueryEnhancement.return_value
+        mock_enhancer.enhance_query = Mock(
+            side_effect=lambda *args, **kwargs: time.sleep(0.05) or "enhanced query"
+        )
+        mock_rerank = MockReranking.return_value
+        mock_rerank.rerank_with_metadata = Mock(return_value=sample_rerank_response)
+        mock_llm = MockLLM.return_value
+        mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
+        response = client.post(
+            "/api/query",
+            json={
+                "session_id": "test-session",
+                "query": "What about that?",
+                "conversation_history": [
+                    {"role": "user", "content": "Tell me about Python."},
+                    {"role": "assistant", "content": "Python is a language."},
+                ],
+            },
+        )
+
+    assert response.status_code == 200
+    mock_hybrid.search.assert_called_once()
+    assert mock_hybrid.search.call_args.kwargs["query"] == "What about that?"
 
 
 def test_query_provider_rate_limit_returns_friendly_error(

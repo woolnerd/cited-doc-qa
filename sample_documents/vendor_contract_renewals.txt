@@ -1,0 +1,26 @@
+Acme Operations Group — Vendor Contract Register
+Prepared for ownership transition review
+
+Vendor: Northstar Packaging
+Service: Corrugated boxes and custom inserts
+Renewal Date: February 15, 2026
+Notice Requirement: 60 days before renewal
+Notes: Pricing increases automatically by 3% unless renegotiated.
+
+Vendor: BrightRoute Logistics
+Service: Regional freight and last-mile delivery
+Renewal Date: March 31, 2026
+Notice Requirement: 45 days before renewal
+Notes: Contract includes minimum monthly shipment volume. Current utilization is below minimum in slow months.
+
+Vendor: LedgerPro Accounting
+Service: Monthly close support and payroll filing
+Renewal Date: July 1, 2026
+Notice Requirement: 30 days before renewal
+Notes: Owner has historically handled ad hoc tax questions directly with LedgerPro partner.
+
+Vendor: SafeWorks Compliance
+Service: OSHA training and annual safety audit
+Renewal Date: March 10, 2026
+Notice Requirement: 30 days before renewal
+Notes: Renewal includes onsite forklift recertification for warehouse team.
