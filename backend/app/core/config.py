@@ -40,8 +40,14 @@ class Settings(BaseSettings):
     DEMO_MAX_COMPLETION_TOKENS: int = Field(default=1000, ge=1)
     DEMO_MAX_RETRIEVED_CHUNKS: int = Field(default=10, ge=1)
     DEMO_REQUEST_TIMEOUT_SECONDS: int = Field(default=45, ge=1)
+    DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS: int = Field(default=5, ge=1)
     DEMO_USAGE_RETENTION_DAYS: int = Field(default=7, ge=1)
     DEMO_USAGE_HASH_SALT: str = ""
+
+    # Source document viewing
+    GCS_SOURCE_BUCKET: str = ""
+    GCS_SOURCE_PREFIX: str = "real_docs"
+    GCS_SIGNED_URL_TTL_SECONDS: int = Field(default=900, ge=60)
 
     @property
     def DEMO_MAX_FILE_SIZE_BYTES(self) -> int:
@@ -83,6 +89,7 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = "test-openrouter-key"  # Claude LLM via Openrouter
 
     # Embedding Configuration
+    EMBEDDING_PROVIDER: str = "gemini"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
     EMBEDDING_DIMENSIONS: int = 3072
 
@@ -94,7 +101,7 @@ class Settings(BaseSettings):
     # Search Configuration
     SEARCH_TOP_K: int = 10  # Number of top results to return
     SEARCH_SIMILARITY_THRESHOLD: float = (
-        0.5  # Minimum similarity score (0-1) - Lowered for better semantic recall
+        0.45  # Minimum similarity score (0-1) - Lowered for better semantic recall
     )
     VECTOR_SEARCH_LIMIT: int = 30
     FULL_TEXT_SEARCH_LIMIT: int = 30
@@ -102,6 +109,7 @@ class Settings(BaseSettings):
     RRF_K: int = 60
 
     # Reranking Configuration
+    RERANK_PROVIDER: str = "cohere"
     RERANK_MODEL: str = "rerank-english-v3.0"
     RERANK_MAX_RETRIES: int = 3
     RERANK_RETRY_DELAY: float = 1.0  # seconds
@@ -109,7 +117,7 @@ class Settings(BaseSettings):
 
     # LLM Configuration (via Openrouter)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    LLM_MODEL: str = "anthropic/claude-sonnet-4-5"  # Openrouter format
+    LLM_MODEL: str = "anthropic/claude-haiku-4.5"  # Openrouter format
     LLM_TEMPERATURE: float = 0.3
     LLM_MAX_TOKENS: int = 2048
 

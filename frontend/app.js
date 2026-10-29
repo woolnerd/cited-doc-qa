@@ -32,6 +32,18 @@ const state = {
   sessionId: SESSION_ID,
 };
 
+function hasSourceDocument(document) {
+  return (
+    document &&
+    (document.session_id === "global" || Boolean(document.metadata?.source_object))
+  );
+}
+
+function sourceHasOriginal(source) {
+  const document = state.documents.find((doc) => doc.id === source.document_id);
+  return hasSourceDocument(document);
+}
+
 // DOM Elements
 const elements = {
   uploadArea: document.getElementById("uploadArea"),
@@ -313,6 +325,32 @@ async function deleteDocument(documentId) {
   }
 }
 
+async function viewOriginalDocument(documentId, event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/documents/${documentId}/source-url?session_id=${state.sessionId}`
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Original document is unavailable");
+    }
+
+    const result = await response.json();
+    window.open(result.url, "_blank", "noopener");
+  } catch (error) {
+    console.error("Source document error:", error);
+    showUploadStatus(
+      "error",
+      error.message || "Failed to open original document"
+    );
+  }
+}
+
 // Query Handling
 async function handleSendQuery() {
   const query = elements.queryInput.value.trim();
@@ -464,6 +502,25 @@ function updateDocumentsList() {
 
       const statusIcon = doc.status === "ready" ? "✓" : "⏳";
       const statusText = doc.status === "ready" ? "Ready" : "Processing";
+      const deleteButton =
+        doc.session_id === "global"
+          ? ""
+          : `
+                <button class="document-action-button delete-button" onclick="deleteDocument('${doc.id}')" title="Delete document">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            `;
+      const viewButton = hasSourceDocument(doc)
+        ? `
+                <button class="document-action-button view-button" onclick="viewOriginalDocument('${doc.id}', event)" title="View original document">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" />
+                    </svg>
+                </button>
+            `
+        : "";
 
       return `
         <div class="document-item">
@@ -479,13 +536,10 @@ function updateDocumentsList() {
             <span class="document-status status-${
               doc.status
             }">${statusIcon} ${statusText}</span>
-            <button class="delete-button" onclick="deleteDocument('${
-              doc.id
-            }')" title="Delete document">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-            </button>
+            <div class="document-actions">
+                ${viewButton}
+                ${deleteButton}
+            </div>
         </div>
         `;
     })
@@ -502,16 +556,22 @@ function enableChat() {
   if (welcomeMessage) {
     welcomeMessage.innerHTML = `
             <h2>Ready to answer your questions!</h2>
-            <p style="margin-bottom: 1rem;">Try asking about your documents:</p>
-            <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+            <p style="margin-bottom: 1rem;">Try asking about your operational documents:</p>
+            <div style="text-align: left; max-width: 560px; margin: 0 auto;">
                 <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
-                    💬 "What are the key points in [document name]?"
+                    💬 "Which vendor contracts renew this quarter?"
                 </p>
                 <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
-                    💬 "Summarize the main findings in [document name]"
+                    💬 "How is overtime calculated?"
                 </p>
                 <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
-                    💬 "What does [document name] say about [specific topic]?"
+                    💬 "What does the refund policy say?"
+                </p>
+                <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
+                    💬 "Where are OSHA procedures documented?"
+                </p>
+                <p style="margin: 0.5rem 0; color: var(--text-2); font-size: 0.95rem;">
+                    💬 "What knowledge should be documented from long-time employees?"
                 </p>
             </div>
         `;
@@ -547,7 +607,11 @@ function addMessage(role, content, sources = [], metadata = {}) {
 
   const textDiv = document.createElement("div");
   textDiv.className = "message-text";
-  textDiv.textContent = content;
+  if (role === "assistant") {
+    textDiv.innerHTML = renderMarkdown(content);
+  } else {
+    textDiv.textContent = content;
+  }
   contentDiv.appendChild(textDiv);
 
   // Add sources for assistant messages
@@ -614,8 +678,25 @@ function createSourceItem(source) {
   chevron.setAttribute("viewBox", "0 0 24 24");
   chevron.setAttribute("stroke", "currentColor");
 
+  const actions = document.createElement("div");
+  actions.className = "source-actions";
+
+  if (sourceHasOriginal(source)) {
+    const viewButton = document.createElement("button");
+    viewButton.className = "source-view-button";
+    viewButton.title = "View original document";
+    viewButton.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-2-8H5a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-3" /></svg>';
+    viewButton.addEventListener("click", (event) =>
+      viewOriginalDocument(source.document_id, event)
+    );
+    actions.appendChild(viewButton);
+  }
+
+  actions.appendChild(chevron);
+
   header.appendChild(title);
-  header.appendChild(chevron);
+  header.appendChild(actions);
 
   // Content (collapsed by default)
   const content = document.createElement("div");
@@ -696,6 +777,60 @@ function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+function renderMarkdown(content) {
+  const lines = escapeHtml(content).split("\n");
+  const html = [];
+  let listItems = [];
+  let listType = null;
+
+  const flushList = () => {
+    if (listItems.length === 0) return;
+    const tag = listType === "ol" ? "ol" : "ul";
+    html.push(`<${tag}>${listItems.map((item) => `<li>${item}</li>`).join("")}</${tag}>`);
+    listItems = [];
+    listType = null;
+  };
+
+  const formatInline = (text) =>
+    text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+    if (unorderedMatch || orderedMatch) {
+      const nextListType = orderedMatch ? "ol" : "ul";
+      if (listType && listType !== nextListType) {
+        flushList();
+      }
+      listType = nextListType;
+      listItems.push(formatInline((orderedMatch || unorderedMatch)[1]));
+      return;
+    }
+
+    flushList();
+
+    if (trimmed.startsWith("### ")) {
+      html.push(`<h4>${formatInline(trimmed.slice(4))}</h4>`);
+    } else if (trimmed.startsWith("## ")) {
+      html.push(`<h3>${formatInline(trimmed.slice(3))}</h3>`);
+    } else if (trimmed.startsWith("# ")) {
+      html.push(`<h2>${formatInline(trimmed.slice(2))}</h2>`);
+    } else {
+      html.push(`<p>${formatInline(trimmed)}</p>`);
+    }
+  });
+
+  flushList();
+  return html.join("");
 }
 
 // Initialize on load

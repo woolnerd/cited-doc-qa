@@ -66,3 +66,10 @@ docker-compose.override.yml
 
 # OS
 Thumbs.db
+
+# Local AI agent metadata
+.pi/
+.claude/
+
+# Real documents for local testing only — never commit
+sample_documents/real_docs/

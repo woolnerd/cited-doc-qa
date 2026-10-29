@@ -21,8 +21,11 @@ def test_demo_mode_defaults_are_disabled() -> None:
     assert settings.DEMO_MAX_COMPLETION_TOKENS == 1000
     assert settings.DEMO_MAX_RETRIEVED_CHUNKS == 10
     assert settings.DEMO_REQUEST_TIMEOUT_SECONDS == 45
+    assert settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS == 5
     assert settings.DEMO_USAGE_RETENTION_DAYS == 7
     assert settings.DEMO_USAGE_HASH_SALT == ""
+    assert settings.EMBEDDING_PROVIDER == "gemini"
+    assert settings.RERANK_PROVIDER == "cohere"
 
 
 def test_demo_mode_settings_can_be_overridden(monkeypatch) -> None:
@@ -39,8 +42,11 @@ def test_demo_mode_settings_can_be_overridden(monkeypatch) -> None:
     monkeypatch.setenv("DEMO_MAX_COMPLETION_TOKENS", "1500")
     monkeypatch.setenv("DEMO_MAX_RETRIEVED_CHUNKS", "8")
     monkeypatch.setenv("DEMO_REQUEST_TIMEOUT_SECONDS", "20")
+    monkeypatch.setenv("DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS", "4")
     monkeypatch.setenv("DEMO_USAGE_RETENTION_DAYS", "14")
     monkeypatch.setenv("DEMO_USAGE_HASH_SALT", "demo-hash-salt")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openrouter")
+    monkeypatch.setenv("RERANK_PROVIDER", "openrouter")
 
     settings = Settings(_env_file=None)
 
@@ -56,8 +62,11 @@ def test_demo_mode_settings_can_be_overridden(monkeypatch) -> None:
     assert settings.DEMO_MAX_COMPLETION_TOKENS == 1500
     assert settings.DEMO_MAX_RETRIEVED_CHUNKS == 8
     assert settings.DEMO_REQUEST_TIMEOUT_SECONDS == 20
+    assert settings.DEMO_QUERY_ENHANCEMENT_TIMEOUT_SECONDS == 4
     assert settings.DEMO_USAGE_RETENTION_DAYS == 14
     assert settings.DEMO_USAGE_HASH_SALT == "demo-hash-salt"
+    assert settings.EMBEDDING_PROVIDER == "openrouter"
+    assert settings.RERANK_PROVIDER == "openrouter"
     assert settings.DEMO_MAX_FILE_SIZE_BYTES == 20 * 1024 * 1024
     assert settings.DEMO_MAX_TOTAL_UPLOAD_BYTES_PER_SESSION == 50 * 1024 * 1024
 
