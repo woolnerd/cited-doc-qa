@@ -9,8 +9,12 @@ from openai.types.chat import ChatCompletion
 from app.core.config import settings
 from app.core.exceptions import DocumentProcessingError, ExternalAPIError
 from app.core.logging import get_logger
+from app.services.deadline import Deadline
 
 logger = get_logger(__name__)
+
+# The OpenAI SDK defaults to a 600s timeout; generation should never hang that long.
+PROVIDER_TIMEOUT_SECONDS = 60.0
 
 
 class LLMService:
@@ -29,7 +33,11 @@ class LLMService:
         try:
             self.api_key = api_key or settings.OPENROUTER_API_KEY
             self.base_url = base_url or settings.OPENROUTER_BASE_URL
-            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            # max_retries=0: retries are owned by generate_answer_with_retry so they
+            # can respect the request deadline instead of stacking SDK retries.
+            self.client = OpenAI(
+                api_key=self.api_key, base_url=self.base_url, max_retries=0
+            )
             self.model = settings.LLM_MODEL
             self.temperature = settings.LLM_TEMPERATURE
             self.max_tokens = settings.LLM_MAX_TOKENS
@@ -179,6 +187,7 @@ Important:
         temperature: float | None = None,
         max_tokens: int | None = None,
         conversation_history: list[dict[str, str]] | None = None,
+        timeout: float = PROVIDER_TIMEOUT_SECONDS,
     ) -> dict[str, Any]:
         """Generate an answer to the query using search results as context.
 
@@ -188,6 +197,7 @@ Important:
             temperature: Override default temperature (0.0-1.0)
             max_tokens: Override default max tokens
             conversation_history: Previous messages in the conversation
+            timeout: Provider call timeout in seconds
 
         Returns:
             Dictionary with answer and metadata
@@ -239,6 +249,7 @@ Please provide a comprehensive answer based on the context above, including cita
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    timeout=timeout,
                 )
             except Exception as e:
                 provider_error = self._translate_provider_error(
@@ -312,6 +323,7 @@ Please provide a comprehensive answer based on the context above, including cita
         temperature: float | None = None,
         max_tokens: int | None = None,
         conversation_history: list[dict[str, str]] | None = None,
+        deadline: Deadline | None = None,
     ) -> dict[str, Any]:
         """Generate answer with retry logic.
 
@@ -323,16 +335,22 @@ Please provide a comprehensive answer based on the context above, including cita
             temperature: Override default temperature
             max_tokens: Override default max tokens
             conversation_history: Previous messages in the conversation
+            deadline: Request deadline; stops retries and caps call timeouts
 
         Returns:
             Dictionary with answer and metadata
 
         Raises:
             DocumentProcessingError: If all retries fail
+            TimeoutError: If the request deadline is reached
         """
         last_error = None
 
         for attempt in range(max_retries):
+            if deadline is not None and deadline.expired():
+                raise TimeoutError(
+                    "Request deadline reached before answer generation"
+                ) from last_error
             try:
                 return self.generate_answer(
                     query=query,
@@ -340,6 +358,9 @@ Please provide a comprehensive answer based on the context above, including cita
                     temperature=temperature,
                     max_tokens=max_tokens,
                     conversation_history=conversation_history,
+                    timeout=Deadline.bound_or_default(
+                        deadline, PROVIDER_TIMEOUT_SECONDS
+                    ),
                 )
             except ExternalAPIError:
                 raise
@@ -351,6 +372,10 @@ Please provide a comprehensive answer based on the context above, including cita
 
                 if attempt < max_retries - 1:
                     delay = retry_delay * (2**attempt)
+                    if deadline is not None and not deadline.allows(delay):
+                        raise TimeoutError(
+                            "Request deadline reached during answer generation retries"
+                        ) from e
                     logger.info(f"Retrying in {delay:.1f} seconds...")
                     time.sleep(delay)
 

@@ -46,7 +46,6 @@ class Settings(BaseSettings):
 
     # Source document viewing
     GCS_SOURCE_BUCKET: str = ""
-    GCS_SOURCE_PREFIX: str = "real_docs"
     GCS_SIGNED_URL_TTL_SECONDS: int = Field(default=900, ge=60)
 
     @property

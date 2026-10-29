@@ -665,3 +665,87 @@ def test_generate_answer_preserves_source_fields(
     assert source["document_name"] == "test.pdf"
     assert source["chunk_index"] == 5
     assert source["rerank_score"] == 0.95
+
+
+class _ExpiredDeadline:
+    """Deadline stub with no time left."""
+
+    def expired(self) -> bool:
+        return True
+
+    def bound(self, timeout: float) -> float:
+        return 0.0
+
+    def allows(self, seconds: float) -> bool:
+        return False
+
+
+class _TightDeadline:
+    """Deadline stub with a little time left."""
+
+    def __init__(self, remaining: float):
+        self._remaining = remaining
+
+    def expired(self) -> bool:
+        return False
+
+    def bound(self, timeout: float) -> float:
+        return min(timeout, self._remaining)
+
+    def allows(self, seconds: float) -> bool:
+        return seconds < self._remaining
+
+
+def test_llm_client_disables_hidden_sdk_retries(mock_openai_client):
+    """Retries are owned by generate_answer_with_retry, not stacked SDK retries."""
+    with patch("app.services.llm.OpenAI") as mock_client_class:
+        LLMService(api_key="k", base_url="https://test.openrouter.ai")
+
+    assert mock_client_class.call_args.kwargs["max_retries"] == 0
+
+
+def test_generate_answer_with_retry_skips_call_when_deadline_expired(
+    llm_service, mock_openai_client, sample_search_results
+):
+    """A timed-out request must not start a paid generation call."""
+    with pytest.raises(TimeoutError):
+        llm_service.generate_answer_with_retry(
+            query="q",
+            search_results=sample_search_results,
+            deadline=_ExpiredDeadline(),
+        )
+
+    mock_openai_client.chat.completions.create.assert_not_called()
+
+
+def test_generate_answer_timeout_bounded_by_deadline(
+    llm_service, mock_openai_client, sample_search_results, mock_completion_response
+):
+    """The provider call timeout must not outlive the request deadline."""
+    mock_openai_client.chat.completions.create.return_value = mock_completion_response
+
+    llm_service.generate_answer_with_retry(
+        query="q",
+        search_results=sample_search_results,
+        deadline=_TightDeadline(remaining=4.0),
+    )
+
+    assert mock_openai_client.chat.completions.create.call_args.kwargs["timeout"] == 4.0
+
+
+def test_generate_answer_with_retry_stops_when_backoff_exceeds_deadline(
+    llm_service, mock_openai_client, sample_search_results
+):
+    """Retries must stop instead of sleeping past the request deadline."""
+    mock_openai_client.chat.completions.create.side_effect = RuntimeError("boom")
+
+    with patch("app.services.llm.time.sleep") as sleep, pytest.raises(TimeoutError):
+        llm_service.generate_answer_with_retry(
+            query="q",
+            search_results=sample_search_results,
+            retry_delay=1.0,
+            deadline=_TightDeadline(remaining=0.5),
+        )
+
+    assert mock_openai_client.chat.completions.create.call_count == 1
+    sleep.assert_not_called()

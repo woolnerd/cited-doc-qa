@@ -112,6 +112,14 @@ def parse_metadata(metadata: object) -> dict:
     return {}
 
 
+RESERVED_SESSION_IDS = frozenset({"global"})
+
+
+def is_reserved_session_id(session_id: str) -> bool:
+    """Return True if a client-supplied session ID claims a reserved session."""
+    return session_id.strip().lower() in RESERVED_SESSION_IDS
+
+
 def generate_gcs_signed_url(
     *, bucket_name: str, object_name: str, ttl_seconds: int
 ) -> str:
@@ -157,6 +165,12 @@ async def upload_document(
     logger.info(
         f"Received upload request for file: {file.filename} (session: {session_id})"
     )
+
+    if is_reserved_session_id(session_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid session_id",
+        )
 
     # Validate file
     validate_file(file, strict_mime=settings.DEMO_MODE)
@@ -523,17 +537,13 @@ async def get_document_source_url(
                 detail="Source document viewing is not configured",
             )
 
+        # Only sign objects explicitly mapped by an operator (metadata.source_object).
+        # Never infer the object from the filename: callers control filenames.
         source_object = metadata.get("source_object")
-        if not source_object and doc_session_id != "global":
+        if not source_object:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Original source file is not available for this uploaded document",
-            )
-
-        if not source_object:
-            prefix = settings.GCS_SOURCE_PREFIX.strip("/")
-            source_object = (
-                f"{prefix}/{doc['filename']}" if prefix else str(doc["filename"])
+                detail="Original source file is not available for this document",
             )
 
         url = generate_gcs_signed_url(

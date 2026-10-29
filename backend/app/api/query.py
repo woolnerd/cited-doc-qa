@@ -1,6 +1,7 @@
 """Query endpoint for RAG chatbot."""
 
 import asyncio
+from functools import partial
 from time import perf_counter
 from typing import Any, TypedDict, cast
 from uuid import UUID
@@ -16,6 +17,7 @@ from app.core.exceptions import (
 )
 from app.core.logging import get_logger
 from app.models.base import QueryMetadata, QueryRequest, QueryResponse, SearchResult
+from app.services.deadline import Deadline
 from app.services.demo_limits import DemoLimitService
 from app.services.hybrid_search import HybridSearchService
 from app.services.llm import LLMService
@@ -86,6 +88,28 @@ class LLMResponse(TypedDict):
     metadata: LLMMetadata
 
 
+def _no_results_response(query: str, timing: dict[str, Any]) -> QueryResponse:
+    """Build the response for a query with no relevant context."""
+    return QueryResponse(
+        success=True,
+        message="No relevant information found for your query",
+        answer="I couldn't find any relevant information in the documents to answer your question.",
+        sources=[],
+        metadata=QueryMetadata(
+            query=query,
+            results_count=0,
+            model="",
+            temperature=0.0,
+            tokens_used={
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+            },
+            timing=timing,
+        ),
+    )
+
+
 @router.post("/query", response_model=QueryResponse, status_code=status.HTTP_200_OK)
 async def query(
     request: QueryRequest,
@@ -141,6 +165,14 @@ async def query(
         query_enhancer = QueryEnhancementService()
         reranking_service = RerankingService()
         llm_service = LLMService()
+
+        # Shared with worker threads, which asyncio cannot cancel: they check it
+        # to stop retrying and cap provider timeouts once the request times out.
+        deadline = (
+            Deadline.after(settings.DEMO_REQUEST_TIMEOUT_SECONDS)
+            if settings.DEMO_MODE
+            else None
+        )
 
         async def process_query() -> QueryResponse:
             retrieval_top_k = (
@@ -210,24 +242,7 @@ async def query(
                     start_time=query_start_time,
                     timing=search_timing,
                 )
-                response = QueryResponse(
-                    success=True,
-                    message="No relevant information found for your query",
-                    answer="I couldn't find any relevant information in the documents to answer your question.",
-                    sources=[],
-                    metadata=QueryMetadata(
-                        query=request.query,
-                        results_count=0,
-                        model="",
-                        temperature=0.0,
-                        tokens_used={
-                            "prompt_tokens": 0,
-                            "completion_tokens": 0,
-                            "total_tokens": 0,
-                        },
-                        timing=search_timing,
-                    ),
-                )
+                response = _no_results_response(request.query, search_timing)
                 await demo_limits.record_query(
                     session_id=request.session_id,
                     ip_address=client_host,
@@ -236,33 +251,39 @@ async def query(
                 )
                 return response
 
-            # Step 3: Reranking (use enhanced query for better relevance)
-            if len(search_results) <= 1:
-                logger.info("Skipping rerank for %d result", len(search_results))
-                rerank_response = cast(
-                    RerankResponse,
-                    {
-                        "results": search_results[: request.top_k],
-                        "metadata": {
-                            "used_fallback": False,
-                            "timing": {"rerank_ms": 0.0},
-                        },
-                    },
-                )
-            else:
-                logger.info(f"Reranking {len(search_results)} results...")
-                rerank_response = cast(
-                    RerankResponse,
-                    await asyncio.to_thread(
+            # Step 3: Reranking (use enhanced query for better relevance).
+            # Always rerank, even a single candidate: the reranker applies
+            # RERANK_SCORE_THRESHOLD, which filters out irrelevant matches.
+            logger.info(f"Reranking {len(search_results)} results...")
+            rerank_response = cast(
+                RerankResponse,
+                await asyncio.to_thread(
+                    partial(
                         reranking_service.rerank_with_metadata,
                         enhanced_query,
                         search_results,
                         request.top_k,
-                    ),
-                )
+                        deadline=deadline,
+                    )
+                ),
+            )
 
             reranked_results = rerank_response["results"]
             rerank_metadata = rerank_response["metadata"]
+
+            if not reranked_results:
+                logger.info("No results passed the rerank relevance threshold")
+                timing = {
+                    **search_timing,
+                    "rerank_ms": rerank_metadata["timing"]["rerank_ms"],
+                }
+                await demo_limits.record_query(
+                    session_id=request.session_id,
+                    ip_address=client_host,
+                    query=request.query,
+                    metadata={"results_count": 0},
+                )
+                return _no_results_response(request.query, timing)
 
             # Step 4: LLM answer generation (use original query for natural answer)
             logger.info("Generating answer with Claude...")
@@ -280,14 +301,16 @@ async def query(
             llm_response = cast(
                 LLMResponse,
                 await asyncio.to_thread(
-                    llm_service.generate_answer_with_retry,
-                    request.query,
-                    reranked_results,
-                    3,
-                    1.0,
-                    None,
-                    max_tokens,
-                    llm_conversation_history,
+                    partial(
+                        llm_service.generate_answer_with_retry,
+                        query=request.query,
+                        search_results=reranked_results,
+                        max_retries=3,
+                        retry_delay=1.0,
+                        max_tokens=max_tokens,
+                        conversation_history=llm_conversation_history,
+                        deadline=deadline,
+                    )
                 ),
             )
 
@@ -356,6 +379,16 @@ async def query(
                 async with asyncio.timeout(settings.DEMO_REQUEST_TIMEOUT_SECONDS):
                     return await process_query()
             except TimeoutError as exc:
+                # Provider work may already have been paid for; count it.
+                try:
+                    await demo_limits.record_query(
+                        session_id=request.session_id,
+                        ip_address=client_host,
+                        query=request.query,
+                        metadata={"timed_out": True},
+                    )
+                except Exception:
+                    logger.warning("Failed to record timed-out query", exc_info=True)
                 logger.warning(
                     "Query timed out query_len=%d session_id=%s elapsed_ms=%.2f "
                     "timeout_seconds=%d",

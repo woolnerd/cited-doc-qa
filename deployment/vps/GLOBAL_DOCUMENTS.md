@@ -52,6 +52,18 @@ LIMIT 10;
 UPDATE documents SET session_id = 'global' WHERE id = '<id-from-above>';
 ```
 
+**Optional: enable "view original source" for the document:**
+
+The source link only works for documents with an explicit `metadata.source_object`
+naming the object in `GCS_SOURCE_BUCKET`. It is never inferred from the filename.
+Upload the original to the bucket first, then:
+```sql
+UPDATE documents
+SET metadata = coalesce(metadata, '{}'::jsonb)
+    || jsonb_build_object('source_object', 'path/in/bucket/your-file.pdf')
+WHERE id = '<id-from-above>';
+```
+
 **Verify:**
 ```sql
 -- List all global documents
