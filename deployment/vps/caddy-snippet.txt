@@ -4,12 +4,13 @@
 # Location: Anywhere in the file (recommend grouping with other getfreetime.ai domains)
 #
 # This configuration:
-# - Reverse proxies rag.getfreetime.ai to the Docker container on port 8001
+# - Reverse proxies rag.getfreetime.ai and eta.getfreetime.ai to the Docker container on port 8001
+#   (eta must never redirect to rag; see ROLLBACK.md)
 # - Enables gzip compression
 # - Adds security headers
 # - Logs access to dedicated file
 
-rag.getfreetime.ai {
+rag.getfreetime.ai, eta.getfreetime.ai {
     reverse_proxy localhost:8001
 
     encode gzip
