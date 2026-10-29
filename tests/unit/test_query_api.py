@@ -263,12 +263,13 @@ async def test_query_with_document_id(
 
 
 @pytest.mark.asyncio
-async def test_query_skips_rerank_for_single_result(
+async def test_query_reranks_single_result_for_relevance(
     client,
     single_result_hybrid_search_response,
+    sample_rerank_response,
     sample_llm_response,
 ):
-    """A single search result should not spend time calling the reranker."""
+    """A lone candidate still goes through the reranker's relevance threshold."""
     with (
         patch("app.api.query.HybridSearchService") as MockHybridSearch,
         patch("app.api.query.RerankingService") as MockReranking,
@@ -278,9 +279,8 @@ async def test_query_skips_rerank_for_single_result(
         mock_hybrid.search = AsyncMock(
             return_value=single_result_hybrid_search_response
         )
-
         mock_rerank = MockReranking.return_value
-
+        mock_rerank.rerank_with_metadata = Mock(return_value=sample_rerank_response)
         mock_llm = MockLLM.return_value
         mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
 
@@ -290,8 +290,43 @@ async def test_query_skips_rerank_for_single_result(
         )
 
     assert response.status_code == 200
-    mock_rerank.rerank_with_metadata.assert_not_called()
-    assert response.json()["metadata"]["timing"]["rerank_ms"] == 0.0
+    mock_rerank.rerank_with_metadata.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_query_rejects_lone_irrelevant_match(
+    client, single_result_hybrid_search_response
+):
+    """If reranking filters out every candidate, don't ask the LLM to answer."""
+    irrelevant = {
+        "results": [],
+        "metadata": {"used_fallback": False, "timing": {"rerank_ms": 120.0}},
+    }
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.RerankingService") as MockReranking,
+        patch("app.api.query.LLMService") as MockLLM,
+    ):
+        mock_hybrid = MockHybridSearch.return_value
+        mock_hybrid.search = AsyncMock(
+            return_value=single_result_hybrid_search_response
+        )
+        MockReranking.return_value.rerank_with_metadata = Mock(return_value=irrelevant)
+        mock_llm = MockLLM.return_value
+
+        response = client.post(
+            "/api/query",
+            json={
+                "session_id": "test-session",
+                "query": "What is the capital of Peru?",
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["sources"] == []
+    assert data["metadata"]["results_count"] == 0
+    mock_llm.generate_answer_with_retry.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -388,6 +423,76 @@ def test_query_demo_timeout_returns_504(
     assert response.status_code == 504
     data = response.json()
     assert "took too long" in data["detail"].lower()
+
+
+def test_query_demo_timeout_records_usage(
+    client, monkeypatch, sample_hybrid_search_response
+):
+    """Timed-out demo queries still count toward usage limits (provider spend)."""
+    monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.api.query.settings.DEMO_REQUEST_TIMEOUT_SECONDS", 1)
+
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.DemoLimitService") as MockLimits,
+    ):
+        limits = MockLimits.return_value
+        limits.check_query_allowed = AsyncMock()
+        limits.record_query = AsyncMock()
+
+        async def slow_search(*args, **kwargs):
+            await asyncio.sleep(2)
+            return sample_hybrid_search_response
+
+        MockHybridSearch.return_value.search = AsyncMock(side_effect=slow_search)
+
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
+
+    assert response.status_code == 504
+    limits.record_query.assert_awaited_once()
+    assert limits.record_query.await_args.kwargs["metadata"] == {"timed_out": True}
+
+
+def test_query_demo_passes_deadline_to_provider_calls(
+    client,
+    monkeypatch,
+    sample_hybrid_search_response,
+    sample_rerank_response,
+    sample_llm_response,
+):
+    """Worker threads get the request deadline so they stop after a 504."""
+    monkeypatch.setattr("app.api.query.settings.DEMO_MODE", True)
+    monkeypatch.setattr("app.api.query.settings.DEMO_REQUEST_TIMEOUT_SECONDS", 45)
+
+    with (
+        patch("app.api.query.HybridSearchService") as MockHybridSearch,
+        patch("app.api.query.RerankingService") as MockReranking,
+        patch("app.api.query.LLMService") as MockLLM,
+        patch("app.api.query.DemoLimitService") as MockLimits,
+    ):
+        MockLimits.return_value.check_query_allowed = AsyncMock()
+        MockLimits.return_value.record_query = AsyncMock()
+        MockHybridSearch.return_value.search = AsyncMock(
+            return_value=sample_hybrid_search_response
+        )
+        mock_rerank = MockReranking.return_value
+        mock_rerank.rerank_with_metadata = Mock(return_value=sample_rerank_response)
+        mock_llm = MockLLM.return_value
+        mock_llm.generate_answer_with_retry = Mock(return_value=sample_llm_response)
+
+        response = client.post(
+            "/api/query",
+            json={"session_id": "test-session", "query": "What is Python?"},
+        )
+
+    assert response.status_code == 200
+    rerank_deadline = mock_rerank.rerank_with_metadata.call_args.kwargs["deadline"]
+    llm_deadline = mock_llm.generate_answer_with_retry.call_args.kwargs["deadline"]
+    assert rerank_deadline is llm_deadline
+    assert 0 < llm_deadline.remaining() <= 45
 
 
 def test_query_demo_enhancement_timeout_uses_original_query(

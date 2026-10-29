@@ -1,5 +1,6 @@
 """Reranking service using Cohere's rerank API."""
 
+import math
 import time
 from typing import Any
 
@@ -10,8 +11,11 @@ from cohere.core.api_error import ApiError as CohereApiError
 from app.core.config import settings
 from app.core.exceptions import DocumentProcessingError
 from app.core.logging import get_logger
+from app.services.deadline import Deadline
 
 logger = get_logger(__name__)
+
+PROVIDER_TIMEOUT_SECONDS = 30.0
 
 
 class RerankingService:
@@ -66,8 +70,20 @@ class RerankingService:
         """
         return float(self.retry_delay * (2**attempt))
 
+    def _should_retry(self, attempt: int, deadline: Deadline | None) -> bool:
+        """Retry only if attempts remain and the backoff fits in the deadline."""
+        if attempt >= self.max_retries - 1:
+            return False
+        if deadline is None:
+            return True
+        return deadline.allows(self._exponential_backoff(attempt))
+
     def _rerank_via_provider(
-        self, query: str, documents: list[str], top_n: int
+        self,
+        query: str,
+        documents: list[str],
+        top_n: int,
+        timeout: float = PROVIDER_TIMEOUT_SECONDS,
     ) -> list[tuple[int, float]]:
         """Call the configured rerank provider and return index/score pairs."""
         if self.provider == "openrouter":
@@ -83,7 +99,7 @@ class RerankingService:
                     "documents": documents,
                     "top_n": top_n,
                 },
-                timeout=30.0,
+                timeout=timeout,
             )
             http_response.raise_for_status()
             return [
@@ -99,6 +115,10 @@ class RerankingService:
             query=query,
             documents=documents,
             top_n=top_n,
+            request_options={
+                "timeout_in_seconds": max(1, math.ceil(timeout)),
+                "max_retries": 0,
+            },
         )
         return [
             (int(result.index), float(result.relevance_score))
@@ -110,6 +130,7 @@ class RerankingService:
         query: str,
         results: list[dict[str, Any]],
         top_k: int | None = None,
+        deadline: Deadline | None = None,
     ) -> list[dict[str, Any]]:
         """Rerank search results using Cohere's rerank API.
 
@@ -117,6 +138,7 @@ class RerankingService:
             query: Search query text
             results: List of search results to rerank
             top_k: Number of top results to return (default from settings)
+            deadline: Request deadline; stops retries and caps call timeouts
 
         Returns:
             Reranked results with Cohere relevance scores
@@ -143,6 +165,9 @@ class RerankingService:
         # Attempt reranking with retry logic
         last_error: Exception | None = None
         for attempt in range(self.max_retries):
+            if deadline is not None and deadline.expired():
+                logger.warning("Request deadline reached; skipping rerank attempt")
+                return self._fallback_to_rrf(results, top_k)
             try:
                 start_time = time.time()
 
@@ -150,6 +175,9 @@ class RerankingService:
                     query=query,
                     documents=documents,
                     top_n=min(top_k, len(documents)),
+                    timeout=Deadline.bound_or_default(
+                        deadline, PROVIDER_TIMEOUT_SECONDS
+                    ),
                 )
 
                 rerank_time = time.time() - start_time
@@ -191,7 +219,7 @@ class RerankingService:
                     f"Cohere API error on attempt {attempt + 1}/{self.max_retries}: {e}"
                 )
 
-                if attempt < self.max_retries - 1:
+                if self._should_retry(attempt, deadline):
                     delay = self._exponential_backoff(attempt)
                     logger.info(f"Retrying in {delay:.1f} seconds...")
                     time.sleep(delay)
@@ -209,7 +237,7 @@ class RerankingService:
                     exc_info=True,
                 )
 
-                if attempt < self.max_retries - 1:
+                if self._should_retry(attempt, deadline):
                     delay = self._exponential_backoff(attempt)
                     logger.info(f"Retrying in {delay:.1f} seconds...")
                     time.sleep(delay)
@@ -260,6 +288,7 @@ class RerankingService:
         query: str,
         results: list[dict[str, Any]],
         top_k: int | None = None,
+        deadline: Deadline | None = None,
     ) -> dict[str, Any]:
         """Rerank results and return with metadata.
 
@@ -267,6 +296,7 @@ class RerankingService:
             query: Search query text
             results: List of search results to rerank
             top_k: Number of top results to return (default from settings)
+            deadline: Request deadline; stops retries and caps call timeouts
 
         Returns:
             Dictionary with reranked results and metadata
@@ -274,7 +304,7 @@ class RerankingService:
         top_k = top_k or settings.RERANK_TOP_K
 
         start_time = time.time()
-        reranked_results = self.rerank(query, results, top_k)
+        reranked_results = self.rerank(query, results, top_k, deadline=deadline)
         total_time = time.time() - start_time
 
         # Check if fallback was used

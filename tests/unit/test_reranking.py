@@ -551,3 +551,82 @@ def test_rerank_handles_missing_contextual_content(
     call_args = mock_cohere_client.rerank.call_args[1]
     documents = call_args["documents"]
     assert documents[0] == "Test content without contextual"
+
+
+class _ExpiredDeadline:
+    """Deadline stub with no time left."""
+
+    def expired(self) -> bool:
+        return True
+
+    def bound(self, timeout: float) -> float:
+        return 0.0
+
+    def allows(self, seconds: float) -> bool:
+        return False
+
+
+class _TightDeadline:
+    """Deadline stub with a little time left but not enough to sleep and retry."""
+
+    def __init__(self, remaining: float = 1.5):
+        self._remaining = remaining
+
+    def expired(self) -> bool:
+        return False
+
+    def bound(self, timeout: float) -> float:
+        return min(timeout, self._remaining)
+
+    def allows(self, seconds: float) -> bool:
+        return seconds < self._remaining
+
+
+def test_rerank_skips_provider_when_deadline_expired(
+    reranking_service, mock_cohere_client, sample_search_results
+):
+    """A timed-out request must not start (or keep paying for) rerank calls."""
+    results = reranking_service.rerank(
+        "test query", sample_search_results, deadline=_ExpiredDeadline()
+    )
+
+    mock_cohere_client.rerank.assert_not_called()
+    assert all(result["rerank_fallback"] for result in results)
+
+
+def test_rerank_openrouter_timeout_bounded_by_deadline(
+    monkeypatch, sample_search_results
+):
+    """Per-call HTTP timeout must not outlive the request deadline."""
+    monkeypatch.setattr("app.services.reranking.settings.RERANK_PROVIDER", "openrouter")
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "results": [{"index": 0, "relevance_score": 0.9}]
+    }
+
+    with patch("app.services.reranking.httpx.post", return_value=mock_response) as post:
+        service = RerankingService(api_key="test-openrouter-key")
+        service.rerank(
+            "test query", sample_search_results, deadline=_TightDeadline(1.5)
+        )
+
+    assert post.call_args.kwargs["timeout"] == 1.5
+
+
+def test_rerank_stops_retrying_when_backoff_exceeds_deadline(
+    reranking_service, mock_cohere_client, sample_search_results
+):
+    """Retries must stop instead of sleeping past the request deadline."""
+    mock_cohere_client.rerank.side_effect = RuntimeError("provider down")
+
+    with patch("app.services.reranking.time.sleep") as sleep:
+        results = reranking_service.rerank(
+            "test query",
+            sample_search_results,
+            deadline=_TightDeadline(remaining=0.5),
+        )
+
+    assert mock_cohere_client.rerank.call_count == 1
+    sleep.assert_not_called()
+    assert all(result["rerank_fallback"] for result in results)

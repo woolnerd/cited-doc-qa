@@ -382,36 +382,64 @@ def test_get_document_source_url_for_global_document(client_with_mock_db, monkey
     )
 
 
-def test_get_document_source_url_infers_object_name_for_global_document(
+def test_get_document_source_url_requires_explicit_source_object_for_global(
     client_with_mock_db, monkeypatch
 ):
-    """Global source URLs fall back to the configured prefix and document filename."""
+    """Global documents without a trusted source_object must not be signed by filename.
+
+    Regression test: inferring the object name from the filename let a caller
+    register a placeholder document and obtain signed URLs for unpublished objects.
+    """
     client, mock_db = client_with_mock_db
 
     mock_document_id = uuid4()
     mock_db.fetchrow.return_value = {
         "id": mock_document_id,
-        "filename": "fallback.pdf",
+        "filename": "unpublished.pdf",
         "session_id": "global",
         "metadata": {},
     }
     monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_BUCKET", "demo-bucket")
-    monkeypatch.setattr("app.api.documents.settings.GCS_SOURCE_PREFIX", "real_docs")
 
-    with patch(
-        "app.api.documents.generate_gcs_signed_url",
-        return_value="https://storage.example/fallback.pdf?signature=test",
-    ) as mock_signed_url:
+    with patch("app.api.documents.generate_gcs_signed_url") as mock_signed_url:
         response = client.get(
             f"/api/documents/{mock_document_id}/source-url?session_id=test-session-123"
         )
 
-    assert response.status_code == 200
-    mock_signed_url.assert_called_once_with(
-        bucket_name="demo-bucket",
-        object_name="real_docs/fallback.pdf",
-        ttl_seconds=900,
+    assert response.status_code == 404
+    mock_signed_url.assert_not_called()
+
+
+@pytest.mark.parametrize("reserved", ["global", "GLOBAL", " Global "])
+def test_upload_rejects_reserved_session_id(client_with_mock_db, reserved):
+    """Uploads cannot claim the shared 'global' session."""
+    client, mock_db = client_with_mock_db
+
+    files = {
+        "file": create_test_file("x.pdf", b"%PDF-1.4 test content", "application/pdf")
+    }
+    response = client.post(
+        "/api/documents/upload", files=files, data={"session_id": reserved}
     )
+
+    assert response.status_code == 400
+    mock_db.fetchrow.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("session_id", "expected"),
+    [
+        ("global", True),
+        ("  GLOBAL\n", True),
+        ("global-abc", False),
+        ("test-session-123", False),
+    ],
+)
+def test_is_reserved_session_id(session_id, expected):
+    """Reserved session detection is case- and whitespace-insensitive."""
+    from app.api.documents import is_reserved_session_id
+
+    assert is_reserved_session_id(session_id) is expected
 
 
 def test_get_document_source_url_unavailable_for_session_upload(
