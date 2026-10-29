@@ -1,10 +1,10 @@
-# RAG Chatbot Demo
+# Cited Doc QA
 
 [![CI](https://github.com/woolnerd/production-rag-system/actions/workflows/ci.yml/badge.svg)](https://github.com/woolnerd/production-rag-system/actions/workflows/ci.yml)
 [![Deploy](https://github.com/woolnerd/production-rag-system/actions/workflows/deploy.yml/badge.svg)](https://github.com/woolnerd/production-rag-system/actions/workflows/deploy.yml)
 [![codecov](https://codecov.io/gh/woolnerd/production-rag-system/branch/main/graph/badge.svg)](https://codecov.io/gh/woolnerd/production-rag-system)
 
-A production-grade RAG (Retrieval Augmented Generation) chatbot that allows users to upload documents and ask questions with proper source citations.
+A document Q&A app: upload documents, ask questions, and get answers with source citations. Built on hybrid search (vector + full-text), reranking, and Claude.
 
 ## Features
 
@@ -66,7 +66,7 @@ User ← Answer Generation ← Claude ← Reranking ← Hybrid Search ← Query 
 1. **Clone and setup**:
 ```bash
 git clone <repository-url>
-cd rag-demo
+cd cited-doc-qa
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r backend/requirements.txt
