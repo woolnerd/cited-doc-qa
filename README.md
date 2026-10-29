@@ -1,8 +1,8 @@
 # Cited Doc QA
 
-[![CI](https://github.com/woolnerd/production-rag-system/actions/workflows/ci.yml/badge.svg)](https://github.com/woolnerd/production-rag-system/actions/workflows/ci.yml)
-[![Deploy](https://github.com/woolnerd/production-rag-system/actions/workflows/deploy.yml/badge.svg)](https://github.com/woolnerd/production-rag-system/actions/workflows/deploy.yml)
-[![codecov](https://codecov.io/gh/woolnerd/production-rag-system/branch/main/graph/badge.svg)](https://codecov.io/gh/woolnerd/production-rag-system)
+[![CI](https://github.com/woolnerd/cited-doc-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/woolnerd/cited-doc-qa/actions/workflows/ci.yml)
+[![Deploy](https://github.com/woolnerd/cited-doc-qa/actions/workflows/deploy.yml/badge.svg)](https://github.com/woolnerd/cited-doc-qa/actions/workflows/deploy.yml)
+[![codecov](https://codecov.io/gh/woolnerd/cited-doc-qa/branch/main/graph/badge.svg)](https://codecov.io/gh/woolnerd/cited-doc-qa)
 
 A document Q&A app: upload documents, ask questions, and get answers with source citations. Built on hybrid search (vector + full-text), reranking, and Claude.
 

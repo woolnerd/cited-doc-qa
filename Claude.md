@@ -6,7 +6,7 @@
 
 Production-ready RAG (Retrieval-Augmented Generation) chatbot system that allows users to upload documents and ask questions about them using advanced search and AI generation.
 
-**Live Demo:** <https://github.com/woolnerd/production-rag-system>
+**Live Demo:** <https://github.com/woolnerd/cited-doc-qa>
 
 ## Tech Stack
 
@@ -684,7 +684,7 @@ pytest -v                 # Verbose
 
 ## Resources
 
-- **Repository:** <https://github.com/woolnerd/production-rag-system>
+- **Repository:** <https://github.com/woolnerd/cited-doc-qa>
 - **Supabase Docs:** <https://supabase.com/docs>
 - **FastAPI Docs:** <https://fastapi.tiangolo.com>
 - **pgvector Docs:** <https://github.com/pgvector/pgvector>
