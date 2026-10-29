@@ -178,7 +178,7 @@ jobs:
             echo "🔄 Rolling back to previous version..."
 
             # Get previous image tag
-            PREV_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep production-rag-system | sed -n '2p')
+            PREV_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep cited-doc-qa | sed -n '2p')
 
             if [ -n "$PREV_IMAGE" ]; then
               echo "Rolling back to: $PREV_IMAGE"

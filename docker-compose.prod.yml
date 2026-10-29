@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${DOCKER_REGISTRY:-ghcr.io/woolnerd}/production-rag-system:${IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-ghcr.io/woolnerd}/cited-doc-qa:${IMAGE_TAG:-latest}
     container_name: rag-chatbot-prod
     ports:
       - "8001:8000"
@@ -9,6 +9,10 @@ services:
       - LOG_LEVEL=WARNING
     env_file:
       - .env.production
+    volumes:
+      # GCS service-account key for signed source-document URLs
+      # (set GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/rag-demo-gcs-viewer.json)
+      - ${GCS_CREDENTIALS_FILE:-/root/secrets/rag-demo-gcs-viewer.json}:/run/secrets/rag-demo-gcs-viewer.json:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
