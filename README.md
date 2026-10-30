@@ -155,6 +155,8 @@ The correctness grades above come from a model, so I graded 40 of the answers my
 
 Both disagreements are the same question in two runs, and they point at the dataset, not the judge. The question asks whether prescription drugs are covered by the drug-free workplace policy. The reference answer says "prescription and over-the-counter medications" are an exception, so the judge marked answers that only discussed prescription drugs as partial. I graded them against the question and called them correct. The reference answer asks for more than the question does.
 
+I changed the reference answer to cover only prescription drugs and ran the eval twice more. The judge marked `nfib-03` correct in both runs (before: partial in one of two), and correct answers came to 30 and 29 of 31. Every remaining partial is an answer that puts two documents' conflicting rules side by side: `nfib-01` in both runs, and `rest-03` in one, where the restaurant SOP says to calibrate thermometers daily and the operations manual says weekly.
+
 My grading notes also flagged the same weakness as above: four of the answers I graded struggled with two handbooks' conflicting policies.
 
 Limits: one grader, who also wrote the reference answers, and a sample weighted toward the judge's non-correct verdicts. This shows the judge grades the way I would on this dataset; it doesn't show it would match other graders. Details are in [`evals/README.md`](evals/README.md#checking-the-judge).

@@ -78,7 +78,7 @@ I graded the 40 answers in `human_grades/sample.csv` (my notes are in the sheet)
 | partial | 0 | 5 | 0 |
 | incorrect | 0 | 0 | 10 |
 
-Agreement is 95% with a kappa of 0.91, or 94% and 0.87 without the 7 canned replies. Both disagreements are `nfib-03` in two runs: its reference answer adds over-the-counter medications, which the question doesn't ask about, and the judge marked answers that left them out as partial. The reference answer is the thing to fix there.
+Agreement is 95% with a kappa of 0.91, or 94% and 0.87 without the 7 canned replies. Both disagreements are `nfib-03` in two runs: its reference answer adds over-the-counter medications, which the question doesn't ask about, and the judge marked answers that left them out as partial. The reference answer was the thing to fix, so it now covers only prescription drugs; in two runs after the change the judge marked `nfib-03` correct both times (`results/nfib03-fix*.json`).
 
 One person graded, and the same person wrote the reference answers, so this checks the judge against my reading of the dataset, not against independent graders.
 
