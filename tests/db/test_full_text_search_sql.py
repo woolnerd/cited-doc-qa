@@ -105,3 +105,77 @@ async def test_chunk_matching_more_terms_ranks_higher(db_service, session_with_c
         CHUNK_TEXT,
         "Approved courses are listed on the intranet.",
     ]
+
+
+async def test_tied_ranks_come_back_in_document_and_chunk_order(
+    db_service, track_document
+):
+    """Chunks with equal ts_rank are ordered by filename and chunk index, not by
+    where Postgres happened to store the rows. Rows are inserted in reverse so
+    storage order and the expected order disagree."""
+    session_id = f"fts-test-{uuid4()}"
+    tied_text = "Overtime is paid at one and a half times the regular rate."
+    for filename in ("b_handbook.txt", "a_handbook.txt"):
+        doc_id = str(uuid4())
+        await db_service.execute(
+            "INSERT INTO documents (id, filename, file_type, session_id) "
+            "VALUES ($1, $2, 'txt', $3)",
+            doc_id,
+            filename,
+            session_id,
+        )
+        track_document(doc_id)
+        for chunk_index in (1, 0):
+            await db_service.execute(
+                "INSERT INTO chunks (document_id, content, contextual_content, "
+                "chunk_index) VALUES ($1, $2, $2, $3)",
+                doc_id,
+                tied_text,
+                chunk_index,
+            )
+    service = FullTextSearchService(db=db_service)
+
+    results = await service.search("How is overtime paid?", session_id, limit=1000)
+
+    ours = [
+        (r["metadata"]["document_name"], r["metadata"]["chunk_index"])
+        for r in results
+        if r["metadata"]["document_name"].endswith("_handbook.txt")
+        and r["content"] == tied_text
+    ]
+    assert ours == [
+        ("a_handbook.txt", 0),
+        ("a_handbook.txt", 1),
+        ("b_handbook.txt", 0),
+        ("b_handbook.txt", 1),
+    ]
+
+
+async def test_tied_ranks_within_one_document_come_back_in_chunk_order(
+    db_service, track_document
+):
+    session_id = f"fts-test-{uuid4()}"
+    doc_id = str(uuid4())
+    tied_text = "Overtime is paid at one and a half times the regular rate."
+    await db_service.execute(
+        "INSERT INTO documents (id, filename, file_type, session_id) "
+        "VALUES ($1, 'handbook.txt', 'txt', $2)",
+        doc_id,
+        session_id,
+    )
+    track_document(doc_id)
+    for chunk_index in (2, 0, 1):
+        await db_service.execute(
+            "INSERT INTO chunks (document_id, content, contextual_content, "
+            "chunk_index) VALUES ($1, $2, $2, $3)",
+            doc_id,
+            tied_text,
+            chunk_index,
+        )
+    service = FullTextSearchService(db=db_service)
+
+    results = await service.search_by_document(
+        "How is overtime paid?", doc_id, session_id
+    )
+
+    assert [r["metadata"]["chunk_index"] for r in results] == [0, 1, 2]

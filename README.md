@@ -181,6 +181,12 @@ Answer grades didn't move beyond run-to-run noise. The remaining partials are st
 
 So this is a small retrieval improvement, not an answer-quality one. On this dataset vector search already finds most passages, so keyword matching mostly helps when a question uses the document's own wording and the embedding misses it.
 
+### Tied full-text ranks
+
+Building the CI check turned up a bug: the full-text SQL sorted by `ts_rank` alone. With the OR query, ties are common, and Postgres returns tied rows in whatever order they're stored on disk, which changes as rows are deleted and space is reused. The same question could get a different candidate list later. Migration `011_fulltext_tiebreak.sql` breaks ties by filename, then chunk index.
+
+On the 31 demo questions (retrieval only, `results/tiebreak-*.json`), every retrieval metric stayed the same. The candidate lists didn't: 6 questions got a different set of chunks in the top 10, and 7 more got the same chunks in a different order. None of the 5 chunks the LLM sees changed for any question. So this fixes repeatability, not accuracy: the results no longer depend on storage order.
+
 ### A retrieval check on every PR
 
 The eval above needs the 9 demo PDFs, which aren't in the repo, and an API key, so it only runs on my machine. CI now runs a smaller retrieval-only version, `python -m evals.gate check`, against four fictional documents in `evals/fixtures/`: two employee handbooks for different companies with the same sections and different numbers, a cooler maintenance guide, and a linen service agreement. A fifth document is uploaded under a different session, and the check fails if any of it is ever retrieved. There are 21 questions.

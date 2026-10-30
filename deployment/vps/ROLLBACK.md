@@ -181,6 +181,27 @@ Gotcha: Postgres warns on every connection that `rag_db` has a collation version
 (created with glibc 2.41, container now provides 2.36). It predates this change and doesn't
 affect it.
 
+## Option 6: Undo Migration 011 (full-text tiebreak)
+
+`migrations/011_fulltext_tiebreak.sql` changes only the `ORDER BY` of the two session full-text
+functions, so tied ranks come back by filename and chunk index instead of storage order. It
+requires 010. No data changes and no app restart. Apply it the same way as 010, with a schema
+backup first:
+
+```bash
+ssh root@<vps> 'docker exec n8n-postgres pg_dump -U rag_user -d rag_db --schema-only \
+  > /root/backups/rag_db-schema-$(date -u +%Y%m%dT%H%M%SZ)-pre-011.sql'
+ssh root@<vps> 'docker exec -i n8n-postgres psql -v ON_ERROR_STOP=1 --single-transaction -U rag_user -d rag_db' \
+  < migrations/011_fulltext_tiebreak.sql
+
+# Verify: expect "t"
+ssh root@<vps> "docker exec n8n-postgres psql -U rag_user -d rag_db -tAc \
+  \"SELECT position('c.chunk_index, c.id' in pg_get_functiondef('search_chunks_fulltext_by_session'::regproc)) > 0;\""
+```
+
+To undo, re-run `migrations/010_fulltext_or_query.sql` (verification then prints "f"). Record the
+date applied and the backup path here when it's done.
+
 ## Smoke Test After Any Rollback
 
 ```bash
