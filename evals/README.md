@@ -54,6 +54,20 @@ The first run embeds all 9 documents (about 540 chunks). Later runs reuse them u
 
 Results go to `results/<label>.json`. They hold the summary, the config, and every question's candidates, final context, answer, and judge output. Chunk text is cut to a 200-character preview.
 
+## Checking the judge
+
+The correctness grades come from a model, so `evals/agreement.py` measures how often a person agrees with them.
+
+```bash
+python -m evals.agreement export baseline baseline-run2 no-similarity-gate no-similarity-gate-run2
+# fill in human_verdict (correct / partial / incorrect) in evals/human_grades/sample.csv
+python -m evals.agreement score
+```
+
+Export pools the unique answers from the given runs and writes a grading sheet with the question, reference answer, and answer. The judge's verdicts go to `key.json`, so grading is blind. The sheet has every answer the judge didn't mark correct, plus a fixed random sample of ones it did, 40 in all. A random sample would be almost all "correct", and agreement on that says little. Grade with the same rubric the judge uses (see `CORRECTNESS_PROMPT` in `judge.py`).
+
+Score prints raw agreement, Cohen's kappa (agreement corrected for chance), and a confusion matrix. Because the sample over-represents the judge's non-correct verdicts, the numbers describe agreement on this sample, not on a typical run.
+
 ## Results
 
 See [What I measured and what I changed](../README.md#what-i-measured-and-what-i-changed) in the main README.
