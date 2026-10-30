@@ -1,156 +1,90 @@
-"""Integration tests for document upload and processing workflow."""
+"""API tests for uploading, processing, listing, and deleting documents."""
 
-from io import BytesIO
 from unittest.mock import patch
 
 import pytest
-from app.core.dependencies import get_database
-from app.main import app
-from fastapi.testclient import TestClient
+
+from tests.integration.helpers import upload_and_process
 
 pytestmark = pytest.mark.integration
 
 
-@pytest.fixture
-def client(db_service):
-    """Create test client with real database."""
-    app.dependency_overrides[get_database] = lambda: db_service
-    yield TestClient(app)
-    app.dependency_overrides.clear()
+async def test_upload_and_process_stores_chunks(client, session_id):
+    processed = await upload_and_process(client, session_id)
+    document_id = processed["document_id"]
+
+    assert processed["success"] is True
+    assert processed["num_chunks"] > 0
+    assert processed["chunks_stored"] == processed["num_chunks"]
+
+    listing = await client.get("/api/documents", params={"session_id": session_id})
+    assert listing.status_code == 200
+    doc = next(d for d in listing.json()["documents"] if d["id"] == document_id)
+    assert doc["filename"] == "python.txt"
+    assert doc["chunk_count"] == processed["num_chunks"]
 
 
-@pytest.mark.slow
-def test_document_upload_processing_storage_flow(
-    client, cleanup_test_data, sample_text_content
+async def test_listing_hides_other_sessions_documents(client, session_id):
+    processed = await upload_and_process(client, session_id)
+
+    listing = await client.get(
+        "/api/documents", params={"session_id": "someone-else-entirely"}
+    )
+
+    assert listing.status_code == 200
+    ids = {d["id"] for d in listing.json()["documents"]}
+    assert processed["document_id"] not in ids
+
+
+async def test_delete_removes_document_and_chunks(client, db_service, session_id):
+    processed = await upload_and_process(client, session_id)
+    document_id = processed["document_id"]
+
+    deleted = await client.delete(
+        f"/api/documents/{document_id}", params={"session_id": session_id}
+    )
+
+    assert deleted.status_code == 200
+    assert deleted.json()["chunks_deleted"] == processed["chunks_stored"]
+    chunks_left = await db_service.fetchval(
+        "SELECT count(*) FROM chunks WHERE document_id = $1", document_id
+    )
+    assert chunks_left == 0
+    assert (await client.get(f"/api/documents/{document_id}")).status_code == 404
+
+
+async def test_delete_from_another_session_is_forbidden(client, session_id):
+    processed = await upload_and_process(client, session_id)
+
+    deleted = await client.delete(
+        f"/api/documents/{processed['document_id']}",
+        params={"session_id": "someone-else-entirely"},
+    )
+
+    assert deleted.status_code == 403
+
+
+async def test_failed_processing_returns_422_and_removes_document(
+    client, db_service, session_id
 ):
-    """Test complete flow: upload → process → verify storage in database.
+    upload = await client.post(
+        "/api/documents/upload",
+        files={"file": ("broken.txt", b"some text", "text/plain")},
+        data={"session_id": session_id},
+    )
+    document_id = upload.json()["document_id"]
 
-    This integration test verifies:
-    1. Document upload creates database record
-    2. Document processing extracts text, chunks, and embeds
-    3. Chunks and embeddings are stored in database
-    4. Data can be queried back from database
-    """
-    # Mock external APIs
-    with (
-        patch(
-            "app.services.embeddings.EmbeddingService.generate_embedding"
-        ) as mock_embed,
-        patch(
-            "app.services.text_extraction.TextExtractor.extract_from_txt"
-        ) as mock_extract,
-    ):
-        # Setup mocks
-        mock_extract.return_value = "Sample extracted text for testing"
-        mock_embed.return_value = [0.1] * 768  # Mock 768-dim embedding
-
-        # Step 1: Upload document
-        files = {"file": ("test.txt", BytesIO(sample_text_content), "text/plain")}
-        upload_response = client.post("/api/documents/upload", files=files)
-
-        assert upload_response.status_code == 201
-        upload_data = upload_response.json()
-        assert upload_data["success"] is True
-        document_id = upload_data["document_id"]
-
-        # Track for cleanup
-        cleanup_test_data(document_id)
-
-        # Step 2: Process document
-        files = {"file": ("test.txt", BytesIO(sample_text_content), "text/plain")}
-        process_response = client.post(
-            f"/api/documents/{document_id}/process", files=files
-        )
-
-        assert process_response.status_code == 200
-        process_data = process_response.json()
-        assert process_data["success"] is True
-        assert process_data["num_chunks"] > 0
-        assert process_data["chunks_stored"] == process_data["num_chunks"]
-
-        # Step 3: Verify document in database
-        doc_response = client.get(f"/api/documents/{document_id}")
-        assert doc_response.status_code == 200
-        doc_data = doc_response.json()
-        assert doc_data["id"] == document_id
-        assert doc_data["filename"] == "test.txt"
-
-        # Step 4: Verify chunks in database
-        list_response = client.get("/api/documents")
-        assert list_response.status_code == 200
-        list_data = list_response.json()
-
-        uploaded_doc = next(d for d in list_data["documents"] if d["id"] == document_id)
-        assert uploaded_doc["chunk_count"] > 0
-        assert uploaded_doc["status"] == "ready"
-
-
-@pytest.mark.slow
-def test_document_deletion_cascade(client, cleanup_test_data, sample_text_content):
-    """Test that deleting a document removes all associated chunks.
-
-    Verifies database CASCADE DELETE works correctly.
-    """
-    with (
-        patch(
-            "app.services.embeddings.EmbeddingService.generate_embedding"
-        ) as mock_embed,
-        patch(
-            "app.services.text_extraction.TextExtractor.extract_from_txt"
-        ) as mock_extract,
-    ):
-        mock_extract.return_value = "Sample text for deletion test"
-        mock_embed.return_value = [0.1] * 768
-
-        # Upload and process document
-        files = {
-            "file": ("delete_test.txt", BytesIO(sample_text_content), "text/plain")
-        }
-        upload_response = client.post("/api/documents/upload", files=files)
-        document_id = upload_response.json()["document_id"]
-
-        files = {
-            "file": ("delete_test.txt", BytesIO(sample_text_content), "text/plain")
-        }
-        process_response = client.post(
-            f"/api/documents/{document_id}/process", files=files
-        )
-        chunks_stored = process_response.json()["chunks_stored"]
-        assert chunks_stored > 0
-
-        # Delete document
-        delete_response = client.delete(f"/api/documents/{document_id}")
-        assert delete_response.status_code == 200
-        delete_data = delete_response.json()
-        assert delete_data["success"] is True
-        assert delete_data["chunks_deleted"] == chunks_stored
-
-        # Verify document is gone
-        doc_response = client.get(f"/api/documents/{document_id}")
-        assert doc_response.status_code == 404
-
-        # No need to track for cleanup since we deleted it
-
-
-@pytest.mark.slow
-def test_error_handling_invalid_document(client, cleanup_test_data):
-    """Test error handling when processing invalid document."""
-    # Upload valid document metadata
-    files = {"file": ("test.txt", BytesIO(b"valid content"), "text/plain")}
-    upload_response = client.post("/api/documents/upload", files=files)
-    document_id = upload_response.json()["document_id"]
-    cleanup_test_data(document_id)
-
-    # Try to process with corrupted content
     with patch(
-        "app.services.text_extraction.TextExtractor.extract_from_txt"
-    ) as mock_extract:
-        mock_extract.side_effect = Exception("Extraction failed")
-
-        files = {"file": ("test.txt", BytesIO(b"corrupted"), "text/plain")}
-        process_response = client.post(
-            f"/api/documents/{document_id}/process", files=files
+        "app.services.text_extraction.TextExtractor.extract_text",
+        side_effect=Exception("extraction failed"),
+    ):
+        process = await client.post(
+            f"/api/documents/{document_id}/process",
+            files={"file": ("broken.txt", b"some text", "text/plain")},
         )
 
-        # Should return error
-        assert process_response.status_code in [422, 500]
+    assert process.status_code == 422
+    remaining = await db_service.fetchval(
+        "SELECT count(*) FROM documents WHERE id = $1", document_id
+    )
+    assert remaining == 0

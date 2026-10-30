@@ -38,9 +38,9 @@ test-unit:  ## Run only unit tests
 test-integration:  ## Run only integration tests
 	pytest tests/integration/ -v -m integration
 
-test-db:  ## Run SQL tests against the eval database (see evals/README.md)
+test-db:  ## Run SQL and API integration tests against a local migrated database (see evals/README.md)
 	RUN_DB_TESTS=1 POSTGRES_HOST=localhost POSTGRES_PORT=5433 POSTGRES_DB=rag_eval \
-	POSTGRES_USER=rag_user POSTGRES_PASSWORD=evalpass pytest tests/db/ -v --no-cov
+	POSTGRES_USER=rag_user POSTGRES_PASSWORD=evalpass pytest tests/db/ tests/integration/ -v --no-cov
 
 eval-gate:  ## Run the CI retrieval gate against the local rag_gate database
 	python -m evals.gate check
