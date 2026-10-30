@@ -12,7 +12,7 @@ It is a regression check for comparing configurations, not a benchmark. 31 quest
 - **1 question whose answer is blank in the source.** The lease template leaves the late-charge amount empty, so the right answer is that the document doesn't state it.
 - **2 questions the documents don't cover** (remote work policy, franchise fee). The right answer is to say so.
 
-The three employee handbooks overlap heavily, so several questions test whether retrieval and the answer stay in the right document.
+The three employee handbooks and the restaurant manuals overlap, and the same topic is often covered differently in each. A question like "can vacation be taken in partial days?" has one answer in one handbook and a different one in another, while its reference answer assumes a single policy. So questions about overlapping documents name the document, the way a user would after seeing the filename in the app's document list. Each question then has one correct answer, and the reference answer can be graded against it.
 
 ## Metrics
 
