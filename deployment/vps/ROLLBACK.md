@@ -110,6 +110,22 @@ docker exec rag-chatbot-prod python -c \
 
 `docker compose restart` does not reread `env_file`; recreate the container as above.
 
+### Unused env lines removed (2026-10-30, 12:14 UTC)
+
+Right after the threshold change, seven lines the app never reads were removed from
+`.env.production`: `DATABASE_URL`, `MAX_FILE_SIZE_MB`, `ALLOWED_FILE_TYPES`, `UPLOAD_RATE_LIMIT`,
+`QUERY_RATE_LIMIT`, `CHUNK_SIZE_TARGET`, `GCS_SOURCE_PREFIX`. The app's defaults for the ones
+defined in `config.py` are the same values. Backup:
+
+- `/root/production-rag-system/.env.production.bak-20261030T121437Z-remove-unused-vars`
+
+To undo, copy that backup over `.env.production` and recreate the container. It already contains
+`SEARCH_SIMILARITY_THRESHOLD=0.0`, so this does not undo the threshold change.
+
+The stale `/root/production-rag-system/.env` (a January 2026 copy of an older env, not used by
+`docker-compose.prod.yml`) was deleted at the same time. It was not backed up: it only held older
+credentials and settings that nothing reads.
+
 ## Smoke Test After Any Rollback
 
 ```bash
