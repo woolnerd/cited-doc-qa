@@ -8,64 +8,65 @@ A document Q&A app: upload documents, ask questions, and get answers with source
 
 ## Features
 
-- **Document Upload**: Support for PDF, DOCX, and TXT files with drag-and-drop interface
-- **Contextual Chunking**: Intelligent document chunking with metadata for better retrieval
-- **Hybrid Search**: Combines vector similarity (pgvector) and full-text search (PostgreSQL)
-- **Reranking**: Cohere rerank-english-v3.0 for improved relevance
-- **Answer Generation**: Claude 3.5 Sonnet with source citations
-- **Clean UI**: Simple, responsive chat interface
+- **Document upload**: PDF, DOCX, and TXT with a drag-and-drop interface
+- **Contextual chunking**: 400–600 token chunks with document context for better retrieval
+- **Hybrid search**: pgvector similarity and Postgres full-text search, merged with Reciprocal Rank Fusion
+- **Reranking**: Cohere rerank to keep only relevant chunks
+- **Cited answers**: Claude answers with numbered `[n]` citations linked to source chunks
+- **Session isolation**: each browser session sees its own uploads plus shared global documents
+- **Demo mode**: per-session, per-IP, and daily limits for running as a public demo
 
 ## Tech Stack
 
 - **Backend**: FastAPI (Python 3.11+)
-- **Database**: Supabase (PostgreSQL + pgvector)
-- **Embeddings**: Google Gemini text-embedding-004 (768 dimensions)
-- **Reranking**: Cohere rerank-english-v3.0
-- **LLM**: Anthropic Claude 3.5 Sonnet
-- **Frontend**: HTML/CSS/JavaScript
+- **Database**: PostgreSQL 15 + pgvector
+- **Embeddings**: OpenAI `text-embedding-3-large` (3072 dimensions) via OpenRouter, or Gemini `gemini-embedding-001`
+- **Reranking**: Cohere `rerank-v3.5` via OpenRouter, or Cohere directly
+- **LLM**: Claude Haiku 4.5 via OpenRouter
+- **Frontend**: vanilla HTML/CSS/JavaScript, no build step
+- **Deployment**: Docker on a VPS behind Caddy, deployed by GitHub Actions
+
+Providers and models are set in `.env`; see `.env.example` for local defaults and `.env.vps.example` for the production setup. Changing the embedding model requires re-embedding every document.
 
 ## Architecture
 
 ```
-User → Document Upload → Text Extraction → Contextual Chunking → Embedding → Storage
-                                                                                  ↓
-User ← Answer Generation ← Claude ← Reranking ← Hybrid Search ← Query Embedding ← Query
+User → Upload → Text Extraction → Contextual Chunking → Embedding → Postgres
+                                                                       ↓
+User ← Cited Answer ← Claude ← Rerank ← Hybrid Search (RRF) ← Query Embedding ← Query Enhancement ← Question
 ```
 
 ### Document Processing Flow
-1. Upload document (PDF/DOCX/TXT)
-2. Extract text content
-3. Split into semantic chunks (400-600 tokens)
-4. Add contextual metadata to each chunk
-5. Generate embeddings with Gemini
-6. Store in Supabase with metadata
+1. Upload a document (PDF/DOCX/TXT)
+2. Extract text
+3. Split into contextual chunks (400–600 tokens)
+4. Generate embeddings
+5. Store chunks and vectors in Postgres
 
-### Query/Retrieval Flow
-1. User submits question
-2. Generate query embedding with Gemini
-3. Hybrid search:
+### Query Flow
+1. User asks a question (with recent conversation history)
+2. Rewrite the query for retrieval
+3. Hybrid search, filtered to the user's session and global documents:
    - Vector similarity search (top 30)
    - Full-text search (top 30)
-   - Combine with RRF (Reciprocal Rank Fusion)
-4. Rerank with Cohere (top 5)
-5. Generate answer with Claude
-6. Return answer with source citations
+   - Merge with RRF
+4. Rerank (top 5) and drop low-scoring chunks
+5. Generate an answer with Claude
+6. Return the answer with source citations
 
 ## Setup
 
 ### Prerequisites
 - Python 3.11 or higher
-- Supabase account
-- API keys for:
-  - Google AI (Gemini)
-  - Cohere
-  - Anthropic
+- PostgreSQL 15 with the pgvector extension
+- An OpenRouter API key (LLM, and embeddings/rerank in the production setup)
+- Optionally Google AI (Gemini) and Cohere keys, if you use those providers directly
 
 ### Local Development
 
-1. **Clone and setup**:
+1. **Clone and set up**:
 ```bash
-git clone <repository-url>
+git clone https://github.com/woolnerd/cited-doc-qa.git
 cd cited-doc-qa
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -75,112 +76,99 @@ pip install -r backend/requirements.txt
 2. **Configure environment variables**:
 ```bash
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env with your database settings and API keys
 ```
 
-3. **Set up database** (see Database Setup section)
+3. **Set up the database**: create a database, then apply the files in `migrations/` in numeric order:
+```bash
+for f in migrations/*.sql; do psql -d rag_db -f "$f"; done
+```
 
 4. **Run the application**:
 ```bash
-cd backend
-uvicorn app.main:app --reload
+make run  # uvicorn on port 8000 with reload
 ```
 
-5. **Access the application**:
-- API: http://localhost:8000
-- Docs: http://localhost:8000/docs
-- Frontend: http://localhost:8000 (serves static files)
+5. **Open it**:
+- App: http://localhost:8000
+- API docs: http://localhost:8000/docs
 
-### Database Setup
-
-See `docs/database-setup.md` for detailed instructions on setting up Supabase with pgvector.
+See `docs/development.md` for more.
 
 ## Testing
 
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app --cov-report=html
-
-# Run specific test types
-pytest tests/unit/
-pytest tests/integration/
-
-# Run performance tests
-locust -f tests/performance/locustfile.py
+make test-unit         # pytest tests/unit/
+make test-integration  # pytest tests/integration/ (needs a database)
+make test-cov          # with coverage report
+make check-all         # format, lint, type-check, test
 ```
+
+Performance tests live in `tests/performance/`; see the README there.
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and deployment:
-- **CI**: Runs tests, linting, and coverage checks on every push/PR
-- **CD**: Automated deployment to production on main branch merge
+- **CI** (`.github/workflows/ci.yml`): lint, type-check, and tests on every push and PR
+- **Deploy** (`.github/workflows/deploy.yml`): builds `ghcr.io/woolnerd/cited-doc-qa` and deploys to the VPS on every push to `main`
 
-See `.github/workflows/` for pipeline configurations.
+See `docs/deployment.md` for setup and `deployment/vps/ROLLBACK.md` for rolling back.
 
-## API Documentation
+## API
 
-### Endpoints
+All document and query endpoints take a `session_id`. Users can see, search, and delete only their own documents, plus read-only global documents.
 
-#### `POST /api/documents/upload`
-Upload a document for processing.
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/health` | Health check |
+| `POST` | `/api/documents/upload` | Upload a file (multipart: `file`, `session_id`) |
+| `POST` | `/api/documents/{id}/process` | Extract, chunk, and embed an uploaded document |
+| `GET` | `/api/documents?session_id=...` | List session and global documents |
+| `GET` | `/api/documents/{id}` | Document metadata |
+| `GET` | `/api/documents/{id}/source-url` | Signed URL for the original file, if an operator mapped one |
+| `DELETE` | `/api/documents/{id}?session_id=...` | Delete a document and its chunks |
+| `POST` | `/api/query` | Ask a question |
 
-**Request**: Multipart form data with file
-**Response**: Document ID and processing status
-
-#### `POST /api/query`
-Ask a question about uploaded documents.
+### `POST /api/query`
 
 **Request**:
 ```json
 {
-  "query": "What is the main topic?",
-  "document_ids": ["optional-filter"]
+  "session_id": "abc123",
+  "query": "What is the notice period for terminating the lease?",
+  "document_id": null,
+  "conversation_history": []
 }
 ```
 
-**Response**:
+**Response** (abridged):
 ```json
 {
-  "answer": "The answer text...",
+  "success": true,
+  "answer": "The tenant must give 60 days' written notice [1].",
   "sources": [
     {
-      "document": "filename.pdf",
+      "citation_num": 1,
+      "document_name": "lease.pdf",
+      "chunk_index": 12,
       "content": "relevant chunk...",
-      "score": 0.95
+      "rerank_score": 0.91
     }
   ],
   "metadata": {
-    "chunks_used": 5,
-    "processing_time_ms": 1234
+    "model": "anthropic/claude-haiku-4.5",
+    "results_count": 5,
+    "timing": {"total_ms": 3120.5}
   }
 }
 ```
 
-#### `GET /api/documents`
-List all uploaded documents.
-
-#### `DELETE /api/documents/{id}`
-Delete a document and all its chunks.
-
-## Deployment
-
-See `docs/deployment.md` for production deployment instructions.
-
-## Performance Considerations
-
-- **Rate Limits**: Configurable limits for uploads and queries
-- **File Size**: Default max 10MB per document
-- **Response Time**: ~2-3 seconds for typical queries (p95)
-- **Concurrent Users**: Tested with 50 simultaneous queries
+Full schemas are at `/docs` when the app is running.
 
 ## Limitations
 
-- Scanned PDFs (images) are not supported
-- Very large documents (>1000 pages) may take several minutes to process
-- API costs scale with usage (see cost estimates in docs)
+- Scanned PDFs (images only) are not supported; there is no OCR
+- Max file size is 10 MB by default
+- Demo mode caps uploads, queries, and total upload size per session
 
 ## Support
 
