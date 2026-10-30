@@ -59,8 +59,8 @@ body {
 
 .sidebar-brand {
     display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.125rem;
     padding: 1.25rem 1.25rem 1rem;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
