@@ -1,0 +1,43 @@
+Walk-In Cooler Operation and Maintenance Guide
+
+Fictional document written for the cited-doc-qa retrieval tests. The FrostLine WC-8 is not a real product.
+
+Scope
+
+This guide covers daily operation, cleaning, and preventive maintenance of the FrostLine WC-8 walk-in cooler with a top-mounted condensing unit. Kitchen staff handle the daily and weekly tasks. Monthly and quarterly tasks are done by the facilities lead. Any work on the refrigerant circuit is done only by a technician holding EPA Section 608 certification.
+
+Temperature Settings
+
+Set the controller to hold the cooler between 35 and 38 degrees Fahrenheit. Never set it below 33 degrees, because produce near the evaporator will freeze. Record the cooler temperature on the log sheet by the door twice per shift, at the start and in the middle of the shift. The log sheet is kept for 90 days.
+
+High Temperature Alarm
+
+The controller sounds an alarm when the cooler stays at or above 41 degrees Fahrenheit for 30 minutes. When the alarm sounds, check that the door is fully closed and the strip curtain is in place, then check the evaporator for heavy frost. If the temperature is still above 41 degrees after another 30 minutes, call the refrigeration contractor and move high-risk food, such as dairy, meat, and cooked rice, to the reach-in coolers.
+
+Door and Gasket Care
+
+Inspect the door gasket weekly for tears, gaps, and mold. Close the door on a dollar bill at several points around the frame; if the bill slides out easily, the gasket is not sealing and must be replaced. Wipe the gasket with warm soapy water and dry it. Do not use bleach on the gasket, because it makes the rubber brittle. Check that the door closer pulls the door shut from fully open on its own.
+
+Defrost Cycle
+
+The evaporator runs an automatic off-cycle defrost four times a day, for up to 30 minutes each time. The defrost times are 2:00 a.m., 8:00 a.m., 2:00 p.m., and 8:00 p.m. The cooler temperature can rise by 2 to 3 degrees during defrost; this is normal and is not logged as an exception. Do not change the defrost schedule without asking the facilities lead.
+
+Condenser Coil Cleaning
+
+Clean the condenser coil once a month, and every two weeks in summer or when the unit sits near a fryer or grill. Turn off power at the disconnect, then brush the coil in the direction of the fins with a soft coil brush. Vacuum the loosened dust. Never use a pressure washer on the condenser coil, because it bends the fins. A dirty condenser coil is the most common cause of high head pressure and warm coolers.
+
+Evaporator Drain Line
+
+Flush the evaporator drain line every quarter with one gallon of warm water mixed with one cup of white vinegar. A blocked drain line causes water to pool on the floor under the evaporator and ice to build up in the drain pan. Check that the drain line heater is warm to the touch during the defrost cycle.
+
+Interior Cleaning
+
+Sweep and mop the cooler floor daily. Once a week, move products off one shelf section at a time and wash the shelves with a food-safe detergent. Store raw meat on the bottom shelves, below ready-to-eat foods. Keep all items at least 6 inches off the floor and 2 inches away from the walls to allow airflow.
+
+Lighting and Safety
+
+The interior light is a sealed LED fixture; replace the whole fixture if it fails. The door has an inside safety release. Test the inside release once a month by stepping inside, closing the door, and pushing the release knob. Never block the inside release with boxes or carts.
+
+When to Call for Service
+
+Call the refrigeration contractor if the compressor short cycles, if you hear grinding or squealing from the fan motors, if ice covers the whole evaporator coil, or if the cooler cannot reach 38 degrees after the condenser coil has been cleaned. Do not try to add refrigerant or adjust the expansion valve yourself.

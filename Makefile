@@ -1,4 +1,4 @@
-.PHONY: help install install-dev setup-hooks format lint type-check test test-cov test-db clean run
+.PHONY: help install install-dev setup-hooks format lint type-check test test-cov test-db eval-gate clean run
 
 help:  ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -41,6 +41,9 @@ test-integration:  ## Run only integration tests
 test-db:  ## Run SQL tests against the eval database (see evals/README.md)
 	RUN_DB_TESTS=1 POSTGRES_HOST=localhost POSTGRES_PORT=5433 POSTGRES_DB=rag_eval \
 	POSTGRES_USER=rag_user POSTGRES_PASSWORD=evalpass pytest tests/db/ -v --no-cov
+
+eval-gate:  ## Run the CI retrieval gate against the local rag_gate database
+	python -m evals.gate check
 
 clean:  ## Clean up cache and temporary files
 	find . -type d -name "__pycache__" -exec rm -rf {} +
