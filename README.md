@@ -140,7 +140,7 @@ Retrieval counts are out of the 29 questions with an expected passage and were i
 ### What didn't improve, and what I'd look at next
 
 - **Faithfulness stayed flat.** About 7% of answer claims aren't supported by the retrieved text. Most are harmless padding ("the clearance is a safety measure to prevent fire hazards"), but a few are real errors.
-- **More context brought a new failure: mixing documents.** The demo has three employee handbooks with different policies. With more candidates reaching the model, some answers combined them. For example, the NFIB handbook's "full-day or half-day vacation only" rule came back next to another handbook's one-hour increments. Two of the three remaining "partial" grades are this kind of problem; the third left out a detail. Grouping context by document, or asking which handbook the user means, would be the next thing to try. (Since addressed; see [Naming the document in overlapping questions](#naming-the-document-in-overlapping-questions).)
+- **More context brought a new failure: mixing documents.** The demo has three employee handbooks with different policies. With more candidates reaching the model, some answers combined them. For example, the NFIB handbook's "full-day or half-day vacation only" rule came back next to another handbook's one-hour increments. Two of the three remaining "partial" grades are this kind of problem; the third left out a detail. Grouping context by document, or asking which handbook the user means, would be the next thing to try. (Since tried; see [Naming the document in overlapping questions](#naming-the-document-in-overlapping-questions) and [Grouping context by document](#grouping-context-by-document).)
 - **Full-text search almost never contributes.** It returned nothing for 81% of questions, because `websearch_to_tsquery` requires every word of a natural-language question to appear in one chunk. Switching to an OR-style query would make hybrid search actually hybrid. I left it unchanged so this comparison measures one change. (Since fixed; see [Full-text search](#full-text-search-match-any-word-not-every-word).)
 - **Two passages are still missed.** One is in a chunk where the PDF's sidebar layout scrambled the text, and the other ranks 59th by vector similarity. In both cases the model still answered correctly from a similar passage elsewhere.
 
@@ -212,6 +212,31 @@ Retrieval improved. One passage (`rest-01`) was missing from the candidates befo
 Answers: `nfib-01` was partial in every earlier run and is correct in both anchored runs. `rest-03` was partial in one earlier run and correct in both anchored runs. `sfc-02` was correct in both earlier runs and partial in both anchored runs: the answer gave the disposal step but left out registering the wasted food in the cash register. Its passage was the first chunk in the context in every run, and the missing step is in that chunk. The other four chunks changed, and the anchored answers quoted only the disposal line. I read this as generation variance, not a retrieval loss.
 
 Faithfulness did not improve. Mean faithfulness was 0.91 and 0.94 (before: 0.95 and 0.93), and the share of fully supported answers fell from 77% and 74% to 68% and 71%. This is one set of 31 questions, so treat the answer changes as small.
+
+### Grouping context by document
+
+The LLM's context used to be a flat list in rerank order. With three handbooks in the candidates, answers sometimes blended their rules. The change groups the context under one header per document, keeps each chunk's citation number and rerank order, and adds prompt rules: don't merge rules from different documents, and when documents disagree, give each answer separately and name its document. Retrieval is unchanged, so only the layout and the prompt differ.
+
+I measured it twice: on the old wording, then on the anchored questions. On the old wording, grouping made the answers attribute each rule to its document, but judge-graded correctness fell from 30 and 29 to 28 and 28 of 31. In the grouped runs the judge marked `pc-02` partial because its answer hedged between two handbooks' policies, which conflicts with a single reference answer.
+
+Retrieval was identical with and without grouping on both question sets. Counts are out of 31 answers, and each setting was run twice (`results/doc-grouping*.json`, `results/anchored*.json`).
+
+| | Unanchored, no grouping | Unanchored, grouped | Anchored, no grouping | Anchored, grouped |
+|---|---|---|---|---|
+| Answers judged correct (run 1, run 2) | 30, 29 | 28, 28 | 30, 30 | 31, 31 |
+| Answers judged partial | 1, 2 | 3, 3 | 1, 1 | 0, 0 |
+| Mean faithfulness | 0.95, 0.93 | 0.96, 0.96 | 0.91, 0.94 | 0.97, 0.91 |
+| Answers with every claim supported | 77%, 74% | 74%, 84% | 68%, 71% | 84%, 63% |
+| Answer passage ranked first (hit@1, of 29) | 24 | 24 | 28 | 28 |
+| MRR of answer passage | 0.89 | 0.89 | 0.98 | 0.98 |
+
+The three questions I was watching:
+
+- **`nfib-01`** (vacation in partial days) was partial in every unanchored run, with or without grouping. It was correct in all four anchored runs. In the unanchored grouped answers, each rule is attributed to its handbook; that is an observation from reading the answers, not a metric.
+- **`rest-03`** (thermometer calibration) was correct in one unanchored run and partial in the other, and partial in both grouped unanchored runs. It was correct in all four anchored runs.
+- **`pc-02`** (sick leave waiting period) was correct in every run without grouping, before and after anchoring, and partial in both unanchored grouped runs.
+
+On the anchored questions, grouping makes little measurable difference. The one verdict that changed is `sfc-02`, which went from partial to correct in both pairs of runs. Faithfulness rose in one run and fell in the other. Each run has 31 questions, so none of these differences is strong evidence. What the eval does show is that anchoring removes most of the ambiguity that grouping was meant to address, and that on the unanchored wording grouping cost one or two correct answers per run, because the judge grades a per-document answer against a single reference.
 
 ### A retrieval check on every PR
 
