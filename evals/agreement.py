@@ -20,6 +20,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from evals.run import NO_RESULTS_ANSWER
+
 EVALS_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = EVALS_DIR / "results"
 DATASET = EVALS_DIR / "dataset.jsonl"
@@ -130,6 +132,13 @@ def load_dataset() -> dict[str, dict[str, Any]]:
 
 
 def export(labels: list[str]) -> None:
+    if SHEET.exists():
+        with SHEET.open(newline="") as f:
+            if any(row["human_verdict"].strip() for row in csv.DictReader(f)):
+                raise SystemExit(
+                    f"{SHEET.relative_to(EVALS_DIR.parent)} already has grades. "
+                    "Move it aside before exporting a new sheet."
+                )
     runs = {
         label: json.loads((RESULTS_DIR / f"{label}.json").read_text())["records"]
         for label in labels
@@ -169,21 +178,36 @@ def export(labels: list[str]) -> None:
     )
 
 
+def graded_pairs(
+    rows: list[dict[str, str]],
+    key: dict[str, dict[str, Any]],
+    skip_answer: str | None = None,
+) -> list[tuple[str, str]]:
+    """(human, judge) verdicts for graded rows, optionally skipping one answer text."""
+    pairs = []
+    for row in rows:
+        human = row["human_verdict"].strip().lower()
+        if not human or (skip_answer and row["answer"].strip() == skip_answer):
+            continue
+        if human not in VERDICTS:
+            raise ValueError(f"{row['sample_id']}: unknown verdict {human!r}")
+        pairs.append((human, key[row["sample_id"]]["judge_verdict"]))
+    return pairs
+
+
 def score() -> None:
     key = json.loads(KEY.read_text())
     with SHEET.open(newline="") as f:
         rows = list(csv.DictReader(f))
-    pairs = []
-    for row in rows:
-        human = row["human_verdict"].strip().lower()
-        if not human:
-            continue
-        if human not in VERDICTS:
-            raise SystemExit(f"{row['sample_id']}: unknown verdict {human!r}")
-        pairs.append((human, key[row["sample_id"]]["judge_verdict"]))
+    pairs = graded_pairs(rows, key)
     if not pairs:
         raise SystemExit("No graded rows yet. Fill in human_verdict in the sheet.")
     print(format_report(pairs))
+    # The app's canned no-results reply is trivially incorrect, so it inflates
+    # agreement. Report the answers that needed judgment on their own too.
+    judged = graded_pairs(rows, key, skip_answer=NO_RESULTS_ANSWER)
+    print("\nExcluding the app's no-results reply:\n")
+    print(format_report(judged))
 
 
 def main() -> None:

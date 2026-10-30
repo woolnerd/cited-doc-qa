@@ -3,14 +3,14 @@ s01,"If the contractor terminates for its own convenience, does Mercy Corps pay 
 
 According to the termination provisions in the agreement: ""In the event of termination due to Contractor's breach or by Contractor for Contractor's convenience, Mercy Corps will not be obligated to pay Contractor for any partially completed work."" [1]
 
-However, Mercy Corps would be obligated to pay for partially completed work in other termination scenarios, such as when termination is due to Mercy Corps' breach, by Mercy Corps for convenience, due to a force majeure event, or due to loss of funding. In those cases, ""Mercy Corps will be obligated to pay Contractor for its reasonable, pro-rated costs of work completed and expenses properly incurred prior to termination."" [1]",,
-s02,What is the warmest water you can use to thaw food under running water?,"70°F or lower, running drinking water.",I couldn't find any relevant information in the documents to answer your question.,,
+However, Mercy Corps would be obligated to pay for partially completed work in other termination scenarios, such as when termination is due to Mercy Corps' breach, by Mercy Corps for convenience, due to a force majeure event, or due to loss of funding. In those cases, ""Mercy Corps will be obligated to pay Contractor for its reasonable, pro-rated costs of work completed and expenses properly incurred prior to termination."" [1]",correct,
+s02,What is the warmest water you can use to thaw food under running water?,"70°F or lower, running drinking water.",I couldn't find any relevant information in the documents to answer your question.,incorrect,could not find relevant information to answer
 s03,How long does a party have to fix a breach before the other side can terminate a task order?,15 days after notice of the breach.,"Based on the provided context, a party has **15 days** to fix a breach before the other side can terminate a task order.
 
 Specifically, the agreement states that either party may terminate a TO ""due to the non-terminating Party's breach of this Agreement and failure to correct such breach within 15 days prior notice of such breach"" [1].
 
-This means that once a party receives notice of a breach, they have a 15-day period to remedy (fix) that breach before the other party can proceed with termination.",,
-s04,What do counter staff do with unsold food at closing?,"Register all wasted food in the cash register, then dispose of unsold food in the waste bins.",I couldn't find any relevant information in the documents to answer your question.,,
+This means that once a party receives notice of a breach, they have a 15-day period to remedy (fix) that breach before the other party can proceed with termination.",correct,
+s04,What do counter staff do with unsold food at closing?,"Register all wasted food in the cash register, then dispose of unsold food in the waste bins.",I couldn't find any relevant information in the documents to answer your question.,incorrect,could not find relevant information to answer
 s05,Can vacation be taken in partial days?,Only in full-day or half-day increments.,"# Vacation Time in Partial Days
 
 Yes, vacation can be taken in partial days, but the policy varies depending on employee classification:
@@ -26,12 +26,12 @@ One handbook notes that ""Vacation days are granted only on a full-day or half-d
 
 Additionally, one source specifies that ""If a holiday falls during the employee's vacation, the day will be charged to holiday pay rather than to vacation pay"" [3], indicating that vacation is tracked on a daily basis in that particular policy.
 
-The specific rules for your organization would depend on your employee classification and your company's particular vacation policy.",,
+The specific rules for your organization would depend on your employee classification and your company's particular vacation policy.",partial,missed the nuance that non-exempt employees can use minimum increments of one-hour
 s06,Can vacation be taken in partial days?,Only in full-day or half-day increments.,"Based on the provided context, I cannot find specific information about whether vacation can be taken in partial days.
 
 The document discusses FMLA (Family and Medical Leave Act) leave policies, including that accrued paid leave such as vacation leave may be used concurrently with FMLA leave [1], and that employees do not continue to accrue benefits like vacation leave during family and medical leave [1]. However, it does not address the specific question of whether vacation time can be taken in increments of less than a full day.
 
-To get an accurate answer to your question, you would need to consult the complete vacation policy section of the employee handbook or contact the authorized person listed in the handbook for questions regarding particular benefits [1].",,
+To get an accurate answer to your question, you would need to consult the complete vacation policy section of the employee handbook or contact the authorized person listed in the handbook for questions regarding particular benefits [1].",incorrect,"same question as previous, but could not find an answer. Mentions FMLA document."
 s07,What is the policy on working remotely from home?,The documents do not cover this; the assistant should say so.,"Based on the provided context documents, there is **no information about a remote work or work-from-home policy**.
 
 The documents provided contain policies related to:
@@ -42,12 +42,12 @@ The documents provided contain policies related to:
 
 However, neither document addresses remote work arrangements, eligibility for working from home, or related guidelines.
 
-To get information about your organization's remote work policy, you would need to consult other sections of your employee handbook or contact your Human Resources department directly.",,
+To get information about your organization's remote work policy, you would need to consult other sections of your employee handbook or contact your Human Resources department directly.",correct,
 s08,How high off the floor do dry storage shelves need to be?,"At least 6 inches, so floor-cleaning equipment can be used underneath.","Based on the provided context from the WSC Operations Manual, there is no specific information about how high off the floor dry storage shelves need to be [1].
 
 The document does specify that shelving/racks should be ""Well organized/grouped by category"" and ""Not in need of repair (shelves sturdy, no bent legs, shelves/unit level)"" [1], and that storage containers should ""Not be stored on floor"" [1]. However, the exact height requirement for shelves is not detailed in this section of the manual.
 
-To get this specific measurement, you may need to consult additional sections of the operations manual or contact your facility management directly.",,
+To get this specific measurement, you may need to consult additional sections of the operations manual or contact your facility management directly.",incorrect,could not find it.
 s09,Can vacation be taken in partial days?,Only in full-day or half-day increments.,"# Vacation Time in Partial Days
 
 Yes, vacation can be taken in partial days, but the policy depends on employee classification:
@@ -58,15 +58,15 @@ Yes, vacation can be taken in partial days, but the policy depends on employee c
 
 Additionally, one handbook specifies that **vacation days are granted only on a full-day or half-day basis** [1], which suggests that at minimum, half-day increments are a standard option across different policies.
 
-The specific rules may vary depending on your company's individual handbook and your employment classification, so it's best to consult your supervisor or HR department for your organization's specific vacation policy.",,
+The specific rules may vary depending on your company's individual handbook and your employment classification, so it's best to consult your supervisor or HR department for your organization's specific vacation policy.",partial,"same vacation day question again. it seems right, but the distinction is it mentions the one-hour increments, and the reference answer says only 1day or half-day increments."
 s10,"If an on-call employee is called back to work, what is the minimum they get paid?","The time worked or a minimum of two (2) hours, whichever is greater.","Based on the employee handbook, if an on-call employee is called back to work outside their normal work schedule, they will be paid **a minimum of two (2) hours at their regular rate of pay, whichever is greater than the time actually worked** [1].
 
 Additionally, if an on-call employee is called back to work, **they will be paid for travel time** [1].
 
-It's important to note that overtime compensation (time and one-half) only applies if the total hours worked exceed 40 hours in a workweek [1].",,
+It's important to note that overtime compensation (time and one-half) only applies if the total hours worked exceed 40 hours in a workweek [1].",correct,
 s11,How often should a chiller's compressor oil be sent to a lab for analysis?,Once a year (spectrometric chemical analysis).,"Based on the provided context, a chiller's compressor oil should be sent to a laboratory for analysis **once a year** [1].
 
-Specifically, the manual states that you should ""Analyze compressor oil - Send a sample of the lubrication oil to a laboratory for a 'spectrometric' chemical analysis once a year"" [1]. This is part of the annual maintenance procedures for electric and gas-fired chillers.",,
+Specifically, the manual states that you should ""Analyze compressor oil - Send a sample of the lubrication oil to a laboratory for a 'spectrometric' chemical analysis once a year"" [1]. This is part of the annual maintenance procedures for electric and gas-fired chillers.",correct,
 s12,What temperature should leftovers be reheated to?,"An internal temperature of 165°F for 15 seconds, within 2 hours.","# Reheating Temperature for Leftovers
 
 According to the operations manual, leftovers must be reheated to an internal temperature of **165°F for at least 15 seconds** [1].
@@ -86,14 +86,14 @@ The full reheating procedure for previously prepared and cooled foods includes:
 - Never mix old batches with new batches [1]
 - Only reheat or serve leftovers one time, then discard [1]
 
-This high temperature ensures that any surviving bacteria from the holding and cooling process are killed [1].",,
+This high temperature ensures that any surviving bacteria from the holding and cooling process are killed [1].",correct,
 s13,How much notice is needed to terminate the master service agreement when no task order is outstanding?,"30 days' prior written notice, by either party.","# Termination Notice for Master Service Agreement
 
 According to the Master Service Agreement, **30 days prior written notice** is required to terminate the agreement when no task order is outstanding and remains to be performed by either party [1].
 
 Specifically, the document states: ""Provided no TO is outstanding and remains to be performed by either party, this Agreement may be terminated by either party upon 30 days prior written notice to the other party."" [1]
 
-It's important to note that this 30-day requirement applies only when there are no active task orders. If task orders are outstanding, different termination provisions would apply, which include various circumstances such as mutual agreement, termination for convenience (with a specified notice period), breach, force majeure events, or loss of funding [1].",,
+It's important to note that this 30-day requirement applies only when there are no active task orders. If task orders are outstanding, different termination provisions would apply, which include various circumstances such as mutual agreement, termination for convenience (with a specified notice period), breach, force majeure events, or loss of funding [1].",correct,
 s14,Are prescription drugs covered by the drug-free workplace policy?,Prescription and over-the-counter medications taken as prescribed are an exception to the policy.,"# Prescription Drugs and Drug-Free Workplace Policies
 
 Based on the provided documents, **prescription drugs are generally exempt from drug-free workplace policies**, with important conditions:
@@ -116,7 +116,7 @@ However, there are critical requirements employees must follow:
 
 ## Summary
 
-In short, prescription drugs are covered by an exception to drug-free workplace policies, but only when used lawfully as prescribed and when they do not impair job performance or safety.",,
+In short, prescription drugs are covered by an exception to drug-free workplace policies, but only when used lawfully as prescribed and when they do not impair job performance or safety.",correct,
 s15,Will I get paid for accrued vacation if I resign?,"Yes, in the last paycheck, unless the employee resigned without giving and working a full two weeks' notice.","# Vacation Pay Upon Resignation
 
 Whether you'll be paid for accrued vacation upon resignation depends on the circumstances:
@@ -130,7 +130,7 @@ Whether you'll be paid for accrued vacation upon resignation depends on the circ
 ## Important Caveat
 The handbook includes an important note: ""Check state laws on vacation payout at termination because some states may require the employer to pay out for all separations."" [1] This means that regardless of company policy, your state may have specific legal requirements that could override these provisions and require payment of all accrued vacation upon any separation.
 
-**Recommendation:** Check your state's vacation/sick/PTO laws, as they may provide you with greater protections than the company policy allows.",,
+**Recommendation:** Check your state's vacation/sick/PTO laws, as they may provide you with greater protections than the company policy allows.",correct,
 s16,What does FIFO mean for restaurant inventory?,"First in, first out: the oldest products are used first.","# FIFO in Restaurant Inventory
 
 Based on the provided context, FIFO is an inventory management procedure used in foodservice operations, though the documents don't explicitly spell out what the acronym stands for.
@@ -150,7 +150,7 @@ FIFO procedures must be followed in several storage areas:
 
 The context indicates that FIFO is part of a broader inventory control system where products must be dated with the ""received-on date"" and/or ""preparation date"" [2]. This dating system supports the FIFO methodology by helping staff identify which items should be used first.
 
-**Note:** While the context confirms FIFO is a critical inventory management procedure in restaurants, it doesn't provide the complete definition of the acronym itself. For a more detailed explanation of what FIFO specifically stands for and its complete operational guidelines, you may want to consult the web resource listed: http://smallbusiness.chron.com/restaurant-inventory-ideas-12147.html [1]",,
+**Note:** While the context confirms FIFO is a critical inventory management procedure in restaurants, it doesn't provide the complete definition of the acronym itself. For a more detailed explanation of what FIFO specifically stands for and its complete operational guidelines, you may want to consult the web resource listed: http://smallbusiness.chron.com/restaurant-inventory-ideas-12147.html [1]",partial,"the answer is contextually accurate, but the model did not have evidence for what the acronym stood for (FIFO)"
 s17,Are prescription drugs covered by the drug-free workplace policy?,Prescription and over-the-counter medications taken as prescribed are an exception to the policy.,"# Prescription Drugs and Drug-Free Workplace Policy
 
 Yes, prescription drugs are generally **exempt** from drug-free workplace policies, with important conditions:
@@ -175,8 +175,8 @@ Employees taking prescription medications must:
 
 Employers will not allow any employee to perform their duties while taking prescribed drugs that are adversely affecting the employee's ability to safely and effectively perform their job duties [4].
 
-In summary, prescription drugs are permitted under drug-free workplace policies as long as they are taken as prescribed and do not impair job performance or safety.",,
-s18,How much clearance from combustible materials does a gas-fired heating unit need?,At least 3 feet.,I couldn't find any relevant information in the documents to answer your question.,,
+In summary, prescription drugs are permitted under drug-free workplace policies as long as they are taken as prescribed and do not impair job performance or safety.",correct,repeated question
+s18,How much clearance from combustible materials does a gas-fired heating unit need?,At least 3 feet.,I couldn't find any relevant information in the documents to answer your question.,incorrect,could not find relevant information to answer
 s19,How quickly do employees accrue paid sick leave?,One hour of paid sick leave for every 30 hours worked.,"# Paid Sick Leave Accrual Rate
 
 Based on the provided documents, there are two different accrual methods described:
@@ -193,8 +193,8 @@ Alternatively, employers may offer sick time in a lump sum at the beginning of t
 
 It's worth noting that one handbook also references a different approach where **full-time, regular employees accrue sick leave from the date of hire for a total of 10 days per year**, with part-time employees receiving a prorated amount [3].
 
-The specific accrual rate applicable to your organization will depend on which method your employer has chosen to implement.",,
-s20,How much tuition reimbursement can an employee get per year?,"Up to $5,200 per year for accredited continuing education related to the job or promotion.",I couldn't find any relevant information in the documents to answer your question.,,
+The specific accrual rate applicable to your organization will depend on which method your employer has chosen to implement.",correct,struggled to resolve two different policies
+s20,How much tuition reimbursement can an employee get per year?,"Up to $5,200 per year for accredited continuing education related to the job or promotion.",I couldn't find any relevant information in the documents to answer your question.,incorrect,could not find relevant information to answer
 s21,When does a non-exempt employee get a meal break?,When working more than five hours in a day: an unpaid 30 (or 60) minute meal period starting no later than the end of the fifth hour.,"# When Non-Exempt Employees Get Meal Breaks
 
 Based on the provided documents, there are two different meal break policies outlined:
@@ -212,10 +212,10 @@ Another handbook states that employees who work at least a specified consecutive
 - Meal periods are **not compensable** and employees must clock out during meal breaks [2]
 - During meal periods, employees are completely relieved of all job duties and may leave the work premises [3]
 - Meal periods may be waived by mutual consent in certain circumstances (if the total work period is 6 hours or less for the first meal period, or 12 hours or less for the second meal period) [3]
-- **Important:** The documents note that meal and rest period requirements vary by state, so you should check your specific state's requirements [2]",,
+- **Important:** The documents note that meal and rest period requirements vary by state, so you should check your specific state's requirements [2]",correct,struggled to resolve two different policies
 s22,How often should a chiller's compressor oil be sent to a lab for analysis?,Once a year (spectrometric chemical analysis).,"According to the maintenance manual, a chiller's compressor oil should be sent to a laboratory for spectrometric chemical analysis **once a year** [1].
 
-This analysis is part of the preventative maintenance procedures for electric and gas-fired chillers to ensure the compressor is operating properly and to detect any potential issues with the lubrication oil.",,
+This analysis is part of the preventative maintenance procedures for electric and gas-fired chillers to ensure the compressor is operating properly and to detect any potential issues with the lubrication oil.",correct,
 s23,How often should kitchen staff calibrate instant-read thermometers?,At least once per day.,"Based on the provided context, there are two different calibration frequencies mentioned:
 
 **Daily Calibration Requirement:**
@@ -224,7 +224,7 @@ Restaurant staff should calibrate instant-read thermometers a minimum of once pe
 **Weekly Calibration Requirement:**
 Thermometers need to be calibrated every week or if they have been dropped [2].
 
-These two sources appear to have different standards. The restaurant SOP document specifies daily calibration [1], while the operations manual indicates weekly calibration [2]. For the most accurate guidance specific to your establishment, you should follow your restaurant's own standard operating procedures or consult with your local health department, as requirements may vary by jurisdiction.",,
+These two sources appear to have different standards. The restaurant SOP document specifies daily calibration [1], while the operations manual indicates weekly calibration [2]. For the most accurate guidance specific to your establishment, you should follow your restaurant's own standard operating procedures or consult with your local health department, as requirements may vary by jurisdiction.",partial,struggled to resolve two different policies
 s24,What goes on the Adjustments line of the daily cash report?,"Employee meals, over rings, discounts, and management meals added together.","# Adjustments Line on the Daily Cash Report
 
 According to the Daily Cash Report (DCR) instructions, the Adjustments line (Line 2) should include the following four items added together [1]:
@@ -236,13 +236,13 @@ According to the Daily Cash Report (DCR) instructions, the Adjustments line (Lin
 
 An important requirement is that **a manager's signature must be on each adjustment ticket with the appropriate reason** [1]. This ensures proper documentation and control over these adjustments to sales.
 
-Once these four items are totaled and entered on the Adjustments line, this amount is then subtracted from Line 1 (Total Sales) to calculate the Gross Sales on Line 3 [1].",,
+Once these four items are totaled and entered on the Adjustments line, this amount is then subtracted from Line 1 (Total Sales) to calculate the Gross Sales on Line 3 [1].",correct,
 s25,How high off the floor do dry storage shelves need to be?,"At least 6 inches, so floor-cleaning equipment can be used underneath.","Based on the provided context, the document does not specify a required height for dry storage shelves off the floor [1].
 
 The document only states that storage containers and chemical storage items must be ""stored properly off floor"" and ""not stored on floor,"" but it does not give specific measurements or height requirements [1].
 
-To get the specific height requirements for dry storage shelves, you would need to consult additional documentation or contact your local health department regulations, as this information is not included in the WSC Operations Manual excerpt provided.",,
-s26,How long should employees rub their hands together when handwashing?,At least 20 seconds.,I couldn't find any relevant information in the documents to answer your question.,,
+To get the specific height requirements for dry storage shelves, you would need to consult additional documentation or contact your local health department regulations, as this information is not included in the WSC Operations Manual excerpt provided.",incorrect,could not find it.
+s26,How long should employees rub their hands together when handwashing?,At least 20 seconds.,I couldn't find any relevant information in the documents to answer your question.,incorrect,could not find it.
 s27,What does FIFO mean for restaurant inventory?,"First in, first out: the oldest products are used first.","# FIFO in Restaurant Inventory
 
 FIFO stands for ""**first in, first out**"" and is an inventory management system used in restaurants [1].
@@ -261,7 +261,7 @@ FIFO is important for several key reasons:
 
 ## Implementation
 
-Foodservice managers must ensure that staff is using the FIFO inventory system [2], and FIFO procedures must be followed in storage areas such as refrigerators, walk-ins, and freezers [4]. The FIFO storage rotation system should be evident during inspections of kitchen operations [1].",,
+Foodservice managers must ensure that staff is using the FIFO inventory system [2], and FIFO procedures must be followed in storage areas such as refrigerators, walk-ins, and freezers [4]. The FIFO storage rotation system should be evident during inspections of kitchen operations [1].",correct,basically same question as s16
 s28,Is there an open-door policy for raising workplace concerns?,Yes. Employees are encouraged to bring concerns to their supervisor or another member of management.,"Yes, there is an open-door policy for raising workplace concerns. [1]
 
 According to the handbook, [ORGANIZATION] has an open door policy that encourages employees to participate in decisions affecting them and their daily professional responsibilities. [1] Employees who have job-related concerns or complaints are encouraged to discuss them with their supervisor or any other management representative with whom they feel comfortable. [1]
@@ -271,7 +271,7 @@ The policy specifically encourages employees to:
 - Pursue discussion of their concerns until the matter is fully resolved [1]
 - Voice concerns about work conditions or compensation openly and directly to their supervisors [1]
 
-The organization believes that employee concerns are best addressed through informal and open communication. [1] While [ORGANIZATION] cannot guarantee satisfaction with every outcome, it will attempt to explain the result to the employee if they are not satisfied. [1] Additionally, the organization will attempt to keep expressions of concern, investigation results, and resolution terms confidential, though some information dissemination may be necessary during the investigation process. [1]",,
+The organization believes that employee concerns are best addressed through informal and open communication. [1] While [ORGANIZATION] cannot guarantee satisfaction with every outcome, it will attempt to explain the result to the employee if they are not satisfied. [1] Additionally, the organization will attempt to keep expressions of concern, investigation results, and resolution terms confidential, though some information dissemination may be necessary during the investigation process. [1]",correct,
 s29,How often should kitchen staff calibrate instant-read thermometers?,At least once per day.,"Based on the provided context, there are two different calibration frequencies mentioned:
 
 **Daily Calibration Requirement:**
@@ -280,7 +280,7 @@ Restaurant staff should calibrate instant-read thermometers **a minimum of once 
 **Weekly Calibration Requirement:**
 However, another source states that thermometers need to be calibrated **every week or if they have been dropped** [2].
 
-These documents appear to have different standards. The daily calibration requirement [1] is more frequent and would be the more conservative approach to ensure accuracy. Additionally, regardless of the regular calibration schedule, thermometers should be recalibrated immediately if they have been dropped, as this can affect their accuracy [2].",,
+These documents appear to have different standards. The daily calibration requirement [1] is more frequent and would be the more conservative approach to ensure accuracy. Additionally, regardless of the regular calibration schedule, thermometers should be recalibrated immediately if they have been dropped, as this can affect their accuracy [2].",partial,struggled to resolve two different policies
 s30,When does a late charge kick in for unpaid rent under the commercial lease?,If rent or other charges are not paid within ten (10) days after they are due.,"# Late Charge Timing for Unpaid Rent
 
 According to the Commercial Lease Agreement, a late charge is imposed if the tenant fails to pay any installment of fixed rent or additional rent within **ten (10) days after the same shall be due** [1].
@@ -292,7 +292,7 @@ According to the Commercial Lease Agreement, a late charge is imposed if the ten
 - **Additional Remedies:** The late charge is in addition to all other rights and remedies available to the Landlord and does not limit those rights [1]
 - **Legal Compliance:** The lease specifies that the late charge shall be automatically reduced to any maximum applicable legal rate or charge to ensure compliance with applicable law [1]
 
-It's worth noting that the specific dollar amount of the late charge per $1.00 unpaid is left blank in the document provided, suggesting this would be filled in when the lease is executed.",,
+It's worth noting that the specific dollar amount of the late charge per $1.00 unpaid is left blank in the document provided, suggesting this would be filled in when the lease is executed.",correct,
 s31,How high off the floor do dry storage shelves need to be?,"At least 6 inches, so floor-cleaning equipment can be used underneath.","Based on the provided context, **all food in dry storage must be stored at least 6 inches off the floor** [1][2].
 
 This requirement is stated consistently across the documents:
@@ -301,7 +301,7 @@ This requirement is stated consistently across the documents:
 
 - ""All foods must be stored at least 6 inches off the floor and from the ceiling and walls to insure proper ventilation and to make cleaning easy"" [2]
 
-The 6-inch minimum clearance serves two important purposes: it ensures **proper ventilation** around stored items and makes **cleaning easier** [2]. Additionally, the documents recommend storing heavier items on lower shelves to avoid injuries when lifting [2].",,
+The 6-inch minimum clearance serves two important purposes: it ensures **proper ventilation** around stored items and makes **cleaning easier** [2]. Additionally, the documents recommend storing heavier items on lower shelves to avoid injuries when lifting [2].",correct,"repeated question for the third, time but this time correct"
 s32,Is there an open-door policy for raising workplace concerns?,Yes. Employees are encouraged to bring concerns to their supervisor or another member of management.,"Yes, there is an open-door policy for raising workplace concerns. [1]
 
 According to the handbook, [ORGANIZATION] has an open door policy that encourages employees to participate in decisions affecting them and their daily professional responsibilities. [1] Employees who have job-related concerns or complaints are encouraged to discuss them with their supervisor or any other management representative with whom they feel comfortable. [1]
@@ -313,7 +313,7 @@ The policy specifically encourages employees to:
 
 The organization commits to attempting to explain results to employees if they are not satisfied, and will attempt to keep expressions of concern, investigation results, and resolutions confidential to the extent possible. [1] The handbook notes that [ORGANIZATION] believes employee concerns are best addressed through informal and open communication. [1]
 
-Additionally, employees with concerns about discrimination can bring these issues to the attention of the designated title without fear of reprisal or retaliation. [2]",,
+Additionally, employees with concerns about discrimination can bring these issues to the attention of the designated title without fear of reprisal or retaliation. [2]",correct,
 s33,Will I get paid for accrued vacation if I resign?,"Yes, in the last paycheck, unless the employee resigned without giving and working a full two weeks' notice.","# Vacation Pay Upon Resignation
 
 Whether you'll be paid for accrued vacation upon resignation depends on the circumstances:
@@ -327,7 +327,7 @@ Whether you'll be paid for accrued vacation upon resignation depends on the circ
 ## Important Note
 The handbook also includes a cautionary note: ""Check state laws on vacation payout at termination because some states may require the employer to pay out for all separations"" [1]. This means that **state law may override the company policy** and require vacation payout regardless of how you resign.
 
-**Recommendation:** Check your state's specific vacation payout laws, as they may provide greater protection for your accrued vacation than the company policy alone.",,
+**Recommendation:** Check your state's specific vacation payout laws, as they may provide greater protection for your accrued vacation than the company policy alone.",correct,
 s34,When does a non-exempt employee get a meal break?,When working more than five hours in a day: an unpaid 30 (or 60) minute meal period starting no later than the end of the fifth hour.,"# Meal Break Requirements for Non-Exempt Employees
 
 Based on the provided documents, meal break requirements for non-exempt employees vary depending on daily work hours:
@@ -347,13 +347,13 @@ Based on the provided documents, meal break requirements for non-exempt employee
 
 During meal periods, employees must be completely relieved of all job duties, must clock out, and the meal period is **not compensable** (unpaid) [2][3]. Employees are entirely relieved from duty and may leave the work premises [3].
 
-**Note:** The documents indicate that some states have different meal and rest period requirements, so you should verify your state's specific requirements [2].",,
-s35,"If an on-call employee is called back to work, what is the minimum they get paid?","The time worked or a minimum of two (2) hours, whichever is greater.",I couldn't find any relevant information in the documents to answer your question.,,
+**Note:** The documents indicate that some states have different meal and rest period requirements, so you should verify your state's specific requirements [2].",correct,
+s35,"If an on-call employee is called back to work, what is the minimum they get paid?","The time worked or a minimum of two (2) hours, whichever is greater.",I couldn't find any relevant information in the documents to answer your question.,incorrect,could not find relevant information to answer
 s36,Can vacation be taken in partial days?,Only in full-day or half-day increments.,"Based on the provided context, I cannot find specific information about whether vacation can be taken in partial days.
 
 The document discusses FMLA (Family and Medical Leave Act) leave policies, including that accrued paid leave such as vacation leave may be used concurrently with FMLA leave [1], and that employees do not continue to accrue benefits like vacation leave during family and medical leave [1]. However, it does not address the specific question of whether vacation time can be taken in increments of less than a full day.
 
-To get an accurate answer to your question, I'd recommend contacting the authorized person listed in your employee handbook for questions regarding particular benefits, as mentioned in the document [1].",,
+To get an accurate answer to your question, I'd recommend contacting the authorized person listed in your employee handbook for questions regarding particular benefits, as mentioned in the document [1].",incorrect,could not find relevant information to answer
 s37,"When should annual boiler maintenance be done, and by whom?","Once a year, between heating seasons (May to September), by a licensed heating contractor.","# Annual Boiler Maintenance Timing and Personnel
 
 According to the HVAC Preventative Maintenance Manual, annual boiler maintenance should be performed **once a year by a licensed heating contractor between heating seasons (May to September)** [1].
@@ -374,7 +374,7 @@ The specific tasks that should be completed during this annual maintenance windo
 
 ## Additional Periodic Maintenance
 
-In addition to the annual professional maintenance, the building's maintenance staff should address periodic maintenance tasks on a continual basis, such as cleaning oil filters at least twice a week and keeping sight glasses clean [1].",,
+In addition to the annual professional maintenance, the building's maintenance staff should address periodic maintenance tasks on a continual basis, such as cleaning oil filters at least twice a week and keeping sight glasses clean [1].",correct,
 s38,Is there an open-door policy for raising workplace concerns?,Yes. Employees are encouraged to bring concerns to their supervisor or another member of management.,"# Open-Door Policy for Workplace Concerns
 
 Yes, there is an open-door policy for raising workplace concerns. According to the provided documents:
@@ -397,12 +397,12 @@ Employees are specifically encouraged to:
 
 ## Protection from Retaliation
 
-Importantly, employees can raise concerns **without fear of reprisal or retaliation** [2], and the organization will not discipline employees for raising such concerns [4].",,
-s39,What is the policy on working remotely from home?,The documents do not cover this; the assistant should say so.,I couldn't find any relevant information in the documents to answer your question.,,
+Importantly, employees can raise concerns **without fear of reprisal or retaliation** [2], and the organization will not discipline employees for raising such concerns [4].",correct,
+s39,What is the policy on working remotely from home?,The documents do not cover this; the assistant should say so.,I couldn't find any relevant information in the documents to answer your question.,correct,
 s40,How often should the restroom check-sheet be filled out at a Southern Fried Chicken store?,"Every 30 minutes throughout the day, normally by the supervisor on duty.","According to the Southern Fried Chicken operations procedures, a check-sheet should be posted in each toilet for completion **every 30 minutes throughout the day** [1].
 
 Responsibility for checking normally rests with the supervisor on duty, and the check-sheet should include verification of:
 - Total cleanliness of floors, walls and fixtures
 - Adequacy of stocks of soaps, towels and paper rolls [1]
 
-The check-sheet should be completed using a Chinagraph pencil or similar instrument [1].",,
+The check-sheet should be completed using a Chinagraph pencil or similar instrument [1].",correct,

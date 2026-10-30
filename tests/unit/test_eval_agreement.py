@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from evals.agreement import (  # noqa: E402
     cohens_kappa,
     confusion_matrix,
+    graded_pairs,
     pool_answers,
     raw_agreement,
     select_sample,
@@ -106,3 +107,27 @@ class TestAgreementStats:
         matrix = confusion_matrix([("partial", "correct"), ("partial", "correct")])
         assert matrix["partial"]["correct"] == 2
         assert matrix["correct"]["partial"] == 0
+
+
+class TestGradedPairs:
+    KEY = {"s01": {"judge_verdict": "correct"}, "s02": {"judge_verdict": "incorrect"}}
+
+    def row(self, sample_id: str, verdict: str, answer: str = "An answer.") -> dict:
+        return {"sample_id": sample_id, "human_verdict": verdict, "answer": answer}
+
+    def test_skips_ungraded_rows_and_normalizes_case(self):
+        rows = [self.row("s01", " Correct "), self.row("s02", "")]
+        assert graded_pairs(rows, self.KEY) == [("correct", "correct")]
+
+    def test_skips_a_given_answer_text(self):
+        rows = [
+            self.row("s01", "correct"),
+            self.row("s02", "incorrect", "Not found.\n"),
+        ]
+        assert graded_pairs(rows, self.KEY, skip_answer="Not found.") == [
+            ("correct", "correct")
+        ]
+
+    def test_rejects_unknown_verdicts(self):
+        with pytest.raises(ValueError, match="s01"):
+            graded_pairs([self.row("s01", "mostly right")], self.KEY)
