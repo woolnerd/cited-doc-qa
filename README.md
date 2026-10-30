@@ -144,6 +144,21 @@ Retrieval counts are out of the 29 questions with an expected passage and were i
 - **Full-text search almost never contributes.** It returned nothing for 81% of questions, because `websearch_to_tsquery` requires every word of a natural-language question to appear in one chunk. Switching to an OR-style query would make hybrid search actually hybrid. I left it unchanged so this comparison measures one change.
 - **Two passages are still missed.** One is in a chunk where the PDF's sidebar layout scrambled the text, and the other ranks 59th by vector similarity. In both cases the model still answered correctly from a similar passage elsewhere.
 
+### Checking the grader
+
+The correctness grades above come from a model, so I graded 40 of the answers myself without seeing its verdicts. The sample had every answer the judge didn't mark correct (17) plus 23 random ones it did, since a purely random sample would be almost all "correct".
+
+| | All 40 | Without the app's canned "couldn't find" reply (33) |
+|---|---|---|
+| Agreement | 38 / 40 (95%) | 31 / 33 (94%) |
+| Cohen's kappa | 0.91 | 0.87 |
+
+Both disagreements are the same question in two runs, and they point at the dataset, not the judge. The question asks whether prescription drugs are covered by the drug-free workplace policy. The reference answer says "prescription and over-the-counter medications" are an exception, so the judge marked answers that only discussed prescription drugs as partial. I graded them against the question and called them correct. The reference answer asks for more than the question does.
+
+My grading notes also flagged the same weakness as above: four of the answers I graded struggled with two handbooks' conflicting policies.
+
+Limits: one grader, who also wrote the reference answers, and a sample weighted toward the judge's non-correct verdicts. This shows the judge grades the way I would on this dataset; it doesn't show it would match other graders. Details are in [`evals/README.md`](evals/README.md#checking-the-judge).
+
 ## CI/CD
 
 - **CI** (`.github/workflows/ci.yml`): lint, type-check, and tests on every push and PR
