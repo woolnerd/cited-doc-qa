@@ -1,6 +1,7 @@
 # Rollback Guide
 
-How to undo the 2026-10-29 cutover, and how to roll back a bad deploy of this app.
+How to undo the 2026-10-29 cutover, how to roll back a bad deploy of this app, and how to undo
+later env changes.
 
 ## Current Setup (after 2026-10-29 cutover)
 
@@ -83,6 +84,31 @@ cp .env.production .env.production.bak-$(date -u +%Y%m%dT%H%M%SZ)
 cp .env.production.bak-20261029T175249Z-pre-eta-cutover .env.production
 docker compose -f docker-compose.prod.yml up -d --force-recreate
 ```
+
+## Option 4: Restore the Vector Similarity Threshold
+
+On 2026-10-30 at 11:54 UTC, `SEARCH_SIMILARITY_THRESHOLD` in `.env.production` changed from `0.45`
+to `0.0`, matching the new code default from PR #91. With `0.45`, 6 of the 29 answerable eval
+questions got no search results; see "What I measured and what I changed" in the README. This was
+the only line changed. Backup:
+
+- `/root/production-rag-system/.env.production.bak-20261030T115411Z-similarity-threshold`
+
+To go back to `0.45`, set it explicitly. Removing the line does not restore the old behavior,
+because the code default is now `0.0`.
+
+```bash
+cd /root/production-rag-system
+cp .env.production .env.production.bak-$(date -u +%Y%m%dT%H%M%SZ)-pre-threshold-rollback
+sed -i 's/^SEARCH_SIMILARITY_THRESHOLD=.*/SEARCH_SIMILARITY_THRESHOLD=0.45/' .env.production
+docker compose -f docker-compose.prod.yml up -d --force-recreate
+
+# Confirm the container loaded it
+docker exec rag-chatbot-prod python -c \
+  "from app.core.config import settings; print(settings.SEARCH_SIMILARITY_THRESHOLD)"
+```
+
+`docker compose restart` does not reread `env_file`; recreate the container as above.
 
 ## Smoke Test After Any Rollback
 
