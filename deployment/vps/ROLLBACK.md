@@ -145,6 +145,42 @@ The stale `/root/production-rag-system/.env` (a January 2026 copy of an older en
 `docker-compose.prod.yml`) was deleted at the same time. It was not backed up: it only held older
 credentials and settings that nothing reads.
 
+## Option 5: Undo Migration 010 (full-text OR query)
+
+On 2026-10-30 at about 16:51 UTC, `migrations/010_fulltext_or_query.sql` (PR #97) was applied by
+hand to `rag_db` in the `n8n-postgres` container. It adds `fulltext_or_query(text)` and replaces
+`search_chunks_fulltext_by_session` and `search_chunks_fulltext_by_document_and_session` so a
+question matches chunks containing any of its words instead of all of them. No data changed, and
+the app needed no restart. Schema backup taken just before:
+
+- `/root/backups/rag_db-schema-20261030T165115Z-pre-010.sql`
+
+To undo, re-run migration 006, then drop the helper. 006 was the last migration before 010 to
+define these functions, so it restores the versions that ran before. It also redefines the two
+non-session full-text functions, which the app doesn't call and 010 didn't touch. Run from a
+checkout of this repo on your laptop:
+
+```bash
+ssh root@<vps> 'docker exec -i n8n-postgres psql -v ON_ERROR_STOP=1 --single-transaction -U rag_user -d rag_db' \
+  < migrations/006_optimize_fulltext_search.sql
+ssh root@<vps> "docker exec n8n-postgres psql -U rag_user -d rag_db -c 'DROP FUNCTION IF EXISTS fulltext_or_query(text);'"
+
+# Verify: expect no rows, then "f"
+ssh root@<vps> "docker exec n8n-postgres psql -U rag_user -d rag_db -tAc \
+  \"SELECT proname FROM pg_proc WHERE proname='fulltext_or_query'; \
+    SELECT position('fulltext_or_query' in pg_get_functiondef('search_chunks_fulltext_by_session'::regproc)) > 0;\""
+```
+
+The schema backup is a reference for what the functions looked like, not something to restore
+wholesale: replaying a full schema dump over the live database would fail on existing objects.
+
+Smoke test for 010 itself: "Is there an open-door policy for raising workplace concerns?" should
+cite `small_business_handbook.pdf`. Before 010, full-text search returned nothing for it.
+
+Gotcha: Postgres warns on every connection that `rag_db` has a collation version mismatch
+(created with glibc 2.41, container now provides 2.36). It predates this change and doesn't
+affect it.
+
 ## Smoke Test After Any Rollback
 
 ```bash
