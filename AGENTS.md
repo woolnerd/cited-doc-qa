@@ -34,11 +34,13 @@ Query enhancement → hybrid search (pgvector + Postgres full-text, merged with 
 - Embeddings: OpenRouter `openai/text-embedding-3-large`, 3072 dims
 - Rerank: OpenRouter `cohere/rerank-v3.5`
 - LLM: `anthropic/claude-haiku-4.5` via OpenRouter
-- `SEARCH_SIMILARITY_THRESHOLD=0.45`
+- `SEARCH_SIMILARITY_THRESHOLD=0.0` (relevance is gated by the reranker's threshold; see `evals/README.md`)
 
 **Do not change the embedding provider, model, or dimensions without re-embedding every document.** The stored vectors (including the global demo documents) were made with that model; a mismatch silently breaks vector search.
 
 ## Rules
+
+- **Retrieval changes:** run `python -m evals.run` before and after changing search, rerank, chunking, or prompt settings, and compare with `python -m evals.compare`. See `evals/README.md`.
 
 - **Config constants:** when changing a hardcoded value (model names, dimensions, thresholds), grep `tests/` for the old value. Unit tests assert exact strings in mock calls.
 - **Image name:** `docker-compose.prod.yml` and `deploy.yml` must use `cited-doc-qa`, the repo name CI publishes to GHCR. `tests/unit/test_deployment_config.py` guards this.

@@ -106,6 +106,44 @@ make check-all         # format, lint, type-check, test
 
 Performance tests live in `tests/performance/`; see the README there.
 
+## What I measured and what I changed
+
+I wrote 31 questions about the 9 documents on the live demo. Each answerable question has a reference answer and the exact passage that answers it; three questions test that the assistant says so when the documents can't answer. `evals/run.py` sends each question through the same search, rerank, and answer steps as the API, with production's models and settings, and scores retrieval (is the answer passage in what the LLM sees?) and the answer (correct, and supported by the retrieved text?, graded by a stronger Claude model). Details are in [`evals/README.md`](evals/README.md).
+
+This is a small, hand-written set, so treat the numbers as evidence about one change, not as an accuracy figure.
+
+### What the baseline showed
+
+Vector search had a minimum cosine similarity of 0.45. With `text-embedding-3-large`, that cut too much: **6 of the 29 answerable questions got no search results at all**, so the app replied that it couldn't find anything. Examples include "How long should employees rub their hands together when handwashing?" and "How much tuition reimbursement can an employee get per year?", both answered verbatim in the documents.
+
+Without the cutoff, the passage with the answer scored anywhere from 0.28 to 0.65 against its question, while the two questions the documents don't cover scored 0.38 and 0.44 against their closest chunks. A similarity cutoff can't separate those, so it was dropping good matches without reliably filtering bad ones.
+
+### The change
+
+I set `SEARCH_SIMILARITY_THRESHOLD` to 0, so vector search always returns its top candidates, and left relevance to the Cohere reranker's existing score threshold (0.1). I did not tune a new cutoff against these questions, since that would just fit the test set.
+
+### Before and after
+
+Retrieval counts are out of the 29 questions with an expected passage and were identical across two runs. Answer counts are out of all 31 questions; the two runs per setting are shown because generation and grading vary.
+
+| | Threshold 0.45 (before) | Threshold 0 (after) |
+|---|---|---|
+| Answer passage anywhere in search results | 19 / 29 | 27 / 29 |
+| Answer passage in the LLM's context (top 5 after rerank) | 19 / 29 | 27 / 29 |
+| Answer passage ranked first | 17 / 29 | 24 / 29 |
+| Answers judged correct (run 1, run 2) | 22, 22 / 31 | 28, 29 / 31 |
+| Answers judged incorrect (run 1, run 2) | 8, 8 / 31 | 0, 0 / 31 |
+| Uncovered questions correctly declined | 2 / 2 | 2 / 2 |
+| Mean faithfulness (run 1, run 2) | 0.94, 0.95 | 0.93, 0.92 |
+| Answers whose citations all point at real context | 31 / 31 | 31 / 31 |
+
+### What didn't improve, and what I'd look at next
+
+- **Faithfulness stayed flat.** About 7% of answer claims aren't supported by the retrieved text. Most are harmless padding ("the clearance is a safety measure to prevent fire hazards"), but a few are real errors.
+- **More context brought a new failure: mixing documents.** The demo has three employee handbooks with different policies. With more candidates reaching the model, some answers combined them. For example, the NFIB handbook's "full-day or half-day vacation only" rule came back next to another handbook's one-hour increments. Two of the three remaining "partial" grades are this kind of problem; the third left out a detail. Grouping context by document, or asking which handbook the user means, would be the next thing to try.
+- **Full-text search almost never contributes.** It returned nothing for 81% of questions, because `websearch_to_tsquery` requires every word of a natural-language question to appear in one chunk. Switching to an OR-style query would make hybrid search actually hybrid. I left it unchanged so this comparison measures one change.
+- **Two passages are still missed.** One is in a chunk where the PDF's sidebar layout scrambled the text, and the other ranks 59th by vector similarity. In both cases the model still answered correctly from a similar passage elsewhere.
+
 ## CI/CD
 
 - **CI** (`.github/workflows/ci.yml`): lint, type-check, and tests on every push and PR
