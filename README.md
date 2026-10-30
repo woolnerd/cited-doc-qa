@@ -140,7 +140,7 @@ Retrieval counts are out of the 29 questions with an expected passage and were i
 ### What didn't improve, and what I'd look at next
 
 - **Faithfulness stayed flat.** About 7% of answer claims aren't supported by the retrieved text. Most are harmless padding ("the clearance is a safety measure to prevent fire hazards"), but a few are real errors.
-- **More context brought a new failure: mixing documents.** The demo has three employee handbooks with different policies. With more candidates reaching the model, some answers combined them. For example, the NFIB handbook's "full-day or half-day vacation only" rule came back next to another handbook's one-hour increments. Two of the three remaining "partial" grades are this kind of problem; the third left out a detail. Grouping context by document, or asking which handbook the user means, would be the next thing to try.
+- **More context brought a new failure: mixing documents.** The demo has three employee handbooks with different policies. With more candidates reaching the model, some answers combined them. For example, the NFIB handbook's "full-day or half-day vacation only" rule came back next to another handbook's one-hour increments. Two of the three remaining "partial" grades are this kind of problem; the third left out a detail. Grouping context by document, or asking which handbook the user means, would be the next thing to try. (Since addressed; see [Naming the document in overlapping questions](#naming-the-document-in-overlapping-questions).)
 - **Full-text search almost never contributes.** It returned nothing for 81% of questions, because `websearch_to_tsquery` requires every word of a natural-language question to appear in one chunk. Switching to an OR-style query would make hybrid search actually hybrid. I left it unchanged so this comparison measures one change. (Since fixed; see [Full-text search](#full-text-search-match-any-word-not-every-word).)
 - **Two passages are still missed.** One is in a chunk where the PDF's sidebar layout scrambled the text, and the other ranks 59th by vector similarity. In both cases the model still answered correctly from a similar passage elsewhere.
 
@@ -186,6 +186,32 @@ So this is a small retrieval improvement, not an answer-quality one. On this dat
 Building the CI check turned up a bug: the full-text SQL sorted by `ts_rank` alone. With the OR query, ties are common, and Postgres returns tied rows in whatever order they're stored on disk, which changes as rows are deleted and space is reused. The same question could get a different candidate list later. Migration `011_fulltext_tiebreak.sql` breaks ties by filename, then chunk index.
 
 On the 31 demo questions (retrieval only, `results/tiebreak-*.json`), every retrieval metric stayed the same. The candidate lists didn't: 6 questions got a different set of chunks in the top 10, and 7 more got the same chunks in a different order. None of the 5 chunks the LLM sees changed for any question. So this fixes repeatability, not accuracy: the results no longer depend on storage order.
+
+### Naming the document in overlapping questions
+
+Three employee handbooks and three restaurant manuals cover overlapping topics, often with different rules. Some of my questions were ambiguous across them. "Can vacation be taken in partial days?" has one answer in one handbook and another in a different handbook, but its reference answer assumes one policy. Answers that were right for one handbook were graded against a reference written for another.
+
+The decision: questions about overlapping documents now name the document, as a user would after seeing the filename in the app's document list. 17 questions changed, and only their `question` field. The ids, reference answers, and passages are the same. The new wording is in `evals/dataset.jsonl`. The human-graded sample in `evals/human_grades/sample.csv` was graded on the old wording, so its agreement numbers apply to the old questions.
+
+Retrieval counts are out of the 29 questions with an expected passage. Answer counts are out of all 31. Each setting was run twice (`results/doc-grouping-before*.json` and `results/anchored*.json`).
+
+| | Unanchored (before) | Anchored (after) |
+|---|---|---|
+| Answer passage in search candidates | 28 / 29, 28 / 29 | 29 / 29, 29 / 29 |
+| Answer passage ranked first (hit@1) | 24 / 29, 24 / 29 | 28 / 29, 28 / 29 |
+| MRR of answer passage in the LLM's context | 0.89, 0.89 | 0.98, 0.98 |
+| Answers judged correct | 30, 29 / 31 | 30, 30 / 31 |
+| Answers judged partial | 1, 2 / 31 | 1, 1 / 31 |
+| Answers judged incorrect | 0, 0 / 31 | 0, 0 / 31 |
+| Mean faithfulness | 0.95, 0.93 | 0.91, 0.94 |
+| Answers with every claim supported | 77%, 74% | 68%, 71% |
+| Answers whose citations all point at real context | 100%, 100% | 100%, 100% |
+
+Retrieval improved. One passage (`rest-01`) was missing from the candidates before and is now ranked first. Four others (`nfib-02`, `nfib-03`, `pc-02`, `pc-03`) moved up in the final context.
+
+Answers: `nfib-01` was partial in every earlier run and is correct in both anchored runs. `rest-03` was partial in one earlier run and correct in both anchored runs. `sfc-02` was correct in both earlier runs and partial in both anchored runs: the answer gave the disposal step but left out registering the wasted food in the cash register. Its passage was the first chunk in the context in every run, and the missing step is in that chunk. The other four chunks changed, and the anchored answers quoted only the disposal line. I read this as generation variance, not a retrieval loss.
+
+Faithfulness did not improve. Mean faithfulness was 0.91 and 0.94 (before: 0.95 and 0.93), and the share of fully supported answers fell from 77% and 74% to 68% and 71%. This is one set of 31 questions, so treat the answer changes as small.
 
 ### A retrieval check on every PR
 
