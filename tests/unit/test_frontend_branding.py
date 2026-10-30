@@ -20,3 +20,12 @@ def test_page_title_matches_brand():
 
 def test_company_name_uses_freetime_casing():
     assert "FreeTime" not in INDEX_HTML.read_text()
+
+
+def test_favicon_is_the_freetime_icon():
+    """Same favicon.ico as getfreetime.ai, so the tab matches the main site."""
+    html = INDEX_HTML.read_text()
+    favicon = INDEX_HTML.parent / "favicon.ico"
+
+    assert '<link rel="icon" type="image/x-icon" href="favicon.ico">' in html
+    assert favicon.read_bytes()[:4] == b"\x00\x00\x01\x00"  # ICO header
