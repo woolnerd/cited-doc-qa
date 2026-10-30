@@ -73,3 +73,6 @@ Thumbs.db
 
 # Real documents for local testing only — never commit
 sample_documents/real_docs/
+
+# Hypothesis example database
+.hypothesis/

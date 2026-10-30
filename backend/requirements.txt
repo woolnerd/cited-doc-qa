@@ -42,6 +42,7 @@ pytest-asyncio==0.24.0
 pytest-cov==6.0.0
 pytest-mock==3.14.0
 pytest-benchmark==4.0.0
+hypothesis==6.170.14
 reportlab==4.2.5
 black==26.10.1
 ruff==0.7.3
