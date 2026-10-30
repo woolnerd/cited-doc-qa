@@ -8,6 +8,7 @@ later env changes.
 | Piece | Value |
 |---|---|
 | Hostnames | `rag.getfreetime.ai`, `eta.getfreetime.ai` (one Caddy block, no redirect) |
+| DNS (Namecheap) | `rag` and `eta` are both A records → VPS IP (`rag` was a CNAME → `eta` until 2026-10-30) |
 | Upstream | `localhost:8001` → container `rag-chatbot-prod` |
 | Checkout | `/root/production-rag-system` (reset to `origin/main` by the deploy workflow) |
 | Image | `ghcr.io/woolnerd/cited-doc-qa:latest` (also tagged `main-<sha>`) |
@@ -24,6 +25,22 @@ Backups taken during the cutover (on the VPS):
 > ⚠️ **Do not make `eta.getfreetime.ai` redirect to `rag.getfreetime.ai`.** Until the cutover,
 > `rag` sent a *permanent* (301) redirect to `eta`, and browsers cache that. A reverse redirect
 > causes a redirect loop for returning visitors. Both hostnames must serve the app directly.
+
+> ⚠️ **Keep the `eta` DNS record and Caddy hostname.** Browsers that cached the old 301 still send
+> `rag` visitors to `eta`, and `eta` is linked from getfreetime.ai/eta/, the landing page's
+> `llms.txt`, and past proposals. Deleting `eta` breaks all of them.
+
+### DNS change (2026-10-30)
+
+`rag` changed from a CNAME pointing at `eta` to its own A record pointing at the VPS IP, so it no
+longer depends on the `eta` record. Both answers end at the same IP, so this doesn't affect the
+rollback options below. To undo it, in Namecheap → Advanced DNS replace the `rag` A record with
+`CNAME rag → eta.getfreetime.ai.`, then check:
+
+```bash
+dig +short rag.getfreetime.ai @dns1.registrar-servers.com   # expect the VPS IP (A) or eta.getfreetime.ai. + IP (CNAME)
+curl -s -o /dev/null -w "%{http_code}\n" https://rag.getfreetime.ai/   # expect 200
+```
 
 ## Option 1: Roll Back to the Old eta Container (full cutover undo)
 
