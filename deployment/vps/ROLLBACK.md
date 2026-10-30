@@ -76,7 +76,9 @@ The next push to `main` redeploys `latest`, so revert the bad commit on `main` (
 
 Only needed if a config change on 8001 is the problem. The pre-cutover env used Gemini embeddings,
 which **do not match** the 3072-dim `openai/text-embedding-3-large` vectors of the global documents,
-so restoring it will break search over them. Prefer fixing the single bad value instead.
+so restoring it will break search over them. Its `OPENROUTER_API_KEY` has also been revoked
+(checked 2026-10-30), so copy the current key into it first. Prefer fixing the single bad value
+instead.
 
 ```bash
 cd /root/production-rag-system
