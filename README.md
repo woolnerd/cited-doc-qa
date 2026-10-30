@@ -141,7 +141,7 @@ Retrieval counts are out of the 29 questions with an expected passage and were i
 
 - **Faithfulness stayed flat.** About 7% of answer claims aren't supported by the retrieved text. Most are harmless padding ("the clearance is a safety measure to prevent fire hazards"), but a few are real errors.
 - **More context brought a new failure: mixing documents.** The demo has three employee handbooks with different policies. With more candidates reaching the model, some answers combined them. For example, the NFIB handbook's "full-day or half-day vacation only" rule came back next to another handbook's one-hour increments. Two of the three remaining "partial" grades are this kind of problem; the third left out a detail. Grouping context by document, or asking which handbook the user means, would be the next thing to try.
-- **Full-text search almost never contributes.** It returned nothing for 81% of questions, because `websearch_to_tsquery` requires every word of a natural-language question to appear in one chunk. Switching to an OR-style query would make hybrid search actually hybrid. I left it unchanged so this comparison measures one change.
+- **Full-text search almost never contributes.** It returned nothing for 81% of questions, because `websearch_to_tsquery` requires every word of a natural-language question to appear in one chunk. Switching to an OR-style query would make hybrid search actually hybrid. I left it unchanged so this comparison measures one change. (Since fixed; see [Full-text search](#full-text-search-match-any-word-not-every-word).)
 - **Two passages are still missed.** One is in a chunk where the PDF's sidebar layout scrambled the text, and the other ranks 59th by vector similarity. In both cases the model still answered correctly from a similar passage elsewhere.
 
 ### Checking the grader
@@ -160,6 +160,26 @@ I changed the reference answer to cover only prescription drugs and ran the eval
 My grading notes also flagged the same weakness as above: four of the answers I graded struggled with two handbooks' conflicting policies.
 
 Limits: one grader, who also wrote the reference answers, and a sample weighted toward the judge's non-correct verdicts. This shows the judge grades the way I would on this dataset; it doesn't show it would match other graders. Details are in [`evals/README.md`](evals/README.md#checking-the-judge).
+
+### Full-text search: match any word, not every word
+
+Migration `010_fulltext_or_query.sql` builds the full-text query from the question's stemmed words joined with OR instead of AND. Stop words are dropped, and `ts_rank` still ranks chunks that match more words higher. Before and after are two runs each with the same dataset (`results/nfib03-fix*.json` and `results/fulltext-or*.json`).
+
+| | AND (before) | OR (after) |
+|---|---|---|
+| Full-text search returned nothing | 25 / 31 | 0 / 31 |
+| Answer passage anywhere in search results | 27 / 29 | 28 / 29 |
+| Answer passage in the LLM's context | 27 / 29 | 28 / 29 |
+| Answer passage ranked first | 24 / 29 | 24 / 29 |
+| MRR of answer passage | 0.87 | 0.89 |
+| Answers judged correct (run 1, run 2) | 30, 29 / 31 | 29, 30 / 31 |
+| Answers judged incorrect | 0, 0 / 31 | 0, 0 / 31 |
+
+Retrieval numbers were identical across both runs on each side. The gain is one question: "Is there an open-door policy for raising workplace concerns?" (`nfib-02`). Its answer passage ranks 28th by vector similarity and didn't survive the merge into the candidate list; full-text search ranks it first, so it now reaches the reranker, which puts it second in the context. In 9 other questions the answer passage moved up in the candidate list, but it was already first or second after reranking, so the final context barely changed.
+
+Answer grades didn't move beyond run-to-run noise. The remaining partials are still `nfib-01` (two handbooks' vacation rules side by side) in every run, plus one different question per run. Faithfulness went 0.93/0.95 before and 0.98/0.93 after, which is also within noise.
+
+So this is a small retrieval improvement, not an answer-quality one. On this dataset vector search already finds most passages, so keyword matching mostly helps when a question uses the document's own wording and the embedding misses it.
 
 ## CI/CD
 
