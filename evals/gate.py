@@ -149,8 +149,8 @@ async def ingest_fixtures(db: Any, embedding_service: Any) -> dict[str, int]:
     from app.services.document_processor import DocumentProcessor
 
     # TRUNCATE, not DELETE: fresh table files keep rows in insertion order.
-    # Full-text ranks often tie, and Postgres breaks ties by physical row
-    # order, so reused space after DELETE would reorder results between runs.
+    # Migration 011 breaks full-text rank ties explicitly; this also keeps the
+    # gate stable on a database that predates it.
     await db.execute("TRUNCATE documents, chunks")
     processor = DocumentProcessor(db_service=db, embedding_service=embedding_service)
     counts = {}
