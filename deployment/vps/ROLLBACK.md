@@ -199,8 +199,11 @@ ssh root@<vps> "docker exec n8n-postgres psql -U rag_user -d rag_db -tAc \
   \"SELECT position('c.chunk_index, c.id' in pg_get_functiondef('search_chunks_fulltext_by_session'::regproc)) > 0;\""
 ```
 
-To undo, re-run `migrations/010_fulltext_or_query.sql` (verification then prints "f"). Record the
-date applied and the backup path here when it's done.
+Applied to production about 18:37 UTC on 2026-10-30. Schema backup taken first:
+`/root/backups/rag_db-schema-20261030T183646Z-pre-011.sql`.
+
+To undo, re-run `migrations/010_fulltext_or_query.sql` (verification then prints "f"), then run
+the smoke test below.
 
 ## Smoke Test After Any Rollback
 
