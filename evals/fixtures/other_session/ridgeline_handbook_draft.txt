@@ -1,0 +1,27 @@
+Ridgeline Outfitters Employee Handbook (Draft Revision)
+
+Fictional document written for the cited-doc-qa retrieval tests. It is uploaded under a different session, so no question in the eval should ever retrieve it. Its numbers deliberately differ from employee_handbook.txt.
+
+Introductory Period
+
+Every new employee serves a 120-day introductory period, with check-ins at 45 and 90 days.
+
+Paid Time Off
+
+Full-time employees earn 20 days of paid time off per year from their first day. Unused PTO carries over without limit.
+
+Overtime
+
+Hourly employees are paid double time for all hours worked over 45 in a workweek.
+
+Retirement Plan
+
+Ridgeline matches 100 percent of the first 8 percent of pay contributed to the 401(k) plan.
+
+Attendance
+
+Missing one scheduled shift without calling in is treated as a voluntary resignation.
+
+Tuition Assistance
+
+Ridgeline reimburses up to 3,000 dollars per year for approved college courses.

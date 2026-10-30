@@ -1,0 +1,53 @@
+Linen and Uniform Service Agreement
+
+Fictional document written for the cited-doc-qa retrieval tests. The parties are not real companies.
+
+This Linen and Uniform Service Agreement is between Bayside Linen Supply LLC ("Supplier") and Copper Kettle Bakery ("Customer").
+
+1. Services
+
+Supplier will rent, deliver, pick up, launder, and repair the aprons, chef coats, kitchen towels, bar mops, and floor mats listed in Schedule A. Supplier owns all rented items. Customer may change the quantities in Schedule A once per quarter by written request, effective on the next delivery.
+
+2. Delivery
+
+Supplier will deliver clean items and collect soiled items every Tuesday between 6:00 a.m. and 10:00 a.m. at each Customer location. If Tuesday is a federal holiday, delivery moves to Wednesday. Customer may request one extra delivery per month at no charge; additional extra deliveries are billed at 75 dollars each.
+
+3. Term and Renewal
+
+The initial term of this Agreement is 24 months from the first delivery. After the initial term, the Agreement renews automatically for successive 12-month terms unless either party gives written notice of non-renewal at least 60 days before the end of the current term.
+
+4. Pricing
+
+Customer will pay the weekly rates in Schedule A. Supplier may increase rates once per year, on the anniversary of the first delivery, by no more than 5 percent. Supplier must give Customer at least 30 days' written notice of any rate increase. A fuel surcharge may not be added during the initial term.
+
+5. Invoices and Payment
+
+Supplier will invoice monthly. Payment is due within 30 days of the invoice date. Unpaid balances more than 30 days past due accrue a late charge of 1.5 percent per month. Supplier may suspend deliveries if any invoice is more than 60 days past due, after giving 10 days' written notice.
+
+6. Lost and Damaged Items
+
+Customer is responsible for rented items that are lost, stolen, or damaged beyond normal wear, such as burns, bleach stains, or cuts. Customer will pay the replacement cost listed in Schedule B for each such item. Normal wear and tear is repaired or replaced by Supplier at no charge.
+
+7. Service Quality
+
+Clean items must be free of stains, tears, and odors. Customer may reject any item that does not meet this standard at delivery, and Supplier will credit the rejected item at the weekly rate and replace it on the next delivery. If Supplier misses two scheduled deliveries in any 90-day period, Customer may terminate this Agreement without penalty by written notice.
+
+8. Termination
+
+Either party may terminate this Agreement for a material breach that the other party does not cure within 30 days after written notice describing the breach. If Customer terminates for any other reason during the initial term, Customer will pay an early termination fee equal to 50 percent of the average weekly charges multiplied by the number of weeks left in the initial term. On termination, Customer will return all rented items within 14 days or pay their replacement cost.
+
+9. Insurance
+
+Supplier will carry general liability insurance of at least 1,000,000 dollars per occurrence and commercial auto insurance on its delivery vehicles, and will provide a certificate of insurance on request.
+
+10. Limitation of Liability
+
+Neither party is liable for indirect or consequential damages. Each party's total liability under this Agreement is limited to the fees paid or payable by Customer in the 12 months before the claim arose.
+
+11. Governing Law
+
+This Agreement is governed by the laws of the State of Oregon. Any dispute will be heard in the state or federal courts located in Multnomah County, Oregon.
+
+12. Entire Agreement
+
+This Agreement, with Schedules A and B, is the entire agreement between the parties about its subject matter. Changes must be in writing and signed by both parties.

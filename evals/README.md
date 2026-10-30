@@ -82,6 +82,26 @@ Agreement is 95% with a kappa of 0.91, or 94% and 0.87 without the 7 canned repl
 
 One person graded, and the same person wrote the reference answers, so this checks the judge against my reading of the dataset, not against independent graders.
 
+## Retrieval gate (CI)
+
+`evals/gate.py` runs a retrieval-only eval in CI over the fictional documents in `fixtures/docs/` and the 21 questions in `fixtures/dataset.jsonl`. `fixtures/other_session/` is uploaded under a different session; any chunk from it in the results fails the check.
+
+`fixtures/recording.json` holds every embedding (float16, base64) and a rerank score for every question against every chunk. `evals/replay.py` serves them through the app's own provider calls, so nothing else is mocked. `fixtures/baseline.json` holds the accepted numbers and each question's ranks. The check fails if a retrieval metric drops, if full-text or vector search returns nothing more often, or if another session's chunks show up.
+
+```bash
+# Separate database: the gate deletes every document in it on each run
+docker exec cited-doc-qa-eval-db createdb -U rag_user rag_gate
+for f in migrations/0*.sql; do
+  docker exec -i cited-doc-qa-eval-db psql -q -U rag_user -d rag_gate < "$f"
+done
+
+make eval-gate                                   # what CI runs; no API key needed
+python -m evals.gate check --update-baseline     # accept new numbers after an improvement
+python -m evals.gate record                      # re-record after changing fixtures, questions, or chunking
+```
+
+`record` calls OpenRouter (28 chunks and 21 questions, a few cents) and rewrites both the recording and the baseline. If the chunking, fixtures, or questions change without re-recording, the check fails and lists the missing calls instead of falling back silently. The gate uses 100-180 token chunks so the small fixture set makes enough chunks for the 10-candidate cut to matter.
+
 ## Results
 
 See [What I measured and what I changed](../README.md#what-i-measured-and-what-i-changed) in the main README.

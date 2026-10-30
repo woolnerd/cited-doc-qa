@@ -1,0 +1,113 @@
+{
+  "updated_at": "2026-10-30T16:35:14+00:00",
+  "config": {
+    "candidates": 10,
+    "rerank_top_k": 5,
+    "chunking_tokens": "100-180",
+    "rerank_score_threshold": 0.1,
+    "similarity_threshold": 0.0,
+    "chunks_per_document": {
+      "employee_handbook.txt": 8,
+      "linen_service_agreement.txt": 5,
+      "staff_handbook.txt": 7,
+      "walk_in_cooler_maintenance.txt": 6,
+      "ridgeline_handbook_draft.txt": 2
+    }
+  },
+  "summary": {
+    "questions": 21,
+    "retrieval_questions": 20,
+    "candidate_hit_rate": 1.0,
+    "candidate_mrr": 0.8208333333333334,
+    "context_hit_at_1": 0.85,
+    "context_hit_at_3": 1.0,
+    "context_hit_at_5": 1.0,
+    "context_mrr": 0.925,
+    "context_recall": 1.0,
+    "fulltext_zero_result_rate": 0.0,
+    "vector_zero_result_rate": 0.0,
+    "other_session_chunks": 0
+  },
+  "questions": {
+    "ridge-01": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "ridge-02": {
+      "candidate_hit_rank": 3,
+      "context_hit_rank": 1
+    },
+    "ridge-03": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "ridge-04": {
+      "candidate_hit_rank": 2,
+      "context_hit_rank": 1
+    },
+    "ridge-05": {
+      "candidate_hit_rank": 2,
+      "context_hit_rank": 1
+    },
+    "ridge-06": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "kettle-01": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "kettle-02": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 2
+    },
+    "kettle-03": {
+      "candidate_hit_rank": 3,
+      "context_hit_rank": 2
+    },
+    "kettle-04": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "kettle-05": {
+      "candidate_hit_rank": 4,
+      "context_hit_rank": 2
+    },
+    "kettle-06": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "cooler-01": {
+      "candidate_hit_rank": 2,
+      "context_hit_rank": 1
+    },
+    "cooler-02": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "cooler-03": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "cooler-04": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "linen-01": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "linen-02": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "linen-03": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    "linen-04": {
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    }
+  }
+}

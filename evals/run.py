@@ -122,19 +122,30 @@ async def ensure_ingested(db: Any, chunking: str) -> dict[str, int]:
     processor = DocumentProcessor(db_service=db)
     counts: dict[str, int] = {}
     for path in files:
-        doc_id = await db.fetchval(
-            "INSERT INTO documents (filename, file_type, upload_date, session_id, metadata) "
-            "VALUES ($1, 'pdf', now(), $2, $3::jsonb) RETURNING id",
-            path.name,
-            INGEST_SESSION,
-            json.dumps({"eval_chunking": chunking}),
+        counts[path.name] = await ingest_file(
+            db, processor, path, INGEST_SESSION, {"eval_chunking": chunking}
         )
-        result = await processor.process_document(
-            doc_id, path.read_bytes(), path.name, "pdf"
-        )
-        counts[path.name] = result["num_chunks"]
-        print(f"  {path.name}: {result['num_chunks']} chunks")
+        print(f"  {path.name}: {counts[path.name]} chunks")
     return counts
+
+
+async def ingest_file(
+    db: Any, processor: Any, path: Path, session_id: str, metadata: dict[str, Any]
+) -> int:
+    """Insert one document row, chunk and embed the file, and return its chunk count."""
+    file_type = path.suffix.lstrip(".")
+    doc_id = await db.fetchval(
+        "INSERT INTO documents (filename, file_type, upload_date, session_id, metadata) "
+        "VALUES ($1, $2, now(), $3, $4::jsonb) RETURNING id",
+        path.name,
+        file_type,
+        session_id,
+        json.dumps(metadata),
+    )
+    result = await processor.process_document(
+        doc_id, path.read_bytes(), path.name, file_type
+    )
+    return int(result["num_chunks"])
 
 
 def chunk_summary(result: dict[str, Any]) -> dict[str, Any]:
@@ -238,6 +249,7 @@ def summarize(
         "questions": len(dataset),
         "retrieval_questions": len(retrieval_rows),
         "candidate_hit_rate": hit_rate(candidate_ranks, 10**6),
+        "candidate_mrr": mean_reciprocal_rank(candidate_ranks),
         "context_hit_at_1": hit_rate(context_ranks, 1),
         "context_hit_at_3": hit_rate(context_ranks, 3),
         "context_hit_at_5": hit_rate(context_ranks, 5),
@@ -245,6 +257,9 @@ def summarize(
         "context_recall": mean(recalls),
         "fulltext_zero_result_rate": mean(
             [1.0 if r["fulltext_results"] == 0 else 0.0 for r in records]
+        ),
+        "vector_zero_result_rate": mean(
+            [1.0 if r["vector_results"] == 0 else 0.0 for r in records]
         ),
     }
 
