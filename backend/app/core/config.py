@@ -99,9 +99,11 @@ class Settings(BaseSettings):
 
     # Search Configuration
     SEARCH_TOP_K: int = 10  # Number of top results to return
-    SEARCH_SIMILARITY_THRESHOLD: float = (
-        0.45  # Minimum similarity score (0-1) - Lowered for better semantic recall
-    )
+    # Minimum cosine similarity for vector results. 0 disables the gate: with
+    # text-embedding-3-large, relevant chunks scored as low as 0.28 in the evals,
+    # so relevance is left to the reranker's RERANK_SCORE_THRESHOLD instead.
+    # See evals/README.md.
+    SEARCH_SIMILARITY_THRESHOLD: float = 0.0
     VECTOR_SEARCH_LIMIT: int = 30
     FULL_TEXT_SEARCH_LIMIT: int = 30
     RERANK_TOP_K: int = 5

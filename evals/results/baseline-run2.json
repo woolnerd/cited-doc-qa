@@ -1,0 +1,2969 @@
+{
+  "label": "baseline-run2",
+  "run_at": "2026-10-30T01:36:17+00:00",
+  "duration_seconds": 169,
+  "config": {
+    "candidates": 10,
+    "rerank_top_k": 5,
+    "chunking_tokens": "400-600",
+    "embedding_model": "openai/text-embedding-3-large",
+    "rerank_model": "cohere/rerank-v3.5",
+    "rerank_score_threshold": 0.1,
+    "similarity_threshold": 0.45,
+    "llm_model": "anthropic/claude-haiku-4.5",
+    "judge_model": "anthropic/claude-sonnet-5.5",
+    "chunks_per_document": {
+      "Sample Master Service Agreement.pdf": 11,
+      "small_business_handbook.pdf": 49,
+      "Chapter-2-Operations-Procedure.pdf": 19,
+      "Model-Employee-Handbook-Final-1.pdf": 29,
+      "restaurant_sop.pdf": 7,
+      "HVAC-maintenance.pdf": 7,
+      "wsc-operations-manual-2012.pdf": 322,
+      "CommercialLeaseAgreement.pdf": 55,
+      "12-employee-handbook_final.pdf": 35
+    }
+  },
+  "summary": {
+    "questions": 31,
+    "retrieval_questions": 29,
+    "candidate_hit_rate": 0.6551724137931034,
+    "context_hit_at_1": 0.5862068965517241,
+    "context_hit_at_3": 0.6551724137931034,
+    "context_hit_at_5": 0.6551724137931034,
+    "context_mrr": 0.6149425287356322,
+    "context_recall": 0.6551724137931034,
+    "fulltext_zero_result_rate": 0.8064516129032258,
+    "answer_correct": 0.7096774193548387,
+    "answer_partial": 0.03225806451612903,
+    "answer_incorrect": 0.25806451612903225,
+    "faithfulness_mean": 0.9454106280193236,
+    "fully_faithful_rate": 0.782608695652174,
+    "citations_valid_rate": 1.0
+  },
+  "records": [
+    {
+      "id": "hvac-01",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer gives no clearance figure and says nothing was found, so it misses the reference's key fact of at least 3 feet."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "hvac-02",
+      "fulltext_results": 1,
+      "vector_results": 5,
+      "candidates": [
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 3,
+          "vector_rank": 2,
+          "fulltext_rank": 1,
+          "rerank_score": null,
+          "preview": "PREVENTATIVE MAINTENANCE MANUAL \nHEATING VENTILATION AIR CONDITIONING\n7\nSECTION 5\nABSORBER – STEAM – GAS – \nELECTRIC\n• Check solution pump seals for leakage. Inspect concentrator steam traps. Report a"
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 4,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "This allows for a clear view of the burner flame and any\ncarbon build-up on the boiler’s combustion chamber.\n• Keep air filters clean.\n• Flush drain low water cut-offs/sidearm oil pre-heater (twice a "
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 2,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Report any unusual odors to a licensed\nHVAC contractor.\n• Monitor air conditioning and heat pump systems for correct refrigerant charge using a\npressure gauge, and recharge to manufacturer’s specifica"
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 0,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "HEATING\nVENTILATION\nAIR CONDITIONING\nPREVENTATIVE\nMAINTENANCE\nMANUAL\nHVAC\n\n\nPREVENTATIVE MAINTENANCE MANUAL \nHEATING VENTILATION AIR CONDITIONING\nCONTENTS\nSECTION\n1. ELECTRIC – HEAT EXCHANGER/\nCOMPRES"
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 1,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "PREVENTATIVE MAINTENANCE MANUAL \nHEATING VENTILATION AIR CONDITIONING\n4\nOUTDOOR UNITS\n• Clean dirt, leaves and debris from inside cabinet. Keep these areas cleaned at all times.\n• Inspect coil and cab"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 3,
+          "vector_rank": 2,
+          "fulltext_rank": 1,
+          "rerank_score": 0.826278,
+          "preview": "PREVENTATIVE MAINTENANCE MANUAL \nHEATING VENTILATION AIR CONDITIONING\n7\nSECTION 5\nABSORBER – STEAM – GAS – \nELECTRIC\n• Check solution pump seals for leakage. Inspect concentrator steam traps. Report a"
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 0,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.4059909,
+          "preview": "HEATING\nVENTILATION\nAIR CONDITIONING\nPREVENTATIVE\nMAINTENANCE\nMANUAL\nHVAC\n\n\nPREVENTATIVE MAINTENANCE MANUAL \nHEATING VENTILATION AIR CONDITIONING\nCONTENTS\nSECTION\n1. ELECTRIC – HEAT EXCHANGER/\nCOMPRES"
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 4,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.36772484,
+          "preview": "This allows for a clear view of the burner flame and any\ncarbon build-up on the boiler’s combustion chamber.\n• Keep air filters clean.\n• Flush drain low water cut-offs/sidearm oil pre-heater (twice a "
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 2,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.13772976,
+          "preview": "Report any unusual odors to a licensed\nHVAC contractor.\n• Monitor air conditioning and heat pump systems for correct refrigerant charge using a\npressure gauge, and recharge to manufacturer’s specifica"
+        },
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 1,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.10204511,
+          "preview": "PREVENTATIVE MAINTENANCE MANUAL \nHEATING VENTILATION AIR CONDITIONING\n4\nOUTDOOR UNITS\n• Clean dirt, leaves and debris from inside cabinet. Keep these areas cleaned at all times.\n• Inspect coil and cab"
+        }
+      ],
+      "answer": "# Annual Boiler Maintenance Timing and Personnel\n\nAccording to the HVAC Preventative Maintenance Manual, annual boiler maintenance should be performed **once a year by a licensed heating contractor between heating seasons (May to September)** [1].\n\n## Annual Maintenance Tasks\n\nThe specific tasks that should be completed during this annual service include [1]:\n\n- Clean low water cut-off\n- Check fuel oil levels\n- Inspect and clean fireside surfaces\n- Inspect all burner refractory material\n- Inspect all gaskets for leaks\n- Inspect and test all system valves\n- Recalibrate all operating controls\n- Clean condensate receiver\n- Inspect electrical terminals\n\n## Additional Periodic Maintenance\n\nIn addition to the annual professional maintenance, the building's maintenance staff should address periodic maintenance tasks on a continual basis, including cleaning oil filters at least twice a week, checking oil pressure readings quarterly, and keeping sight glasses clean [1].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states once a year, between heating seasons (May to September), by a licensed heating contractor, matching the reference; the extra detail does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Annual boiler maintenance should be performed once a year by a licensed heating contractor between heating seasons (May to September).",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes cleaning the low water cut-off.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes checking fuel oil levels.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes inspecting and cleaning fireside surfaces.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes inspecting all burner refractory material.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes inspecting all gaskets for leaks.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes inspecting and testing all system valves.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes recalibrating all operating controls.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes cleaning the condensate receiver.",
+            "supported": true
+          },
+          {
+            "claim": "Annual boiler maintenance includes inspecting electrical terminals.",
+            "supported": true
+          },
+          {
+            "claim": "The building's maintenance staff should address periodic maintenance tasks on a continual basis or as often as indicated.",
+            "supported": true
+          },
+          {
+            "claim": "Periodic maintenance includes cleaning oil filters at least twice a week.",
+            "supported": true
+          },
+          {
+            "claim": "Periodic maintenance includes checking oil pressure readings at the burners quarterly.",
+            "supported": true
+          },
+          {
+            "claim": "Periodic maintenance includes keeping sight glasses clean.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "hvac-03",
+      "fulltext_results": 0,
+      "vector_results": 1,
+      "candidates": [
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Report any unusual odors to a licensed\nHVAC contractor.\n• Monitor air conditioning and heat pump systems for correct refrigerant charge using a\npressure gauge, and recharge to manufacturer’s specifica"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "HVAC-maintenance.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.74273956,
+          "preview": "Report any unusual odors to a licensed\nHVAC contractor.\n• Monitor air conditioning and heat pump systems for correct refrigerant charge using a\npressure gauge, and recharge to manufacturer’s specifica"
+        }
+      ],
+      "answer": "Based on the provided context, a chiller's compressor oil should be sent to a laboratory for analysis **once a year** [1].\n\nSpecifically, the document states: \"Analyze compressor oil - Send a sample of the lubrication oil to a laboratory for a 'spectrometric' chemical analysis once a year\" [1].\n\nThis annual analysis helps ensure the compressor is operating properly and can identify potential issues with the lubrication oil.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states once a year and mentions spectrometric chemical analysis, matching the reference with no contradictions."
+      },
+      "faithfulness": {
+        "score": 0.6666666666666666,
+        "claims": [
+          {
+            "claim": "A chiller's compressor oil should be sent to a laboratory for analysis once a year.",
+            "supported": true
+          },
+          {
+            "claim": "The document states: \"Analyze compressor oil - Send a sample of the lubrication oil to a laboratory for a 'spectrometric' chemical analysis once a year.\"",
+            "supported": true
+          },
+          {
+            "claim": "The annual oil analysis helps ensure the compressor is operating properly and can identify potential issues with the lubrication oil.",
+            "supported": false
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "rest-01",
+      "fulltext_results": 0,
+      "vector_results": 1,
+      "candidates": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 145,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Dry Storage \nAREA: FLOORS \n• Clean and free of dirt, residue build-up \n• Nothing is stored on the floor \nAREA: WALLS \n• Clean and in good condition \nAREA: CEILING/VENTS \n• Clean, free of build-up, and"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 145,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.30272126,
+          "preview": "Dry Storage \nAREA: FLOORS \n• Clean and free of dirt, residue build-up \n• Nothing is stored on the floor \nAREA: WALLS \n• Clean and in good condition \nAREA: CEILING/VENTS \n• Clean, free of build-up, and"
+        }
+      ],
+      "answer": "Based on the provided context, the document does not specify a required height for dry storage shelves off the floor [1]. \n\nThe document only states that storage containers and chemical storage items must be \"stored properly off floor\" and \"not stored on floor,\" but it does not give specific measurements or height requirements [1].\n\nTo get the specific height requirements for dry storage shelves, you would need to consult additional documentation or contact your local health department regulations, as this information is not included in the WSC Operations Manual excerpt provided.",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer says no height requirement is specified and gives no figure, so it misses the key fact of at least 6 inches."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Storage containers must be \"not stored on floor\" according to the document.",
+            "supported": true
+          },
+          {
+            "claim": "Chemical storage items must be \"stored properly off floor\" according to the document.",
+            "supported": true
+          },
+          {
+            "claim": "The document does not give specific measurements or height requirements for storing items off the floor.",
+            "supported": true
+          },
+          {
+            "claim": "The context is an excerpt from the WSC Operations Manual.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "rest-02",
+      "fulltext_results": 0,
+      "vector_results": 2,
+      "candidates": [
+        {
+          "document_name": "restaurant_sop.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Flour moths or pantry moths (Ephestia kuehniella) live in\ndry storage areas and feed on grains. Pantry moths invade old\nboxes of breakfast cereal or cornstarch. FIFO promotes product quality and reduc"
+        },
+        {
+          "document_name": "restaurant_sop.pdf",
+          "chunk_index": 6,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "All of the manager’s duties involve interacting\nwith BOH and FOH staff to coordinate the performance of daily and special event\ntasks. As a result, a foodservice manager must be organized and focused."
+        }
+      ],
+      "context": [
+        {
+          "document_name": "restaurant_sop.pdf",
+          "chunk_index": 6,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.5125224,
+          "preview": "All of the manager’s duties involve interacting\nwith BOH and FOH staff to coordinate the performance of daily and special event\ntasks. As a result, a foodservice manager must be organized and focused."
+        },
+        {
+          "document_name": "restaurant_sop.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.5040288,
+          "preview": "Flour moths or pantry moths (Ephestia kuehniella) live in\ndry storage areas and feed on grains. Pantry moths invade old\nboxes of breakfast cereal or cornstarch. FIFO promotes product quality and reduc"
+        }
+      ],
+      "answer": "# FIFO in Restaurant Inventory\n\nFIFO stands for \"First In, First Out,\" a critical inventory management procedure used in foodservice operations [1][2].\n\n## Purpose and Importance\n\nFIFO promotes product quality and reduces waste, which directly impacts the restaurant's bottom line [2]. This is especially important in foodservice because the main product—food—has a short shelf life [2].\n\n## Application in Storage\n\nFIFO inventory management procedures must be followed in all storage areas, including refrigerators, walk-ins, and freezers [2]. This means older products should be used before newer ones to ensure food freshness and minimize spoilage.\n\n## Why It Matters\n\nBy implementing FIFO procedures, restaurants can:\n- Maintain product quality\n- Reduce food waste\n- Improve profitability\n- Prevent spoilage of perishable items\n\nThe document emphasizes that inventory control is a key responsibility of foodservice operations managers, and FIFO is a fundamental component of that control system [1].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer defines FIFO as \"First In, First Out\" and states that older products are used before newer ones, which matches the reference, and its extra detail does not contradict it."
+      },
+      "faithfulness": {
+        "score": 0.5555555555555556,
+        "claims": [
+          {
+            "claim": "FIFO stands for \"First In, First Out.\"",
+            "supported": false
+          },
+          {
+            "claim": "FIFO is a critical inventory management procedure used in foodservice operations.",
+            "supported": true
+          },
+          {
+            "claim": "FIFO promotes product quality and reduces waste, which impacts the restaurant's bottom line.",
+            "supported": true
+          },
+          {
+            "claim": "Inventory control is especially important in foodservice because the main product has a short shelf life.",
+            "supported": true
+          },
+          {
+            "claim": "FIFO inventory management procedures must be followed in refrigerator, walk-in, and freezer storage.",
+            "supported": true
+          },
+          {
+            "claim": "Under FIFO, older products should be used before newer ones to ensure freshness and minimize spoilage.",
+            "supported": false
+          },
+          {
+            "claim": "Implementing FIFO improves profitability and prevents spoilage of perishable items.",
+            "supported": false
+          },
+          {
+            "claim": "The document says inventory control is a key responsibility of foodservice operations managers.",
+            "supported": true
+          },
+          {
+            "claim": "The document describes FIFO as a fundamental component of the inventory control system.",
+            "supported": false
+          }
+        ]
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "rest-03",
+      "fulltext_results": 0,
+      "vector_results": 2,
+      "candidates": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 9,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Gloves should be changed when: \n• They become dirty or torn \n• Before starting a different task \n• After handling raw meat and before handling cooked or ready-to-eat food \n \n \n \n \n \n \n \n \n \n \n \n \nFOOD"
+        },
+        {
+          "document_name": "restaurant_sop.pdf",
+          "chunk_index": 1,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Remind staff to calibrate instant-read thermometers a minimum of\nonce per day.\n/c116 Floors should be free of grease, dirt, and food spills to prevent slips, falls, and bacterial\ngrowth.\n/c116 Check h"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "restaurant_sop.pdf",
+          "chunk_index": 1,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.86108357,
+          "preview": "Remind staff to calibrate instant-read thermometers a minimum of\nonce per day.\n/c116 Floors should be free of grease, dirt, and food spills to prevent slips, falls, and bacterial\ngrowth.\n/c116 Check h"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 9,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.5689194,
+          "preview": "Gloves should be changed when: \n• They become dirty or torn \n• Before starting a different task \n• After handling raw meat and before handling cooked or ready-to-eat food \n \n \n \n \n \n \n \n \n \n \n \n \nFOOD"
+        }
+      ],
+      "answer": "Based on the provided context, there are two different calibration frequencies mentioned:\n\n1. **Daily calibration**: According to the restaurant standard operating procedures, staff should \"calibrate instant-read thermometers a minimum of once per day.\" [1]\n\n2. **Weekly calibration**: The operations manual states that \"Thermometers need to be calibrated every week or if they have been dropped.\" [2]\n\nThe most stringent requirement is the **daily calibration standard** outlined in the restaurant SOP document [1], which would ensure the most frequent verification of thermometer accuracy. However, it's worth noting that the operations manual's weekly standard [2] may apply to specific types of thermometers (such as bimetallic thermometers). \n\nFor the most accurate guidance specific to your establishment, I'd recommend clarifying with your manager which standard applies to your kitchen's instant-read thermometers.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer identifies daily calibration (minimum once per day) as the standard for instant-read thermometers, matching the reference, and its mention of a weekly standard is hedged as applying to other thermometer types rather than contradicting it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "The restaurant standard operating procedures say staff should calibrate instant-read thermometers a minimum of once per day.",
+            "supported": true
+          },
+          {
+            "claim": "The operations manual states that thermometers need to be calibrated every week or if they have been dropped.",
+            "supported": true
+          },
+          {
+            "claim": "The daily calibration standard in the restaurant SOP is the most stringent requirement, meaning it is the most frequent.",
+            "supported": true
+          },
+          {
+            "claim": "The operations manual's weekly standard may apply to specific types of thermometers, such as bimetallic thermometers.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 2,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "msa-01",
+      "fulltext_results": 0,
+      "vector_results": 9,
+      "candidates": [
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Provided no TO is outstanding and remains to be performed by either party, this Agreement may \nbe terminated by either party upon 30 days prior written notice to the other party. \nb. Any TO may be ter"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 8,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If any inconsistency was found between the terms in this template and the ones in the RFP, the RFP terms and \nconditions shall prevail` \n   \nMASTER SERVICE AGREEMENT No: [Attachment – Sample MSA ] PAG"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 5,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Contractor hereby irrevocably waives and agrees never to assert any Moral Rights that may exist \nanywhere in the world in or with respect to any Work Product, including claims for damages and \nother r"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 9,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Background:  \n \nb. Scope of Work:  \nThe term “Services” means all services, including delivery of all deliverables, described in all Task Orders.   \n4. Pricing:  \n5. Invoicing & Payment Terms:  Contra"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 10,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Statement of Work (the “SOW”):  In accordance with the terms of the above -referenced Master \nServices Agreement, Contractor agrees to perform the following services in the following manner: \na. Task "
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 1,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Compliance with TOs and Changes to TOs. Services will be provided strictly in accordance with \neach TO. No deviation, substitution or c hange is permitted without Mercy Corps’ prior written consent; \n"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 0,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "** This is only Mercy Corps’ standard template for master service agreement contract.. Some terms might be added or removed based on the nature of \nthe provided service and its value. If any inconsist"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 2,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Such notice shall clearly state the specific Services disputed, and Mercy \nCorps’ reason for disputing the performance of t he Services. If both parties accept the dispute of \nthe invoice, they shall "
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 7,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Any unresolved dispute or claims will be settled by arbitration administered by the \nInternational Centre for Dispute Resolution in accordance with its International Arbitration Rules. The \nnumber of "
+        }
+      ],
+      "context": [
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.8338803,
+          "preview": "Provided no TO is outstanding and remains to be performed by either party, this Agreement may \nbe terminated by either party upon 30 days prior written notice to the other party. \nb. Any TO may be ter"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 9,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.6337056,
+          "preview": "Background:  \n \nb. Scope of Work:  \nThe term “Services” means all services, including delivery of all deliverables, described in all Task Orders.   \n4. Pricing:  \n5. Invoicing & Payment Terms:  Contra"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 8,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.5073975,
+          "preview": "If any inconsistency was found between the terms in this template and the ones in the RFP, the RFP terms and \nconditions shall prevail` \n   \nMASTER SERVICE AGREEMENT No: [Attachment – Sample MSA ] PAG"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 0,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": 0.4889428,
+          "preview": "** This is only Mercy Corps’ standard template for master service agreement contract.. Some terms might be added or removed based on the nature of \nthe provided service and its value. If any inconsist"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 1,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": 0.48411235,
+          "preview": "Compliance with TOs and Changes to TOs. Services will be provided strictly in accordance with \neach TO. No deviation, substitution or c hange is permitted without Mercy Corps’ prior written consent; \n"
+        }
+      ],
+      "answer": "# Termination Notice for Master Service Agreement\n\nAccording to the Master Service Agreement, **30 days prior written notice** is required to terminate the agreement when no task order is outstanding and remains to be performed by either party [1].\n\nThe document specifically states:\n\n> \"Provided no TO is outstanding and remains to be performed by either party, this Agreement may be terminated by either party upon 30 days prior written notice to the other party.\" [1]\n\nThis 30-day notice period applies to either party seeking to terminate the master agreement itself. However, it's important to note that individual Task Orders (TOs) may have different termination provisions, including a separate \"Termination Notice Period\" that can be specified in the Additional Terms [2].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states 30 days' prior written notice by either party, which matches the reference, and its extra detail about Task Order termination provisions does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "The Master Service Agreement requires 30 days prior written notice to terminate the agreement when no task order is outstanding and remains to be performed by either party.",
+            "supported": true
+          },
+          {
+            "claim": "The document states: \"Provided no TO is outstanding and remains to be performed by either party, this Agreement may be terminated by either party upon 30 days prior written notice to the other party.\"",
+            "supported": true
+          },
+          {
+            "claim": "The 30-day notice period applies to either party seeking to terminate the master agreement itself.",
+            "supported": true
+          },
+          {
+            "claim": "Individual Task Orders may have different termination provisions than the master agreement.",
+            "supported": true
+          },
+          {
+            "claim": "A separate \"Termination Notice Period\" can be specified in the Additional Terms.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "msa-02",
+      "fulltext_results": 0,
+      "vector_results": 1,
+      "candidates": [
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Provided no TO is outstanding and remains to be performed by either party, this Agreement may \nbe terminated by either party upon 30 days prior written notice to the other party. \nb. Any TO may be ter"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.3307635,
+          "preview": "Provided no TO is outstanding and remains to be performed by either party, this Agreement may \nbe terminated by either party upon 30 days prior written notice to the other party. \nb. Any TO may be ter"
+        }
+      ],
+      "answer": "Based on the provided context, a party has **15 days** to fix a breach before the other side can terminate a task order.\n\nSpecifically, the agreement states that either party may terminate a task order \"due to the non-terminating Party's breach of this Agreement and failure to correct such breach within 15 days prior notice of such breach\" [1].\n\nThis means that once a party receives notice of a breach, they have a 15-day period to remedy it before the other party can proceed with termination.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states 15 days after notice of the breach, which matches the reference exactly."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "A party has 15 days to fix a breach before the other side can terminate a task order.",
+            "supported": true
+          },
+          {
+            "claim": "The agreement states that either party may terminate a task order due to the non-terminating Party's breach of the Agreement and failure to correct the breach within 15 days prior notice of such breach.",
+            "supported": true
+          },
+          {
+            "claim": "Once a party receives notice of a breach, they have a 15-day period to remedy it before the other party can proceed with termination.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "msa-03",
+      "fulltext_results": 1,
+      "vector_results": 11,
+      "candidates": [
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": 1,
+          "rerank_score": null,
+          "preview": "Provided no TO is outstanding and remains to be performed by either party, this Agreement may \nbe terminated by either party upon 30 days prior written notice to the other party. \nb. Any TO may be ter"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 5,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Contractor hereby irrevocably waives and agrees never to assert any Moral Rights that may exist \nanywhere in the world in or with respect to any Work Product, including claims for damages and \nother r"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 3,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Performanc e by Contractor of its obligations \nunder this Agreement will not infringe on any patent, copyright, trademark, trade secret or other \nproprietary right of any third party. \nd. Contractor w"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 0,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "** This is only Mercy Corps’ standard template for master service agreement contract.. Some terms might be added or removed based on the nature of \nthe provided service and its value. If any inconsist"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 1,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Compliance with TOs and Changes to TOs. Services will be provided strictly in accordance with \neach TO. No deviation, substitution or c hange is permitted without Mercy Corps’ prior written consent; \n"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 9,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Background:  \n \nb. Scope of Work:  \nThe term “Services” means all services, including delivery of all deliverables, described in all Task Orders.   \n4. Pricing:  \n5. Invoicing & Payment Terms:  Contra"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 2,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Such notice shall clearly state the specific Services disputed, and Mercy \nCorps’ reason for disputing the performance of t he Services. If both parties accept the dispute of \nthe invoice, they shall "
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 4,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If any inconsistency was found between the terms in this template and the ones in the RFP, the RFP terms and \nconditions shall prevail` \n   \nMASTER SERVICE AGREEMENT No: [Attachment – Sample MSA ] PAG"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 8,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If any inconsistency was found between the terms in this template and the ones in the RFP, the RFP terms and \nconditions shall prevail` \n   \nMASTER SERVICE AGREEMENT No: [Attachment – Sample MSA ] PAG"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 7,
+          "vector_rank": 10,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Any unresolved dispute or claims will be settled by arbitration administered by the \nInternational Centre for Dispute Resolution in accordance with its International Arbitration Rules. The \nnumber of "
+        }
+      ],
+      "context": [
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": 1,
+          "rerank_score": 0.91435975,
+          "preview": "Provided no TO is outstanding and remains to be performed by either party, this Agreement may \nbe terminated by either party upon 30 days prior written notice to the other party. \nb. Any TO may be ter"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 9,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": 0.6108487,
+          "preview": "Background:  \n \nb. Scope of Work:  \nThe term “Services” means all services, including delivery of all deliverables, described in all Task Orders.   \n4. Pricing:  \n5. Invoicing & Payment Terms:  Contra"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 1,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.44217938,
+          "preview": "Compliance with TOs and Changes to TOs. Services will be provided strictly in accordance with \neach TO. No deviation, substitution or c hange is permitted without Mercy Corps’ prior written consent; \n"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 0,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.43165663,
+          "preview": "** This is only Mercy Corps’ standard template for master service agreement contract.. Some terms might be added or removed based on the nature of \nthe provided service and its value. If any inconsist"
+        },
+        {
+          "document_name": "Sample Master Service Agreement.pdf",
+          "chunk_index": 5,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.38852578,
+          "preview": "Contractor hereby irrevocably waives and agrees never to assert any Moral Rights that may exist \nanywhere in the world in or with respect to any Work Product, including claims for damages and \nother r"
+        }
+      ],
+      "answer": "No, Mercy Corps does not pay for partially completed work if the contractor terminates for its own convenience.\n\nAccording to the termination provisions in the agreement: \"In the event of termination due to Contractor's breach or by Contractor for Contractor's convenience, Mercy Corps will not be obligated to pay Contractor for any partially completed work.\" [1]\n\nHowever, Mercy Corps would be obligated to pay for partially completed work in other termination scenarios, such as when termination is due to Mercy Corps' breach, by Mercy Corps for convenience, due to a force majeure event, or due to loss of funding. In those cases, \"Mercy Corps will be obligated to pay Contractor for its reasonable, pro-rated costs of work completed and expenses properly incurred prior to termination.\" [1]",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states that Mercy Corps does not pay for partially completed work when the contractor terminates for its own convenience, matching the reference, and the extra detail on other termination scenarios does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Mercy Corps does not pay for partially completed work if the contractor terminates for its own convenience.",
+            "supported": true
+          },
+          {
+            "claim": "The agreement states that in the event of termination due to Contractor's breach or by Contractor for Contractor's convenience, Mercy Corps will not be obligated to pay Contractor for any partially completed work.",
+            "supported": true
+          },
+          {
+            "claim": "Mercy Corps would be obligated to pay for work in cases where termination is due to Mercy Corps' breach.",
+            "supported": true
+          },
+          {
+            "claim": "Mercy Corps would be obligated to pay for work in cases where termination is by Mercy Corps for its convenience.",
+            "supported": true
+          },
+          {
+            "claim": "Mercy Corps would be obligated to pay for work in cases where termination is due to a force majeure event.",
+            "supported": true
+          },
+          {
+            "claim": "Mercy Corps would be obligated to pay for work in cases where termination is due to loss of funding.",
+            "supported": true
+          },
+          {
+            "claim": "In those cases, Mercy Corps will be obligated to pay Contractor for its reasonable, pro-rated costs of work completed and expenses properly incurred prior to termination.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "lease-01",
+      "fulltext_results": 0,
+      "vector_results": 7,
+      "candidates": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Tenant does hereby covenant and agree pr omptly to pay the fixed rent, addi tional rent and other charges herein \n\nreserved as and when the same shall become due and payable, without demand therefor, "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 14,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If the last day of the term of this Lease falls on Sunday or a legal holiday, this Lease \nshall expire on the business day immediately preceding. \n (i)  at any time and from time to time upon not less"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 36,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "In the event of any termination of this Lease under the provisions of Article 16 hereof or in the event that Landlord shall re-enter the premises under the provisions of Article 17 hereof or in the ev"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 43,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Bills for any expense incurred by \nLandlord in connection with any such performance by Landlord for the account of Tenant, and bills for all costs, expenses and \ndisbursements of every kind and nature"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 34,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If the term \"Tenant\", as used in this Lease, refers to more than \none person, then, as used in subparagraphs (a), (b), (c), (d) and (h) of this Article 16, said term shall be deemed to include all of "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 42,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "No executory \nagreement hereafter made between Landlord and Tenant shall be effe ctive to change, modify, wa ive, release, discharge, \nterminate or effect an abandonment of this Lease, in whole or in "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 33,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "from Landlord shall expire and terminate (whether or not the term thereof shall then have commenced) as a result of the default of Tenant thereunder or of the occurrence of an event as therein provide"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.76596165,
+          "preview": "Tenant does hereby covenant and agree pr omptly to pay the fixed rent, addi tional rent and other charges herein \n\nreserved as and when the same shall become due and payable, without demand therefor, "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 36,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.42319635,
+          "preview": "In the event of any termination of this Lease under the provisions of Article 16 hereof or in the event that Landlord shall re-enter the premises under the provisions of Article 17 hereof or in the ev"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 43,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.3999997,
+          "preview": "Bills for any expense incurred by \nLandlord in connection with any such performance by Landlord for the account of Tenant, and bills for all costs, expenses and \ndisbursements of every kind and nature"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 34,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.37031704,
+          "preview": "If the term \"Tenant\", as used in this Lease, refers to more than \none person, then, as used in subparagraphs (a), (b), (c), (d) and (h) of this Article 16, said term shall be deemed to include all of "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 14,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.30994248,
+          "preview": "If the last day of the term of this Lease falls on Sunday or a legal holiday, this Lease \nshall expire on the business day immediately preceding. \n (i)  at any time and from time to time upon not less"
+        }
+      ],
+      "answer": "# Late Charge Timing for Unpaid Rent\n\nAccording to the Commercial Lease Agreement, a late charge is imposed if the Tenant fails to pay any installment of fixed rent or additional rent within **ten (10) days after the same shall be due** [1].\n\n## Key Details:\n\n- **Trigger**: The late charge applies when payment is not received within 10 days of the due date [1]\n- **Frequency**: The late charge is imposed **monthly for each late payment** [1]\n- **Additional Remedies**: The late charge is in addition to all other rights and remedies available to the Landlord and does not limit those rights [1]\n- **Legal Compliance**: The late charge amount is automatically reduced to any maximum applicable legal rate or charge to ensure compliance with applicable law, code, or regulation [1]\n\nIt's important to note that the specific dollar amount of the late charge per $1.00 unpaid is not filled in within the provided document excerpt [1].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states the late charge applies when rent is not paid within ten (10) days after it is due, matching the reference, and the extra details do not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "A late charge is imposed if the Tenant fails to pay any installment of fixed rent or additional rent within ten (10) days after it is due.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge applies when payment is not received within 10 days of the due date.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge is imposed monthly for each late payment.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge is in addition to all other rights and remedies available to the Landlord and does not limit those rights.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge is automatically reduced to any maximum applicable legal rate or charge to ensure compliance with applicable law, code, or regulation.",
+            "supported": true
+          },
+          {
+            "claim": "The specific dollar amount of the late charge per $1.00 unpaid is not filled in within the provided document excerpt.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "lease-02",
+      "fulltext_results": 1,
+      "vector_results": 15,
+      "candidates": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 15,
+          "vector_rank": 2,
+          "fulltext_rank": 1,
+          "rerank_score": null,
+          "preview": "Assignment, Mortgaging, Subletting, etc.    \n (a)  Tenant covenants and agrees, for Tenant and its successors , assigns and legal representatives, that neither this \nLease nor the term and estate here"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 46,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "with the prior written consent of Landlord in each instance. (h) Tenant shall not occupy any space in the Building (b y assignment, sublease or otherwise) other than the premises hereby demised, excep"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 16,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Tenant's liability under this Lease,  in the event of an assignment, shall not  at any time be released, relieved or \ndischarged by reason of Landlord's consent to such assignment nor shall Tenant at "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 53,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Landlord's interest in the premises is derived pursuant to the terms of a certain \nlease (herein referred to as the \"Prime Lease\") dated as of                                  (as thereafter modified "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 17,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Tenant will also deliver to \nLandlord, at least thirty (30) days prior to the effective date thereof, an assumption agreement in form satisfactory to Landlord \nwherein the assignee agrees to assume al"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 28,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Tenant shall give to Landlord prompt written notice of any damage to, or \ndefective condition in, any part or appurtenance of the Building's plumbing, electrical, heating, air conditioning or other si"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 0,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "LEASE dated                                      ,  \n \nbetween  \n \nhaving a place of business at                                                                                                        "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 2,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Tenant does hereby covenant and agree pr omptly to pay the fixed rent, addi tional rent and other charges herein \n\nreserved as and when the same shall become due and payable, without demand therefor, "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 44,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Miscellaneous.      \n (a)  Notwithstanding anything contained in this Lease to the contrary, Tenant covenants and agrees that Tenant will not \nuse the premises or any part thereof, or permit the premi"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 38,
+          "vector_rank": 10,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "net rents are actually received by Landlord prior to the commencement of such suit, and ( iii) if the premises or any part thereof should be re-let in combination with other space, then proper apporti"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 15,
+          "vector_rank": 2,
+          "fulltext_rank": 1,
+          "rerank_score": 0.604703,
+          "preview": "Assignment, Mortgaging, Subletting, etc.    \n (a)  Tenant covenants and agrees, for Tenant and its successors , assigns and legal representatives, that neither this \nLease nor the term and estate here"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 46,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.45231876,
+          "preview": "with the prior written consent of Landlord in each instance. (h) Tenant shall not occupy any space in the Building (b y assignment, sublease or otherwise) other than the premises hereby demised, excep"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 53,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.38428864,
+          "preview": "Landlord's interest in the premises is derived pursuant to the terms of a certain \nlease (herein referred to as the \"Prime Lease\") dated as of                                  (as thereafter modified "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 16,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.36412215,
+          "preview": "Tenant's liability under this Lease,  in the event of an assignment, shall not  at any time be released, relieved or \ndischarged by reason of Landlord's consent to such assignment nor shall Tenant at "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 0,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": 0.27093676,
+          "preview": "LEASE dated                                      ,  \n \nbetween  \n \nhaving a place of business at                                                                                                        "
+        }
+      ],
+      "answer": "# Can the Tenant Sublet the Space?\n\nBased on the lease agreement, **the tenant cannot sublet the space without prior written consent from the landlord.**\n\n## Key Restrictions\n\nThe lease explicitly states that the premises \"will be sublet, without the prior written consent of Landlord in every case and any attempt thereat shall be void any of no force or effect.\" [1] Additionally, the tenant \"shall not occupy any space in the Building (by assignment, sublease or otherwise) other than the premises hereby demised, except with the prior written consent of Landlord in each instance.\" [2]\n\n## Conditions for Subletting\n\nWhile subletting is generally prohibited without consent, the lease does provide a limited exception. The tenant may assign the lease (which would include subletting scenarios) in connection with certain transactions, **provided that Landlord's prior written consent is obtained, which \"shall not be unreasonably withheld or delayed.\"** [4] This exception applies specifically to:\n\n- Sale of all capital stock (if a corporation) or ownership interests (if a partnership)\n- Merger or consolidation with another entity\n- Sale of all or substantially all assets of the tenant [4]\n\n## Important Note\n\nEven if the lease is assigned or sublet with landlord consent, **the original tenant remains liable** for all obligations under the lease and is not released from performance. [4]",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states that subletting requires the landlord's prior written consent and that any attempt without it is void, which matches the reference; the extra detail about assignment exceptions does not contradict it."
+      },
+      "faithfulness": {
+        "score": 0.8888888888888888,
+        "claims": [
+          {
+            "claim": "The tenant cannot sublet the space without prior written consent from the landlord.",
+            "supported": true
+          },
+          {
+            "claim": "The lease states the premises will not be sublet without the prior written consent of Landlord in every case, and any attempt thereat shall be void or of no force or effect.",
+            "supported": true
+          },
+          {
+            "claim": "The tenant shall not occupy any space in the Building (by assignment, sublease or otherwise) other than the demised premises, except with the prior written consent of Landlord in each instance.",
+            "supported": true
+          },
+          {
+            "claim": "The lease provides a limited exception allowing the tenant to assign the lease in connection with certain transactions, with Landlord's prior written consent which shall not be unreasonably withheld or delayed.",
+            "supported": true
+          },
+          {
+            "claim": "The exception for assignment (which would include subletting scenarios) applies to the lease's assignment provisions and extends to subletting.",
+            "supported": false
+          },
+          {
+            "claim": "The exception applies to the sale of all capital stock (if a corporation) or ownership interests (if a partnership).",
+            "supported": true
+          },
+          {
+            "claim": "The exception applies to a merger or consolidation with another entity.",
+            "supported": true
+          },
+          {
+            "claim": "The exception applies to the sale of all or substantially all assets of the tenant.",
+            "supported": true
+          },
+          {
+            "claim": "Even if the lease is assigned or sublet with landlord consent, the original tenant remains liable for all obligations under the lease and is not released.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "lease-03",
+      "fulltext_results": 0,
+      "vector_results": 7,
+      "candidates": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 23,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Tenant shall not carry any separate in surance of the same character required by this Article unless Landlord and any \nmortgagee and any lessor under any ground or underlying lease shall be named as a"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 24,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If the premiums are covered by a mortgage to which this Lease is subject, originals of the policies \nfor the insurance required hereunder shall be delivered to the mortgagee, and, if obtainable, dup l"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 14,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If the last day of the term of this Lease falls on Sunday or a legal holiday, this Lease \nshall expire on the business day immediately preceding. \n (i)  at any time and from time to time upon not less"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 20,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If substantial alteration or reconstructi on of the Building shall, in the opinion of Landlord, be required as a result of \ndamage by fire or other casualty (whether or not the premises shall have bee"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 33,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "from Landlord shall expire and terminate (whether or not the term thereof shall then have commenced) as a result of the default of Tenant thereunder or of the occurrence of an event as therein provide"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 22,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "This Lease shall be considered an express agreement governing any case of damage to or destruction of the Building or \nany part thereof by fire or other casualty, and Section 227 of the Real Property "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 21,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Each party agrees to endeavor to have included in each of its insurance policies (insuring the Building and Landlord's \nproperty therein, in the case of Landlord, and insuring Tenant's Property in the"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 23,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.85624856,
+          "preview": "Tenant shall not carry any separate in surance of the same character required by this Article unless Landlord and any \nmortgagee and any lessor under any ground or underlying lease shall be named as a"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 24,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.6493346,
+          "preview": "If the premiums are covered by a mortgage to which this Lease is subject, originals of the policies \nfor the insurance required hereunder shall be delivered to the mortgagee, and, if obtainable, dup l"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 20,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.39950758,
+          "preview": "If substantial alteration or reconstructi on of the Building shall, in the opinion of Landlord, be required as a result of \ndamage by fire or other casualty (whether or not the premises shall have bee"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 14,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.3358086,
+          "preview": "If the last day of the term of this Lease falls on Sunday or a legal holiday, this Lease \nshall expire on the business day immediately preceding. \n (i)  at any time and from time to time upon not less"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 22,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": 0.23776215,
+          "preview": "This Lease shall be considered an express agreement governing any case of damage to or destruction of the Building or \nany part thereof by fire or other casualty, and Section 227 of the Real Property "
+        }
+      ],
+      "answer": "# Insurance Policy Renewal Delivery Timeline\n\nAccording to the Commercial Lease Agreement, the tenant must deliver renewal insurance policies to the landlord **not less than thirty (30) days prior to the expiration date of the expiring policies** [1].\n\n## Additional Details\n\nThe lease specifies that:\n\n- At the commencement of the lease term and thereafter, original policies or renewal policies must be delivered by the tenant to the landlord [1]\n- Proof of payment of premium must accompany the policy delivery [1]\n- If premiums are payable in installments, the tenant must furnish proof of payment of the current installment with the policy, and then provide proof of each subsequent installment payment within five (5) days after it becomes due [1]\n\nThis 30-day advance notice requirement ensures that the landlord has adequate time to review the renewal policies and verify continuous coverage before the existing policies expire.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states the tenant must deliver renewal policies not less than 30 days before the expiring policies expire, which matches the reference, and the extra detail does not contradict it."
+      },
+      "faithfulness": {
+        "score": 0.8333333333333334,
+        "claims": [
+          {
+            "claim": "The tenant must deliver renewal insurance policies to the landlord not less than thirty (30) days prior to the expiration date of the expiring policies.",
+            "supported": true
+          },
+          {
+            "claim": "At the commencement of the lease term and thereafter, original policies or renewal policies must be delivered by the tenant to the landlord.",
+            "supported": true
+          },
+          {
+            "claim": "Proof of payment of premium must accompany the policy delivery.",
+            "supported": true
+          },
+          {
+            "claim": "If premiums are payable in installments, the tenant must furnish proof of payment of the current installment simultaneously with the policy.",
+            "supported": true
+          },
+          {
+            "claim": "The tenant must provide proof of each subsequent installment payment within five (5) days after it becomes due.",
+            "supported": true
+          },
+          {
+            "claim": "The 30-day advance requirement ensures that the landlord has adequate time to review the renewal policies and verify continuous coverage before the existing policies expire.",
+            "supported": false
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "shrm-01",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer gives no information and does not state the key fact: the greater of time worked or a two-hour minimum."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "shrm-02",
+      "fulltext_results": 0,
+      "vector_results": 3,
+      "candidates": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 13,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Once an employee has reached this cap, all further accruals will cease. Vacation accruals will recommence after the employee has taken vacation and the \naccrued vacation has dropped below the cap. Vac"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 10,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Accrued vacation leave will be paid in the last paycheck unless the employee resigned and did \nnot give and work a full two weeks’ notice. [Note: Check state laws on vacation payout at \ntermination be"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 41,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "In either event, in general, California em ployers are not required by law to provide paid vacation to their em ployees. If they do, however, vacation benefits are deemed a form of deferred compensati"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 10,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.77913743,
+          "preview": "Accrued vacation leave will be paid in the last paycheck unless the employee resigned and did \nnot give and work a full two weeks’ notice. [Note: Check state laws on vacation payout at \ntermination be"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 13,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.5407062,
+          "preview": "Once an employee has reached this cap, all further accruals will cease. Vacation accruals will recommence after the employee has taken vacation and the \naccrued vacation has dropped below the cap. Vac"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 41,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.19123739,
+          "preview": "In either event, in general, California em ployers are not required by law to provide paid vacation to their em ployees. If they do, however, vacation benefits are deemed a form of deferred compensati"
+        }
+      ],
+      "answer": "# Vacation Pay Upon Resignation\n\nBased on the provided documents, whether you receive payment for accrued vacation upon resignation depends on the circumstances:\n\n## General Rule\nAccording to the employee handbook, **accrued vacation leave will be paid in the last paycheck** [1]. However, there is an important exception.\n\n## Exception: Insufficient Notice\n**If you resign without giving and working a full two weeks' notice, you will NOT receive payment for accrued vacation** [1].\n\n## Important Caveat\nThe handbook includes a note that you should **check your state laws on vacation payout at termination, as some states may require the employer to pay out all accrued vacation for all separations** [1]. For example, in California, vacation is considered vested compensation that cannot be forfeited, and employers must pay out all accrued but unused vacation upon termination [3].\n\n## Summary\n- **With proper notice (2+ weeks):** You should receive payment for accrued vacation\n- **Without proper notice:** You may forfeit vacation pay under this policy\n- **State law may override:** Your state may require payment regardless of notice given\n\nI recommend reviewing your specific state's labor laws or consulting with your HR department to understand your rights in your particular jurisdiction.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states that accrued vacation is paid in the last paycheck unless the employee resigns without giving and working a full two weeks' notice, which matches the reference, and the added state-law caveat does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "According to the employee handbook, accrued vacation leave will be paid in the last paycheck.",
+            "supported": true
+          },
+          {
+            "claim": "If an employee resigns without giving and working a full two weeks' notice, they will not receive payment for accrued vacation under the handbook policy.",
+            "supported": true
+          },
+          {
+            "claim": "The handbook includes a note advising to check state laws on vacation payout at termination, as some states may require employers to pay out accrued vacation for all separations.",
+            "supported": true
+          },
+          {
+            "claim": "In California, vacation is considered vested compensation that cannot be forfeited.",
+            "supported": true
+          },
+          {
+            "claim": "In California, employers must pay out all accrued but unused vacation upon termination.",
+            "supported": true
+          },
+          {
+            "claim": "With proper notice (2+ weeks), the employee should receive payment for accrued vacation.",
+            "supported": true
+          },
+          {
+            "claim": "Without proper notice, the employee may forfeit vacation pay under this policy.",
+            "supported": true
+          },
+          {
+            "claim": "State law may override the handbook policy and require payment regardless of notice given.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 2,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "shrm-03",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer says no information was found and gives none of the reference's key facts (the $5,200 annual cap and the accredited job-related education condition)."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "nfib-01",
+      "fulltext_results": 1,
+      "vector_results": 0,
+      "candidates": [
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 17,
+          "vector_rank": null,
+          "fulltext_rank": 1,
+          "rerank_score": null,
+          "preview": "When leave is taken \nintermittently, the company may transfer the employee \nto another position with equivalent pay and beneﬁts, \nwhich is better suited to periods of absence. Subject to certain condi"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 17,
+          "vector_rank": null,
+          "fulltext_rank": 1,
+          "rerank_score": 0.24772386,
+          "preview": "When leave is taken \nintermittently, the company may transfer the employee \nto another position with equivalent pay and beneﬁts, \nwhich is better suited to periods of absence. Subject to certain condi"
+        }
+      ],
+      "answer": "Based on the provided context, I cannot find specific information about whether vacation can be taken in partial days. \n\nThe document discusses FMLA (Family and Medical Leave Act) leave policies, including that accrued paid leave such as vacation leave may be used concurrently with FMLA leave [1], and that employees do not continue to accrue benefits like vacation leave during family and medical leave [1]. However, it does not address the specific question of whether vacation time can be taken in increments of less than a full day.\n\nTo get an accurate answer to your question, you would need to consult the complete vacation policy section of the employee handbook or contact the authorized person listed in the handbook for questions regarding particular benefits [1].",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer says it cannot find the information and does not state the reference's key fact that vacation can only be taken in full-day or half-day increments."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "The document discusses FMLA leave policies.",
+            "supported": true
+          },
+          {
+            "claim": "Accrued paid leave such as vacation leave may be used concurrently with FMLA leave.",
+            "supported": true
+          },
+          {
+            "claim": "Employees on FMLA leave do not continue to accrue benefits like vacation leave during family and medical leave.",
+            "supported": true
+          },
+          {
+            "claim": "The handbook identifies an authorized person to whom questions about particular benefits can be directed.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "nfib-02",
+      "fulltext_results": 0,
+      "vector_results": 2,
+      "candidates": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 7,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "All employme nt \npractices and activities are conducted on a non-discriminatory basis. \n \n[ORGANIZATION] will make reasonable accommodations for the known physical or mental \nlimita t io ns or an othe"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 4,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Any employee with questions or concerns about any type of discriminatio n in the workplace is \nencouraged to bring these issues to the attention of [TITLE]. Employees can raise concerns and \nmake repo"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 7,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.8156003,
+          "preview": "All employme nt \npractices and activities are conducted on a non-discriminatory basis. \n \n[ORGANIZATION] will make reasonable accommodations for the known physical or mental \nlimita t io ns or an othe"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 4,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.32791626,
+          "preview": "Any employee with questions or concerns about any type of discriminatio n in the workplace is \nencouraged to bring these issues to the attention of [TITLE]. Employees can raise concerns and \nmake repo"
+        }
+      ],
+      "answer": "Yes, there is an open-door policy for raising workplace concerns. [1]\n\nAccording to the handbook, [ORGANIZATION] has an open door policy that encourages employees to participate in decisions affecting them and their daily professional responsibilities. [1] Employees who have job-related concerns or complaints are encouraged to discuss them with their supervisor or any other management representative with whom they feel comfortable. [1]\n\nThe policy specifically encourages employees to:\n- Raise work-related concerns with their immediate supervisor or with a supervisor or other management representative of their choice as soon as possible after the events that cause the concern [1]\n- Pursue discussion of their concerns until the matter is fully resolved [1]\n- Voice concerns about work conditions or compensation openly and directly to their supervisors [1]\n\nThe organization commits to attempting to explain results to employees if they are not satisfied, and will attempt to keep expressions of concern, investigation results, and resolutions confidential to the extent possible. [1] The handbook notes that [ORGANIZATION] believes employee concerns are best addressed through informal and open communication. [1]\n\nAdditionally, employees with concerns about discrimination can bring these issues to the attention of the designated title without fear of reprisal or retaliation. [2]",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer confirms an open-door policy and says employees are encouraged to take concerns to their supervisor or another management representative, matching the reference; the extra detail does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "The handbook includes an open-door policy for raising workplace concerns.",
+            "supported": true
+          },
+          {
+            "claim": "The open door policy encourages employees to participate in decisions affecting them and their daily professional responsibilities.",
+            "supported": true
+          },
+          {
+            "claim": "Employees with job-related concerns or complaints are encouraged to discuss them with their supervisor or any other management representative with whom they feel comfortable.",
+            "supported": true
+          },
+          {
+            "claim": "Employees are encouraged to raise work-related concerns with their immediate supervisor or a supervisor or other management representative of their choice as soon as possible after the events that cause the concern.",
+            "supported": true
+          },
+          {
+            "claim": "Employees are encouraged to pursue discussion of their concerns until the matter is fully resolved.",
+            "supported": true
+          },
+          {
+            "claim": "Employees are encouraged to voice concerns about work conditions or compensation openly and directly to their supervisors.",
+            "supported": true
+          },
+          {
+            "claim": "The organization will attempt to explain the result to employees if they are not satisfied.",
+            "supported": true
+          },
+          {
+            "claim": "The organization will attempt to keep expressions of concern, investigation results, and resolution terms confidential, though some dissemination may be necessary.",
+            "supported": true
+          },
+          {
+            "claim": "The organization believes employee concerns are best addressed through informal and open communication.",
+            "supported": true
+          },
+          {
+            "claim": "Employees with concerns about discrimination can bring these issues to the attention of the designated title (TITLE) without fear of reprisal or retaliation.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "nfib-03",
+      "fulltext_results": 0,
+      "vector_results": 6,
+      "candidates": [
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 11,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Such \nemployees may be required to document that they are successfully following prescribed \ntreatment and to take and pass follow-up tests if they hold jobs that are safety sensitive or that \nrequire"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 12,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Depending on the circumstances and \nthe employee’s work history/record, [Company Name] may offer an employee who \nviolates this policy or tests positive the opportunity to return to work on a last-cha"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 47,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Code § 14000. \n \nxxxii Em ployers who are covered by the federal Drug -Free Workplace Act of 1988 (DFWA), 41 U.S.C. § 8102 et seq ., \nwhich applies to all em ployers who receive federal grants or who "
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 286,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "A drug test can also be required if two or more members \nof management becomes concerned over an employee’s actions, speech or \noverall behavior. You must indicate to your employees which type of drug"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 6,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If an \nemployee feels he/she has been retaliated against, the \nemployee should ﬁle a complaint using the \nprocedures set forth above. Employees are prohibited from unlawfully consuming, \ndistributing,"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 10,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Accrued vacation leave will be paid in the last paycheck unless the employee resigned and did \nnot give and work a full two weeks’ notice. [Note: Check state laws on vacation payout at \ntermination be"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 6,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.629889,
+          "preview": "If an \nemployee feels he/she has been retaliated against, the \nemployee should ﬁle a complaint using the \nprocedures set forth above. Employees are prohibited from unlawfully consuming, \ndistributing,"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 10,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": 0.58664185,
+          "preview": "Accrued vacation leave will be paid in the last paycheck unless the employee resigned and did \nnot give and work a full two weeks’ notice. [Note: Check state laws on vacation payout at \ntermination be"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 11,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.5786631,
+          "preview": "Such \nemployees may be required to document that they are successfully following prescribed \ntreatment and to take and pass follow-up tests if they hold jobs that are safety sensitive or that \nrequire"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 47,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.5553635,
+          "preview": "Code § 14000. \n \nxxxii Em ployers who are covered by the federal Drug -Free Workplace Act of 1988 (DFWA), 41 U.S.C. § 8102 et seq ., \nwhich applies to all em ployers who receive federal grants or who "
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 286,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.5299209,
+          "preview": "A drug test can also be required if two or more members \nof management becomes concerned over an employee’s actions, speech or \noverall behavior. You must indicate to your employees which type of drug"
+        }
+      ],
+      "answer": "# Prescription Drugs and Drug-Free Workplace Policies\n\nBased on the provided documents, **prescription drugs are generally exempt from drug-free workplace policies**, with important conditions:\n\n## General Exemption\n\nBoth handbooks explicitly state that prescription medications taken as prescribed are exceptions to drug-free workplace policies [1][3]. Specifically, the policies do not prohibit \"the lawful use and possession of prescribed medications\" [3].\n\n## Important Conditions\n\nHowever, there are critical requirements employees must follow:\n\n1. **Medical Consultation**: Employees must consult with their doctors about how prescribed medications affect their fitness for duty and ability to work safely, and must \"promptly disclose any work restrictions to their supervisor\" [3].\n\n2. **Proper Documentation**: Employees taking prescribed drugs \"must carry it in the container labeled by a licensed pharmacist or be prepared to produce it if asked\" [3].\n\n3. **Job Performance**: Employers will not allow employees to perform their duties while taking prescribed drugs that are \"adversely affecting the employee's ability to safely and effectively perform their job duties\" [3].\n\n4. **Disclosure Limitations**: Importantly, employees \"should not, however, disclose underlying medical conditions unless directed to do so\" [3].\n\n## Summary\n\nIn short, prescription drugs are covered by an exception to drug-free workplace policies, but only when used lawfully as prescribed and when they do not impair job performance or safety.",
+      "correctness": {
+        "verdict": "partial",
+        "reason": "The answer correctly says prescription medications taken as prescribed are an exception, but it never mentions over-the-counter medications, which the reference includes."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Prescription drugs are generally exempt from drug-free workplace policies, with conditions.",
+            "supported": true
+          },
+          {
+            "claim": "Both handbooks explicitly state that prescription medications taken as prescribed are exceptions to drug-free workplace policies.",
+            "supported": true
+          },
+          {
+            "claim": "The policy does not prohibit employees from the lawful use and possession of prescribed medications.",
+            "supported": true
+          },
+          {
+            "claim": "Employees must consult with their doctors about the medications' effect on fitness for duty and ability to work safely.",
+            "supported": true
+          },
+          {
+            "claim": "Employees must promptly disclose any work restrictions to their supervisor.",
+            "supported": true
+          },
+          {
+            "claim": "Employees taking a prescribed medication must carry it in the container labeled by a licensed pharmacist or be prepared to produce it if asked.",
+            "supported": true
+          },
+          {
+            "claim": "The company will not allow employees to perform duties while taking prescribed drugs that adversely affect their ability to safely and effectively perform job duties.",
+            "supported": true
+          },
+          {
+            "claim": "Employees should not disclose underlying medical conditions unless directed to do so.",
+            "supported": true
+          },
+          {
+            "claim": "The exception applies only when drugs are used lawfully as prescribed and do not impair job performance or safety.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 5,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "pc-01",
+      "fulltext_results": 0,
+      "vector_results": 20,
+      "candidates": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 14,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Sick Leave Benefitsxvi \n \nEligibilityxvii \nEmployees, including part-time and temporary employees, qualify to accrue paid sick leave \nunder this policy upon the start of their employment or July 1, 20"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 43,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Em ployers adopting new policies to com ply with the law m ay choose whether to have an \n“accrual” policy or a “no accrual/up front” policy (an ex am ple of this type of policy is provided in italics "
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 15,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees using paid sick leave must do so in minim um increme nts of two hours. Employees will be paid for sick leave not later than the payday for the next regular payroll \nperiod after the sick lea"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 16,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees \nmay consult [enter authorized person’s name] regard-\ning the amount of (paid) sick leave provided each year. Sick days may not be carried over into the next year. Abuse of this policy may r"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 23,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Sick leave may be used for an employee's personal illness, well-care, and medical and dental \nappointments. Sick leave may also be used for illness and well-care in an employee's \nimmediate family. Si"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 42,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Per California Departm ent of Industrial Relations website: “T here is nothing in the law \nthat m andates an em ployer pay an em ployee a special prem ium  for work perform ed on a holiday, Saturday, "
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 15,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Modify this section if your company \nprovides paid time oﬀ instead of vacation and sick leave. You should also consult with an employment attorney \nregarding your state’s requirements related to the \n"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 14,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees who will be late to or absent from \nwork should notify a supervisor in advance, or as soon as \npracticable in the event of an emergency. Chronic \nabsenteeism may result in disciplinary actio"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 22,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Day \n• Presidents Day \n• Memorial Day \n• Independence Day \n• Labor Day \n• Thanksgiving Day \n• Day After Thanksgiving \n• Christmas Day \n \nShould a holiday fall on a weekend, the holiday will be observe"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 44,
+          "vector_rank": 10,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "PUBLIC COUNSEL | COMMUNITY DEVELOPM ENT PROJECT | AUGUST 2017 \n \n39  \n                                                                                                                                  "
+        }
+      ],
+      "context": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 14,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.79939574,
+          "preview": "Sick Leave Benefitsxvi \n \nEligibilityxvii \nEmployees, including part-time and temporary employees, qualify to accrue paid sick leave \nunder this policy upon the start of their employment or July 1, 20"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 15,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.7382357,
+          "preview": "Employees using paid sick leave must do so in minim um increme nts of two hours. Employees will be paid for sick leave not later than the payday for the next regular payroll \nperiod after the sick lea"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 22,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": 0.7192461,
+          "preview": "Day \n• Presidents Day \n• Memorial Day \n• Independence Day \n• Labor Day \n• Thanksgiving Day \n• Day After Thanksgiving \n• Christmas Day \n \nShould a holiday fall on a weekend, the holiday will be observe"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 43,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.6638657,
+          "preview": "Em ployers adopting new policies to com ply with the law m ay choose whether to have an \n“accrual” policy or a “no accrual/up front” policy (an ex am ple of this type of policy is provided in italics "
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 23,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.5608546,
+          "preview": "Sick leave may be used for an employee's personal illness, well-care, and medical and dental \nappointments. Sick leave may also be used for illness and well-care in an employee's \nimmediate family. Si"
+        }
+      ],
+      "answer": "# Paid Sick Leave Accrual Rate\n\nBased on the provided documents, there are two different accrual methods described:\n\n## Hourly Accrual Method\n\nUnder the accrual method, **employees accrue one hour of paid sick leave for every 30 hours of work performed** [1]. However, there is a cap on accrual: employees may not accrue more than 48 hours or six regularly-scheduled workdays of paid sick leave at any given time [1]. Once an employee reaches this cap, they cease accruing further paid sick leave until they use some of their accrued leave [1].\n\n## Lump Sum Method (Alternative)\n\nAlternatively, employers may offer sick time in a lump sum at the beginning of the year. Under this method, employers must provide at least 24 hours or three days of paid sick leave per year, and the full amount must be available for the employee's use from the beginning of each year [4].\n\n## Additional Context\n\nIt's worth noting that one handbook also references a different approach where **full-time, regular employees accrue sick leave from the date of hire for a total of 10 days per year**, with part-time employees receiving a prorated amount [3].\n\nThe specific accrual rate applicable to your organization will depend on which method your employer has chosen to implement.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states that employees accrue one hour of paid sick leave for every 30 hours worked, matching the reference, and the extra detail on caps and alternative methods does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Under the accrual method, employees accrue one hour of paid sick leave for every 30 hours of work performed.",
+            "supported": true
+          },
+          {
+            "claim": "Employees may not accrue more than 48 hours or six regularly-scheduled workdays of paid sick leave at any given time.",
+            "supported": true
+          },
+          {
+            "claim": "Once an employee reaches the cap, they cease accruing further paid sick leave until they use some of their accrued leave.",
+            "supported": true
+          },
+          {
+            "claim": "Employers may offer sick time in a lump sum at the beginning of the year as an alternative to hourly accrual.",
+            "supported": true
+          },
+          {
+            "claim": "Under the lump sum method, employers must provide at least 24 hours or three days of paid sick leave per year.",
+            "supported": true
+          },
+          {
+            "claim": "Under the lump sum method, the full amount must be available for the employee's use from the beginning of each year.",
+            "supported": true
+          },
+          {
+            "claim": "One handbook states that full-time, regular employees accrue sick leave from the date of hire for a total of 10 days per year.",
+            "supported": true
+          },
+          {
+            "claim": "In that handbook, part-time employees receive a prorated amount of sick leave.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "pc-02",
+      "fulltext_results": 0,
+      "vector_results": 8,
+      "candidates": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 14,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Sick Leave Benefitsxvi \n \nEligibilityxvii \nEmployees, including part-time and temporary employees, qualify to accrue paid sick leave \nunder this policy upon the start of their employment or July 1, 20"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 23,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Sick leave may be used for an employee's personal illness, well-care, and medical and dental \nappointments. Sick leave may also be used for illness and well-care in an employee's \nimmediate family. Si"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 43,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Em ployers adopting new policies to com ply with the law m ay choose whether to have an \n“accrual” policy or a “no accrual/up front” policy (an ex am ple of this type of policy is provided in italics "
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 15,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees using paid sick leave must do so in minim um increme nts of two hours. Employees will be paid for sick leave not later than the payday for the next regular payroll \nperiod after the sick lea"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 16,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees \nmay consult [enter authorized person’s name] regard-\ning the amount of (paid) sick leave provided each year. Sick days may not be carried over into the next year. Abuse of this policy may r"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 42,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Per California Departm ent of Industrial Relations website: “T here is nothing in the law \nthat m andates an em ployer pay an em ployee a special prem ium  for work perform ed on a holiday, Saturday, "
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 14,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees who will be late to or absent from \nwork should notify a supervisor in advance, or as soon as \npracticable in the event of an emergency. Chronic \nabsenteeism may result in disciplinary actio"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 15,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Modify this section if your company \nprovides paid time oﬀ instead of vacation and sick leave. You should also consult with an employment attorney \nregarding your state’s requirements related to the \n"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 23,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.81595254,
+          "preview": "Sick leave may be used for an employee's personal illness, well-care, and medical and dental \nappointments. Sick leave may also be used for illness and well-care in an employee's \nimmediate family. Si"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 14,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.7339103,
+          "preview": "Sick Leave Benefitsxvi \n \nEligibilityxvii \nEmployees, including part-time and temporary employees, qualify to accrue paid sick leave \nunder this policy upon the start of their employment or July 1, 20"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 15,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.6466616,
+          "preview": "Employees using paid sick leave must do so in minim um increme nts of two hours. Employees will be paid for sick leave not later than the payday for the next regular payroll \nperiod after the sick lea"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 16,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.5550741,
+          "preview": "Employees \nmay consult [enter authorized person’s name] regard-\ning the amount of (paid) sick leave provided each year. Sick days may not be carried over into the next year. Abuse of this policy may r"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 43,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.48294178,
+          "preview": "Em ployers adopting new policies to com ply with the law m ay choose whether to have an \n“accrual” policy or a “no accrual/up front” policy (an ex am ple of this type of policy is provided in italics "
+        }
+      ],
+      "answer": "# Waiting Period Before Using Accrued Sick Leave\n\nThe answer depends on which policy framework applies to your organization:\n\n## Small Business Policy\nUnder the small business handbook, **new employees must work for at least 90 calendar days before they can use accrued paid sick leave**, even though they begin accruing it from their start date [2]. The policy states: \"employees may take paid sick leave accrued under this policy if they have worked for [ORGANIZATION] for at least 90 calendar days\" [2].\n\nHowever, there is an exception: \"if the employee is re-hired within one year from the date of separation, any number of days that the employee previously worked for [ORGANIZATION] will be credited toward the 90 calendar days\" [3].\n\n## Company Handbook Policy\nThe company handbook does not specify a waiting period before using accrued sick leave. It only mentions that sick leave may accrue to a maximum of 120 hours and \"may not be used before accrual\" [1], meaning employees can use it once they've accrued it, without a specified waiting period.\n\n**In summary:** If your organization follows the small business handbook, the answer is **90 calendar days**. If you follow the company handbook policy, there is no stated waiting period beyond the requirement that sick leave must be accrued first.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states that new employees must work at least 90 calendar days before using accrued sick leave, matching the reference; the added caveat about a different company handbook policy does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Under the small business handbook, new employees must work at least 90 calendar days before they can use accrued paid sick leave.",
+            "supported": true
+          },
+          {
+            "claim": "Under the small business handbook, employees begin accruing paid sick leave from their start date (or July 1, 2015, whichever is later).",
+            "supported": true
+          },
+          {
+            "claim": "The small business policy states employees may take accrued paid sick leave if they have worked for the organization for at least 90 calendar days.",
+            "supported": true
+          },
+          {
+            "claim": "If an employee is re-hired within one year of separation, any days previously worked are credited toward the 90 calendar days.",
+            "supported": true
+          },
+          {
+            "claim": "The company handbook states sick leave may accrue to a maximum of 120 hours.",
+            "supported": true
+          },
+          {
+            "claim": "The company handbook states sick leave may not be used before accrual.",
+            "supported": true
+          },
+          {
+            "claim": "The company handbook does not specify a waiting period before using accrued sick leave.",
+            "supported": true
+          },
+          {
+            "claim": "Under the company handbook, employees can use sick leave once accrued, without a specified waiting period.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 2
+    },
+    {
+      "id": "pc-03",
+      "fulltext_results": 0,
+      "vector_results": 5,
+      "candidates": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 10,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees are free to spend their meal period \ntime as they choose (consistent with all other [ORGANIZATION] policies that apply during \noff-duty time). However, they must be prepared to resume work p"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 9,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employees are not permitted to work “off the clock.”  Failure to comport with this policy may \nresult in corrective action. If for any reason an employee fails to record his or her hours worked \nor do"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 20,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If an employee's marital status changes or the number of exemptions previously claimed \nincreases or decreases, a new Form W-4 must be submitted to the Human Resource \ndepartment. Except for extreme e"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 21,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Overtime Pay (nonexempt employees) \n \nNonexempt employees who exceed 40 hours of work time in a workweek will be paid time and \none half. Paid leave, such as holiday, sick or vacation pay, does not ap"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 12,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Exempt employees must meet a certain salary \nthreshold and perform certain job duties, which are \nspeciﬁed in the FLSA and interpreting regulations. Misclassiﬁcation of employees (as exempt versus \nno"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 10,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.8377398,
+          "preview": "Employees are free to spend their meal period \ntime as they choose (consistent with all other [ORGANIZATION] policies that apply during \noff-duty time). However, they must be prepared to resume work p"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 20,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.81025416,
+          "preview": "If an employee's marital status changes or the number of exemptions previously claimed \nincreases or decreases, a new Form W-4 must be submitted to the Human Resource \ndepartment. Except for extreme e"
+        },
+        {
+          "document_name": "small_business_handbook.pdf",
+          "chunk_index": 9,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.7458619,
+          "preview": "Employees are not permitted to work “off the clock.”  Failure to comport with this policy may \nresult in corrective action. If for any reason an employee fails to record his or her hours worked \nor do"
+        },
+        {
+          "document_name": "12-employee-handbook_final.pdf",
+          "chunk_index": 21,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.40797067,
+          "preview": "Overtime Pay (nonexempt employees) \n \nNonexempt employees who exceed 40 hours of work time in a workweek will be paid time and \none half. Paid leave, such as holiday, sick or vacation pay, does not ap"
+        },
+        {
+          "document_name": "Model-Employee-Handbook-Final-1.pdf",
+          "chunk_index": 12,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.27422792,
+          "preview": "Exempt employees must meet a certain salary \nthreshold and perform certain job duties, which are \nspeciﬁed in the FLSA and interpreting regulations. Misclassiﬁcation of employees (as exempt versus \nno"
+        }
+      ],
+      "answer": "# Meal Break Requirements for Non-Exempt Employees\n\nBased on the provided documents, meal break requirements for non-exempt employees vary depending on daily work hours:\n\n## Primary Meal Break Policy\n\n**Non-exempt employees who work more than 5 hours in a day** are provided with an unpaid 30 or 60-minute uninterrupted meal period starting no later than the end of the fifth hour of work [3].\n\n**Non-exempt employees who work more than 10 hours in a day** are provided with a second unpaid 30 or 60-minute uninterrupted meal period starting no later than the end of the 10th hour of work [3].\n\n## Waiver Provisions\n\n- If the total work period is **no more than 6 hours**, the meal period may be waived by mutual consent of both employer and employee [3].\n- If the total work period is **no more than 12 hours**, the second meal period may be waived by mutual consent only if the first meal period was not waived [3].\n\n## Important Requirements\n\nDuring meal periods, employees must be completely relieved of all job duties, must clock out, and the meal period is **not compensable** (unpaid) [2][3]. Employees are entirely relieved from duty and may leave the work premises [3].\n\n**Note:** The documents indicate that some states have different meal and rest period requirements, so you should verify your state's specific requirements [2].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states the key facts: more than 5 hours worked, an unpaid 30 or 60 minute meal period, starting no later than the end of the fifth hour. The extra details about the second meal period and waivers do not contradict the reference."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Non-exempt employees who work more than 5 hours in a day are provided an unpaid 30 or 60-minute uninterrupted meal period starting no later than the end of the fifth hour of work.",
+            "supported": true
+          },
+          {
+            "claim": "Non-exempt employees who work more than 10 hours in a day are provided a second unpaid 30 or 60-minute uninterrupted meal period starting no later than the end of the 10th hour of work.",
+            "supported": true
+          },
+          {
+            "claim": "If the total work period is no more than 6 hours, the meal period may be waived by mutual consent of employer and employee.",
+            "supported": true
+          },
+          {
+            "claim": "If the total work period is no more than 12 hours, the second meal period may be waived by mutual consent only if the first meal period was not waived.",
+            "supported": true
+          },
+          {
+            "claim": "During meal periods, non-exempt employees must be completely relieved of all job duties.",
+            "supported": true
+          },
+          {
+            "claim": "Non-exempt employees must clock out for meal periods.",
+            "supported": true
+          },
+          {
+            "claim": "The meal period is not compensable (unpaid).",
+            "supported": true
+          },
+          {
+            "claim": "Employees are entirely relieved from duty during meal periods and may leave the work premises.",
+            "supported": true
+          },
+          {
+            "claim": "The documents indicate that some states have different meal and rest period requirements, so state-specific requirements should be verified.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 2,
+      "context_hit_rank": 3
+    },
+    {
+      "id": "sfc-01",
+      "fulltext_results": 0,
+      "vector_results": 30,
+      "candidates": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 159,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Monday Clean with Degreaser all Restroom Entry Doors and Kick Plates;  \nPolish all Kick Plates and Door Handles \n \nTuesday Clean all Ceiling Vents or Wall Vents (A/C and Fresh Air); \nCheck Air Freshen"
+        },
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 5,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "When mopping is in progress, a yellow warning sign \nshould be used to warn customers that there is a potential danger of slipping if the floor is still wet. Clean \nmops should be used and the water in"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 160,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Re-cleaned Restroom__________ Manager \n Baby \nChanging \nStation \nFloor \nSwept \nToilet \nTissue \nSoap/ Air \nFresh \nBasin\nClean \nMirror\nClean \nNo \nSpots \nToilet \nBowls \nClean \nTrash \nCans \nEmpty \nSanitar"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 161,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "FOOD BAR AREA / CARVING STATION  \n• Great eye appeal -fresh product -area neat & clean  \n• Proper consistency -gravies, liquids, etc. -no film on \nproduct \n• Delicious flavor -profile \n7. FOOD BAR ATT"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 112,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "At a minimum, complete the Comprehensive Report quarterly to help keep score in your \nefforts to exceed our guests' expectations. \n\"Blueprint to a Successful Operation\" \nTrying to complete a \"spring-u"
+        },
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 7,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Besides cleanliness \nand appearance of both the store itself and its employees, a number of other points should be noticed and \nchecked regularly.\n\n8\nOperation Procedure / Issue 1-2017\nNo part of this"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 158,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Don't forget to clean \naround the base where it is fastened to the floor and under the rim. The toilet seat \nshould be clean and tight. Report to the Manager is the seat is loose. Cleaning the \nurinal"
+        },
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 4,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Again it is preferable to invite the customer to take a seat whilst the meal is \nbeing prepared, and to take the food over to him when ready. Speed of Service\nSpeed is a major factor in a customer dec"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 102,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Temperature Comfortable 1 Service Stations: Clean, Organized 1 Hostess & Cashier Stations: Clean, Organized 1 DINING ROOM TOTAL 18 0 Rev. 11-06 9 LADIES RESTROOM - Clean & Good Repair Points Actual Co"
+        },
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 13,
+          "vector_rank": 10,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Service Counter And Restaurant\nPerformed By: Counter Staff\nEstimated Time: 15 minutes\nCheck cash floats and prepare cash registers\nReplenish napkin holders \nReplenish Straw Dispensers\nStock up condime"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 5,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.89567816,
+          "preview": "When mopping is in progress, a yellow warning sign \nshould be used to warn customers that there is a potential danger of slipping if the floor is still wet. Clean \nmops should be used and the water in"
+        },
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 7,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": 0.51413256,
+          "preview": "Besides cleanliness \nand appearance of both the store itself and its employees, a number of other points should be noticed and \nchecked regularly.\n\n8\nOperation Procedure / Issue 1-2017\nNo part of this"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 158,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": 0.3866482,
+          "preview": "Don't forget to clean \naround the base where it is fastened to the floor and under the rim. The toilet seat \nshould be clean and tight. Report to the Manager is the seat is loose. Cleaning the \nurinal"
+        },
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 4,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": 0.3584434,
+          "preview": "Again it is preferable to invite the customer to take a seat whilst the meal is \nbeing prepared, and to take the food over to him when ready. Speed of Service\nSpeed is a major factor in a customer dec"
+        },
+        {
+          "document_name": "Chapter-2-Operations-Procedure.pdf",
+          "chunk_index": 13,
+          "vector_rank": 10,
+          "fulltext_rank": null,
+          "rerank_score": 0.26209083,
+          "preview": "Service Counter And Restaurant\nPerformed By: Counter Staff\nEstimated Time: 15 minutes\nCheck cash floats and prepare cash registers\nReplenish napkin holders \nReplenish Straw Dispensers\nStock up condime"
+        }
+      ],
+      "answer": "According to the operations procedures for Southern Fried Chicken stores, the restroom check-sheet should be completed **every 30 minutes throughout the day** [1].\n\nThe responsibility for checking normally rests with the supervisor on duty, and the check-sheet should verify:\n- Total cleanliness of floors, walls and fixtures\n- Adequacy of stocks of soaps, towels and paper rolls [1]\n\nThe check-sheet should be completed using a Chinagraph pencil or similar instrument [1]. This frequent checking schedule is part of the store's rigorous operating procedures to ensure that toilet facilities are kept clean and adequately stocked at all times, as the condition of restroom facilities is recognized as a major factor in customers' overall impression of the restaurant [1].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer states every 30 minutes throughout the day and normally by the supervisor on duty, matching the reference; the extra detail does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "The restroom check-sheet should be completed every 30 minutes throughout the day.",
+            "supported": true
+          },
+          {
+            "claim": "Responsibility for checking normally rests with the supervisor on duty.",
+            "supported": true
+          },
+          {
+            "claim": "The check should verify total cleanliness of floors, walls and fixtures.",
+            "supported": true
+          },
+          {
+            "claim": "The check should verify adequacy of stocks of soaps, towels and paper rolls.",
+            "supported": true
+          },
+          {
+            "claim": "The check-sheet should be completed using a Chinagraph pencil or similar instrument.",
+            "supported": true
+          },
+          {
+            "claim": "The frequent checking is part of the store's rigorous operating procedures to ensure toilet facilities are kept clean and adequately stocked at all times.",
+            "supported": true
+          },
+          {
+            "claim": "The condition of restroom facilities is recognized as a major factor in customers' overall impression of the restaurant.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 2,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "sfc-02",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer says no information was found and does not state any key facts from the reference, such as registering the wasted food in the cash register and disposing of it in the waste bins."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "wsc-01",
+      "fulltext_results": 7,
+      "vector_results": 1,
+      "candidates": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 0,
+          "vector_rank": 1,
+          "fulltext_rank": 1,
+          "rerank_score": null,
+          "preview": "OPERATIONSMANUAL\nThe Western Sizzlin Steak and More Restaurant Operations Manual and its\ncontents are the exclusive property of TheWestern Sizzlin Home Office. It is for the\nexclusive use of Western S"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 168,
+          "vector_rank": null,
+          "fulltext_rank": 2,
+          "rerank_score": null,
+          "preview": "Western Sizzlin Steakhouse in <City>, recognizing the increased demand for Angus \nand the overall quality behind the product, is adding Angus Beef to their menu. \n \n“We wanted to set ourselves apart f"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 63,
+          "vector_rank": null,
+          "fulltext_rank": 3,
+          "rerank_score": null,
+          "preview": "Utility and Cleaning Supply Storage  - Every co-worker should know where these items      \nare kept and how to use them properly. Food Preparation Schedules and Work sheets  - These documents which ca"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 234,
+          "vector_rank": null,
+          "fulltext_rank": 4,
+          "rerank_score": null,
+          "preview": "Place the deposit bag in another paper or plastic bag so that less attention \nwill be drawn to the individual making the deposit. \n• When making a deposit, always exercise precaution, be aware, and av"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 250,
+          "vector_rank": null,
+          "fulltext_rank": 5,
+          "rerank_score": null,
+          "preview": "EXP. __________________ \n#51160-03 POTATOES_____________  #75500-03 TELEPHONE ________________ \n#51212-03 BK. & DESS ____________  #79600-03 MAINT EQUIP _______________ \n#51212-03 HOT BAR ____________"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 170,
+          "vector_rank": null,
+          "fulltext_rank": 6,
+          "rerank_score": null,
+          "preview": "The Marketing Coordinator would be \nresponsible for reading all ADRF promotional material and communicating all marketing \ninformation to the staff as wel l as starting and following thro ugh continua"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 284,
+          "vector_rank": null,
+          "fulltext_rank": 7,
+          "rerank_score": null,
+          "preview": "Employee Signature Date \nManagement Signature Date \nRISK MANAGEMENT \n\nJune 2006 22 \nOSHA TRAINING ACKNOWLEDGMENT \nI ____________________  attended an Occupational Safety and Health Act (OSHA) \nTrainin"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 0,
+          "vector_rank": 1,
+          "fulltext_rank": 1,
+          "rerank_score": 0.8467682,
+          "preview": "OPERATIONSMANUAL\nThe Western Sizzlin Steak and More Restaurant Operations Manual and its\ncontents are the exclusive property of TheWestern Sizzlin Home Office. It is for the\nexclusive use of Western S"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 168,
+          "vector_rank": null,
+          "fulltext_rank": 2,
+          "rerank_score": 0.4120811,
+          "preview": "Western Sizzlin Steakhouse in <City>, recognizing the increased demand for Angus \nand the overall quality behind the product, is adding Angus Beef to their menu. \n \n“We wanted to set ourselves apart f"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 284,
+          "vector_rank": null,
+          "fulltext_rank": 7,
+          "rerank_score": 0.27958056,
+          "preview": "Employee Signature Date \nManagement Signature Date \nRISK MANAGEMENT \n\nJune 2006 22 \nOSHA TRAINING ACKNOWLEDGMENT \nI ____________________  attended an Occupational Safety and Health Act (OSHA) \nTrainin"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 234,
+          "vector_rank": null,
+          "fulltext_rank": 4,
+          "rerank_score": 0.26758084,
+          "preview": "Place the deposit bag in another paper or plastic bag so that less attention \nwill be drawn to the individual making the deposit. \n• When making a deposit, always exercise precaution, be aware, and av"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 63,
+          "vector_rank": null,
+          "fulltext_rank": 3,
+          "rerank_score": 0.24291028,
+          "preview": "Utility and Cleaning Supply Storage  - Every co-worker should know where these items      \nare kept and how to use them properly. Food Preparation Schedules and Work sheets  - These documents which ca"
+        }
+      ],
+      "answer": "Based on the provided context, Western Sizzlin Steak and More Restaurant was founded in **1962 in Augusta, Georgia** by Nick Pascarella [1].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer gives 1962, Augusta, Georgia, and Nick Pascarella, matching the reference with no contradictions."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Western Sizzlin Steak and More Restaurant was founded in 1962.",
+            "supported": true
+          },
+          {
+            "claim": "Western Sizzlin Steak and More Restaurant was founded in Augusta, Georgia.",
+            "supported": true
+          },
+          {
+            "claim": "Western Sizzlin Steak and More Restaurant was founded by Nick Pascarella.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "wsc-02",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer gives no duration and says no information was found, so it misses the reference's key fact of at least 20 seconds."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "wsc-03",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "incorrect",
+        "reason": "The answer gives no information and does not state the 70°F or lower temperature from the reference."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      },
+      "candidate_hit_rank": null,
+      "context_hit_rank": null
+    },
+    {
+      "id": "wsc-04",
+      "fulltext_results": 1,
+      "vector_results": 1,
+      "candidates": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": 1,
+          "rerank_score": null,
+          "preview": "When cooling hot food: \n§ Reduce the mass to a maximum of 2 inches.  (An \nexample would be; pouring soup into two or three pots so \nonly 2 inches of soup remains in each pot.)  Liquid items \nshould be"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 6,
+          "vector_rank": 1,
+          "fulltext_rank": 1,
+          "rerank_score": 0.72559077,
+          "preview": "When cooling hot food: \n§ Reduce the mass to a maximum of 2 inches.  (An \nexample would be; pouring soup into two or three pots so \nonly 2 inches of soup remains in each pot.)  Liquid items \nshould be"
+        }
+      ],
+      "answer": "Based on the provided context, leftovers should be reheated to an internal temperature of **165°F for at least 15 seconds** [1].\n\nThe reheating process requires that previously prepared and cooled foods be heated quickly through the danger zone within 45 minutes to reach 140°F, and then continued to heat to the final internal temperature of 165°F [1]. The temperature should be measured in the center or thickest portion of the product to ensure thorough heating [1].\n\nAdditionally, the context specifies that this reheating to 165°F must be completed within 2 hours, and importantly, leftovers should only be reheated or served one time before being discarded [1].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer gives 165°F for at least 15 seconds and says reheating must be completed within 2 hours, matching the reference; the extra details do not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "Leftovers should be reheated to an internal temperature of 165°F for at least 15 seconds.",
+            "supported": true
+          },
+          {
+            "claim": "Previously prepared and cooled foods must be heated quickly through the danger zone within 45 minutes to reach 140°F.",
+            "supported": true
+          },
+          {
+            "claim": "After reaching 140°F, the food should continue heating to a final internal temperature of 165°F.",
+            "supported": true
+          },
+          {
+            "claim": "The temperature should be measured in the center or thickest portion of the product.",
+            "supported": true
+          },
+          {
+            "claim": "The reheating to 165°F must be completed within 2 hours.",
+            "supported": true
+          },
+          {
+            "claim": "Leftovers should only be reheated or served one time before being discarded.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "wsc-05",
+      "fulltext_results": 0,
+      "vector_results": 10,
+      "candidates": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 237,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "An example of other deposits would be fat or grease sales, toy \nmachine rebates, etc. All should be added together and placed on Line 12 \nunder Total Special Deposits. \n \n• Guest Count – In order to d"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 236,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Example: if the local tax rate is 6.5 percent then you would divide Line 3 by \n1.065 to establish the net sales. \n \n• Line 3b - Sales Tax is calculated by subtracting Line 3a from Line 3. Enter \nsales"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 238,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "MGN'T MEALS ADJUSTMENTS \n   \n  3_________________________ \n  GROSS SALES \nACCTS RECEIVABLE - VENDOR NAME: ACCOUNT #: AMOUNT: 3A________________________ \n__________________________________ ____________"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 235,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Balancing the sales and receipts every day will ensure good \nmoney management controls and maximize the potential for a successful and profitable \noperation. \n• The DCR is a daily summary of cash tran"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 243,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If every item is entered correctly it should balance to 0 when a dded and          \nsubtracted left to right across the page. RESTAURANT ACCOUNTING \n\nWestern Sizzlin \nJune 2006 20 \n \n \nRESTAURANT ACCO"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 233,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "The change fund is vital to the operation and must \nbe managed carefully. Please note the following regarding the change fund: \n• The General Manager is responsible for this money. \n• The change fund "
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 234,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Place the deposit bag in another paper or plastic bag so that less attention \nwill be drawn to the individual making the deposit. \n• When making a deposit, always exercise precaution, be aware, and av"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 244,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Western Sizzlin \nJune 2006 22 \n \n \n• Promo - Complimentary or (Comp). - The number of promos for the day should be \nreported to the left of the (/) and the total dollars should be reported to the righ"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 239,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "OTHER \n DEPOSITS:            _______________    _______________ _______________ 12_________________________ \n  TOTAL SPECIAL DEPOSITS \n  {12A+12B+12C} \nGUEST COUNT:   _______________                  "
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 242,
+          "vector_rank": 10,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Employee Name:________________________________________________________ \n  Purpose:________________________________________________________________ \n Date:_____________________   Location:_____________"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 235,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": 0.7777226,
+          "preview": "Balancing the sales and receipts every day will ensure good \nmoney management controls and maximize the potential for a successful and profitable \noperation. \n• The DCR is a daily summary of cash tran"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 237,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.4286405,
+          "preview": "An example of other deposits would be fat or grease sales, toy \nmachine rebates, etc. All should be added together and placed on Line 12 \nunder Total Special Deposits. \n \n• Guest Count – In order to d"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 238,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": 0.38172707,
+          "preview": "MGN'T MEALS ADJUSTMENTS \n   \n  3_________________________ \n  GROSS SALES \nACCTS RECEIVABLE - VENDOR NAME: ACCOUNT #: AMOUNT: 3A________________________ \n__________________________________ ____________"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 242,
+          "vector_rank": 10,
+          "fulltext_rank": null,
+          "rerank_score": 0.37018043,
+          "preview": "Employee Name:________________________________________________________ \n  Purpose:________________________________________________________________ \n Date:_____________________   Location:_____________"
+        },
+        {
+          "document_name": "wsc-operations-manual-2012.pdf",
+          "chunk_index": 236,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.35093334,
+          "preview": "Example: if the local tax rate is 6.5 percent then you would divide Line 3 by \n1.065 to establish the net sales. \n \n• Line 3b - Sales Tax is calculated by subtracting Line 3a from Line 3. Enter \nsales"
+        }
+      ],
+      "answer": "# What Goes on the Adjustments Line of the Daily Cash Report\n\nAccording to the Daily Cash Report (DCR) instructions, the Adjustments line (Line 2) should include the following four items added together [1]:\n\n1. **Employee meals (2a)**\n2. **Over rings (2b)**\n3. **Discounts (2c)**\n4. **Management meals (2d)**\n\nAn important requirement is that \"a manager's signature should be on each adjustment ticket with the appropriate reason\" [1]. This ensures proper documentation and accountability for all adjustments being made to the daily sales figures.\n\nOnce these four categories are totaled, the Adjustments line amount is then subtracted from the Total Sales (Line 1) to calculate the Gross Sales (Line 3) [1].",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer lists all four items (employee meals, over rings, discounts, management meals) added together, matching the reference; the extra detail does not contradict it."
+      },
+      "faithfulness": {
+        "score": 0.8,
+        "claims": [
+          {
+            "claim": "The Adjustments line is Line 2 of the DCR.",
+            "supported": true
+          },
+          {
+            "claim": "The Adjustments line includes employee meals (2a), over rings (2b), discounts (2c), and management meals (2d) added together.",
+            "supported": true
+          },
+          {
+            "claim": "A manager's signature should be on each adjustment ticket with the appropriate reason.",
+            "supported": true
+          },
+          {
+            "claim": "The Adjustments amount is subtracted from Total Sales (Line 1) to calculate Gross Sales (Line 3).",
+            "supported": true
+          },
+          {
+            "claim": "The manager's signature requirement ensures proper documentation and accountability for adjustments to daily sales figures.",
+            "supported": false
+          }
+        ]
+      },
+      "candidate_hit_rank": 4,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "lease-04",
+      "fulltext_results": 0,
+      "vector_results": 9,
+      "candidates": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Tenant does hereby covenant and agree pr omptly to pay the fixed rent, addi tional rent and other charges herein \n\nreserved as and when the same shall become due and payable, without demand therefor, "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 36,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "In the event of any termination of this Lease under the provisions of Article 16 hereof or in the event that Landlord shall re-enter the premises under the provisions of Article 17 hereof or in the ev"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 43,
+          "vector_rank": 3,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "Bills for any expense incurred by \nLandlord in connection with any such performance by Landlord for the account of Tenant, and bills for all costs, expenses and \ndisbursements of every kind and nature"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 42,
+          "vector_rank": 4,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "No executory \nagreement hereafter made between Landlord and Tenant shall be effe ctive to change, modify, wa ive, release, discharge, \nterminate or effect an abandonment of this Lease, in whole or in "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 34,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If the term \"Tenant\", as used in this Lease, refers to more than \none person, then, as used in subparagraphs (a), (b), (c), (d) and (h) of this Article 16, said term shall be deemed to include all of "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 1,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "The rent reserved under this Lease for the term hereof shall be and consist of the following fixed rent, namely: \n (a)  for and during the period commencing on                                        a"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 35,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "In the event of a breach of threatened breach on the part of the Tenant with respect to any of the covenants, \n\nagreements, terms, provisions or conditions on the part of or on behalf of Tenant to be "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 14,
+          "vector_rank": 8,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "If the last day of the term of this Lease falls on Sunday or a legal holiday, this Lease \nshall expire on the business day immediately preceding. \n (i)  at any time and from time to time upon not less"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 38,
+          "vector_rank": 9,
+          "fulltext_rank": null,
+          "rerank_score": null,
+          "preview": "net rents are actually received by Landlord prior to the commencement of such suit, and ( iii) if the premises or any part thereof should be re-let in combination with other space, then proper apporti"
+        }
+      ],
+      "context": [
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 2,
+          "vector_rank": 1,
+          "fulltext_rank": null,
+          "rerank_score": 0.8627572,
+          "preview": "Tenant does hereby covenant and agree pr omptly to pay the fixed rent, addi tional rent and other charges herein \n\nreserved as and when the same shall become due and payable, without demand therefor, "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 36,
+          "vector_rank": 2,
+          "fulltext_rank": null,
+          "rerank_score": 0.5090084,
+          "preview": "In the event of any termination of this Lease under the provisions of Article 16 hereof or in the event that Landlord shall re-enter the premises under the provisions of Article 17 hereof or in the ev"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 1,
+          "vector_rank": 6,
+          "fulltext_rank": null,
+          "rerank_score": 0.43295085,
+          "preview": "The rent reserved under this Lease for the term hereof shall be and consist of the following fixed rent, namely: \n (a)  for and during the period commencing on                                        a"
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 35,
+          "vector_rank": 7,
+          "fulltext_rank": null,
+          "rerank_score": 0.3301153,
+          "preview": "In the event of a breach of threatened breach on the part of the Tenant with respect to any of the covenants, \n\nagreements, terms, provisions or conditions on the part of or on behalf of Tenant to be "
+        },
+        {
+          "document_name": "CommercialLeaseAgreement.pdf",
+          "chunk_index": 34,
+          "vector_rank": 5,
+          "fulltext_rank": null,
+          "rerank_score": 0.2960235,
+          "preview": "If the term \"Tenant\", as used in this Lease, refers to more than \none person, then, as used in subparagraphs (a), (b), (c), (d) and (h) of this Article 16, said term shall be deemed to include all of "
+        }
+      ],
+      "answer": "Based on the Commercial Lease Agreement provided, the specific late charge amount is not fully specified in the available context.\n\nAccording to the lease document, the late charge structure is described as follows [1]:\n\n\"If Tenant shall fail to pay any installment of fixed rent or additional rent or other sums or charges within ten (10) days after the same shall be due then, Tenant shall pay a late charge of $_____ for each $1.00 so unpaid.\"\n\nThe document shows that there is a blank space where the late charge amount should be filled in. The lease also includes an important provision [1]:\n\n\"Nothing herein contained shall be intended to violate any applicable law, code or regulation, and, in all instances, such late charge shall be automatically reduced to any maximum applicable legal rate or charge.\"\n\nAdditionally, the late charge [1]:\n- Is imposed monthly for each late payment\n- Is in addition to all other rights and remedies available to the Landlord\n- Does not limit any other remedies the Landlord may have\n\nTo determine the actual late charge amount, you would need to review the executed lease agreement where this dollar amount has been filled in, as it is not specified in the document excerpt provided.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer says the late charge amount is a blank in the lease and is not specified, which matches the reference, and its extra detail does not contradict it."
+      },
+      "faithfulness": {
+        "score": 1.0,
+        "claims": [
+          {
+            "claim": "The lease states that if Tenant fails to pay any installment of fixed rent, additional rent or other sums within ten (10) days after it is due, Tenant shall pay a late charge of $___ for each $1.00 unpaid.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge amount in the lease is a blank space that has not been filled in.",
+            "supported": true
+          },
+          {
+            "claim": "The lease provides that nothing in it is intended to violate any applicable law, code or regulation, and the late charge is automatically reduced to the maximum applicable legal rate or charge.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge is imposed monthly for each late payment.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge is in addition to all other rights and remedies available to the Landlord.",
+            "supported": true
+          },
+          {
+            "claim": "The late charge does not limit any other remedies the Landlord may have.",
+            "supported": true
+          }
+        ]
+      },
+      "candidate_hit_rank": 1,
+      "context_hit_rank": 1
+    },
+    {
+      "id": "oos-01",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer says the documents contain no relevant information, which matches the reference's requirement to state that the documents do not cover the topic, and it invents no specifics."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      }
+    },
+    {
+      "id": "oos-02",
+      "fulltext_results": 0,
+      "vector_results": 0,
+      "candidates": [],
+      "context": [],
+      "answer": "I couldn't find any relevant information in the documents to answer your question.",
+      "correctness": {
+        "verdict": "correct",
+        "reason": "The answer says the documents contain no relevant information and invents no specifics, which matches the reference."
+      },
+      "faithfulness": {
+        "score": null,
+        "claims": []
+      }
+    }
+  ]
+}
