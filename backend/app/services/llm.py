@@ -17,6 +17,26 @@ logger = get_logger(__name__)
 PROVIDER_TIMEOUT_SECONDS = 60.0
 
 
+def _group_by_document(
+    results: list[dict[str, Any]],
+) -> list[tuple[str, list[tuple[int, dict[str, Any]]]]]:
+    """Group search results by source document.
+
+    Each chunk keeps its rerank citation number (its 1-based position in
+    results). Groups are ordered by where their document first appears, and
+    chunks within a group keep rerank order.
+
+    Returns:
+        List of (document_name, [(citation_num, result), ...]) tuples
+    """
+    groups: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for idx, result in enumerate(results):
+        metadata = result.get("metadata", {})
+        doc_name = metadata.get("document_name", "Unknown Document")
+        groups.setdefault(doc_name, []).append((idx + 1, result))
+    return list(groups.items())
+
+
 class LLMService:
     """Service for generating answers using Claude via Openrouter."""
 
@@ -60,23 +80,23 @@ class LLMService:
         if not results:
             return "No relevant information found."
 
-        context_parts = []
-        for idx, result in enumerate(results):
-            # Use contextual content if available, otherwise use content
-            content = result.get("contextual_content") or result.get("content", "")
+        document_blocks = []
+        for doc_name, items in _group_by_document(results):
+            chunk_parts = []
+            for citation_num, result in items:
+                # Use contextual content if available, otherwise use content
+                content = result.get("contextual_content") or result.get("content", "")
+                chunk_index = result.get("metadata", {}).get("chunk_index", 0)
 
-            # Get document metadata for citation
-            metadata = result.get("metadata", {})
-            doc_name = metadata.get("document_name", "Unknown Document")
-            chunk_index = metadata.get("chunk_index", 0)
-
-            # Format: [Citation 1] Content from doc_name (chunk X)
-            citation_num = idx + 1
-            context_parts.append(
-                f"[{citation_num}] {content}\n(Source: {doc_name}, chunk {chunk_index + 1})"
+                # Format: [Citation 1] Content from doc_name (chunk X)
+                chunk_parts.append(
+                    f"[{citation_num}] {content}\n(Source: {doc_name}, chunk {chunk_index + 1})"
+                )
+            document_blocks.append(
+                f"=== Document: {doc_name} ===\n\n" + "\n\n".join(chunk_parts)
             )
 
-        return "\n\n".join(context_parts)
+        return "\n\n".join(document_blocks)
 
     def _create_system_prompt(self) -> str:
         """Create the system prompt for the RAG chatbot.
@@ -97,7 +117,13 @@ Your role:
 Important:
 - Do not make up information that's not in the context
 - If you're uncertain, acknowledge it
-- Use citations to help users verify information"""
+- Use citations to help users verify information
+
+Multiple documents:
+- The context is grouped by source document. Different documents may come from different organizations and can have conflicting policies.
+- Never merge rules from different documents into one answer as if they were a single policy.
+- If the documents disagree and the question doesn't say which one it means, give each document's answer separately and name the document it comes from.
+- Only say documents agree when each of them states it."""
 
     def _truncate_conversation_history(
         self,

@@ -193,6 +193,122 @@ def test_create_system_prompt(llm_service):
     assert "Do not make up information" in prompt
 
 
+def _chunk(doc_name, chunk_index, text):
+    """Search result for a chunk of doc_name."""
+    return {
+        "chunk_id": f"{doc_name}-{chunk_index}",
+        "document_id": doc_name,
+        "content": text,
+        "metadata": {"document_name": doc_name, "chunk_index": chunk_index},
+    }
+
+
+@pytest.fixture
+def interleaved_results():
+    """Ranked docs A, B, A, C: A's two chunks are not adjacent in rerank order."""
+    return [
+        _chunk("A.pdf", 14, "A first chunk text."),
+        _chunk("B.pdf", 2, "B chunk text."),
+        _chunk("A.pdf", 17, "A second chunk text."),
+        _chunk("C.pdf", 0, "C chunk text."),
+    ]
+
+
+def test_format_context_groups_chunks_under_document_headers(
+    llm_service, interleaved_results
+):
+    """Each document gets one header, and its chunks sit under that header."""
+    context = llm_service._format_context(interleaved_results)
+
+    assert context.count("=== Document: A.pdf ===") == 1
+    a = context.index("=== Document: A.pdf ===")
+    b = context.index("=== Document: B.pdf ===")
+    c = context.index("=== Document: C.pdf ===")
+    assert a < b < c
+    # [3] is A's second chunk, so it belongs in A's block, before B's header.
+    assert a < context.index("[3] A second chunk text.") < b
+
+
+def test_format_context_keeps_citation_numbers_in_rerank_order(
+    llm_service, interleaved_results
+):
+    """Citation numbers stay tied to rerank position, not to the group."""
+    context = llm_service._format_context(interleaved_results)
+
+    for n in range(1, 5):
+        assert context.count(f"[{n}] ") == 1
+    b = context.index("=== Document: B.pdf ===")
+    c = context.index("=== Document: C.pdf ===")
+    assert b < context.index("[2] B chunk text.") < c
+
+
+def test_format_context_exact_grouped_layout(llm_service, interleaved_results):
+    """Blocks are separated by a blank line; chunks within a block likewise."""
+    context = llm_service._format_context(interleaved_results)
+
+    assert context == (
+        "=== Document: A.pdf ===\n\n"
+        "[1] A first chunk text.\n(Source: A.pdf, chunk 15)\n\n"
+        "[3] A second chunk text.\n(Source: A.pdf, chunk 18)\n\n"
+        "=== Document: B.pdf ===\n\n"
+        "[2] B chunk text.\n(Source: B.pdf, chunk 3)\n\n"
+        "=== Document: C.pdf ===\n\n"
+        "[4] C chunk text.\n(Source: C.pdf, chunk 1)"
+    )
+
+
+def test_format_context_single_document_has_one_header(
+    llm_service, sample_search_results
+):
+    """A single document gets exactly one header."""
+    context = llm_service._format_context(sample_search_results)
+
+    assert context.count("=== Document: python_guide.pdf ===") == 1
+    assert context.count("=== Document:") == 1
+
+
+def test_format_context_missing_metadata_grouped_as_unknown(llm_service):
+    """Chunks without a document name fall into the Unknown Document group."""
+    results = [
+        {"chunk_id": "x", "content": "Orphan text", "metadata": {}},
+        _chunk("A.pdf", 0, "A text."),
+    ]
+
+    context = llm_service._format_context(results)
+
+    assert "=== Document: Unknown Document ===" in context
+    assert "[1] Orphan text" in context
+
+
+def test_group_by_document_orders_blocks_by_first_appearance(interleaved_results):
+    """The pure helper returns (doc, [(citation_num, result)]) in rank order."""
+    from app.services.llm import _group_by_document
+
+    groups = _group_by_document(interleaved_results)
+
+    assert [name for name, _ in groups] == ["A.pdf", "B.pdf", "C.pdf"]
+    a_items = groups[0][1]
+    assert [num for num, _ in a_items] == [1, 3]
+    assert a_items[0][1] is interleaved_results[0]
+    assert a_items[1][1] is interleaved_results[2]
+    assert groups[1][1] == [(2, interleaved_results[1])]
+
+
+def test_group_by_document_empty_input():
+    """No results means no groups."""
+    from app.services.llm import _group_by_document
+
+    assert _group_by_document([]) == []
+
+
+def test_create_system_prompt_covers_conflicting_documents(llm_service):
+    """The prompt tells the model not to merge conflicting document policies."""
+    prompt = llm_service._create_system_prompt()
+
+    assert "conflicting" in prompt
+    assert "name the document" in prompt
+
+
 def test_generate_answer_success(
     llm_service, mock_openai_client, sample_search_results, mock_completion_response
 ):
