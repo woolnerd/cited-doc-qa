@@ -1,6 +1,7 @@
 # Rollback Guide
 
-How to undo the 2026-10-29 cutover, and how to roll back a bad deploy of this app.
+How to undo the 2026-10-29 cutover, how to roll back a bad deploy of this app, and how to undo
+later env changes.
 
 ## Current Setup (after 2026-10-29 cutover)
 
@@ -75,7 +76,9 @@ The next push to `main` redeploys `latest`, so revert the bad commit on `main` (
 
 Only needed if a config change on 8001 is the problem. The pre-cutover env used Gemini embeddings,
 which **do not match** the 3072-dim `openai/text-embedding-3-large` vectors of the global documents,
-so restoring it will break search over them. Prefer fixing the single bad value instead.
+so restoring it will break search over them. Its `OPENROUTER_API_KEY` has also been revoked
+(checked 2026-10-30), so copy the current key into it first. Prefer fixing the single bad value
+instead.
 
 ```bash
 cd /root/production-rag-system
@@ -83,6 +86,47 @@ cp .env.production .env.production.bak-$(date -u +%Y%m%dT%H%M%SZ)
 cp .env.production.bak-20261029T175249Z-pre-eta-cutover .env.production
 docker compose -f docker-compose.prod.yml up -d --force-recreate
 ```
+
+## Option 4: Restore the Vector Similarity Threshold
+
+On 2026-10-30 at 11:54 UTC, `SEARCH_SIMILARITY_THRESHOLD` in `.env.production` changed from `0.45`
+to `0.0`, matching the new code default from PR #91. With `0.45`, 6 of the 29 answerable eval
+questions got no search results; see "What I measured and what I changed" in the README. This was
+the only line changed. Backup:
+
+- `/root/production-rag-system/.env.production.bak-20261030T115411Z-similarity-threshold`
+
+To go back to `0.45`, set it explicitly. Removing the line does not restore the old behavior,
+because the code default is now `0.0`.
+
+```bash
+cd /root/production-rag-system
+cp .env.production .env.production.bak-$(date -u +%Y%m%dT%H%M%SZ)-pre-threshold-rollback
+sed -i 's/^SEARCH_SIMILARITY_THRESHOLD=.*/SEARCH_SIMILARITY_THRESHOLD=0.45/' .env.production
+docker compose -f docker-compose.prod.yml up -d --force-recreate
+
+# Confirm the container loaded it
+docker exec rag-chatbot-prod python -c \
+  "from app.core.config import settings; print(settings.SEARCH_SIMILARITY_THRESHOLD)"
+```
+
+`docker compose restart` does not reread `env_file`; recreate the container as above.
+
+### Unused env lines removed (2026-10-30, 12:14 UTC)
+
+Right after the threshold change, seven lines the app never reads were removed from
+`.env.production`: `DATABASE_URL`, `MAX_FILE_SIZE_MB`, `ALLOWED_FILE_TYPES`, `UPLOAD_RATE_LIMIT`,
+`QUERY_RATE_LIMIT`, `CHUNK_SIZE_TARGET`, `GCS_SOURCE_PREFIX`. The app's defaults for the ones
+defined in `config.py` are the same values. Backup:
+
+- `/root/production-rag-system/.env.production.bak-20261030T121437Z-remove-unused-vars`
+
+To undo, copy that backup over `.env.production` and recreate the container. It already contains
+`SEARCH_SIMILARITY_THRESHOLD=0.0`, so this does not undo the threshold change.
+
+The stale `/root/production-rag-system/.env` (a January 2026 copy of an older env, not used by
+`docker-compose.prod.yml`) was deleted at the same time. It was not backed up: it only held older
+credentials and settings that nothing reads.
 
 ## Smoke Test After Any Rollback
 
